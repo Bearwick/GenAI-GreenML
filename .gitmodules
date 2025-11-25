@@ -1,0 +1,3 @@
+[submodule "machine-learning-housing-price-predection"]
+	path = machine-learning-housing-price-predection
+	url = https://github.com/Bifenzine/machine-learning-housing-price-predection.git
