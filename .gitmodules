@@ -7,3 +7,6 @@
 [submodule "Repositories/ml-price-prediction-with-linear-regression"]
 	path = Repositories/ml-price-prediction-with-linear-regression
 	url = https://github.com/CreativeCreate/ml-price-prediction-with-linear-regression.git
+[submodule "repos/cancer_prediction"]
+	path = repos/cancer_prediction
+	url = https://github.com/joemathew2004/cancer_prediction.git
