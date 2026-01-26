@@ -7,11 +7,6 @@ This markdown file describes the process of locating the desired ML projects and
 ## Adding ML Projects
 
 ```
-cd repos
-git submodule add [url]
-```
-
-```
 ./scripts/import_repo.sh
 ```
 
