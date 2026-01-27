@@ -47,3 +47,5 @@ Rock-or-Mine-prediction: fix numpy coding error & remove input prediction
 Deep-Learning-Classification: fix Keras API shape formatting issue
 
 CT_Project: fix pandas TypeError
+
+Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity: fix tensorflow ImportError & scikit-learn TypeError & Keras AttributeError & printing TypeError
