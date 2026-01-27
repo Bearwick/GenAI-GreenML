@@ -95,21 +95,45 @@ rsync -a \
   "$TARGET_DIR/"
 
 # ----------------------------
-# Python environment bootstrap
+# Python environment bootstrap (venv + pipreqs)
 # ----------------------------
 
 REQ_CREATED=false
 VENV_CREATED=false
 
+VENV_DIR="$TARGET_DIR/venv"
+VENV_PY="$VENV_DIR/bin/python"
+VENV_PIP="$VENV_DIR/bin/pip"
+VENV_PIPREQS="$VENV_DIR/bin/pipreqs"
+
+# 1) Create virtual environment if missing
+if [[ ! -d "$VENV_DIR" ]]; then
+  echo "[*] Creating virtual environment: $VENV_DIR"
+  python3 -m venv "$VENV_DIR"
+  VENV_CREATED=true
+fi
+
+# 2) Install pipreqs inside the venv (ensure pip exists + is reasonably fresh)
+echo "[*] Installing/Updating pip + pipreqs inside venv"
+"$VENV_PY" -m ensurepip --upgrade >/dev/null 2>&1 || true
+"$VENV_PIP" install --upgrade pip setuptools wheel >/dev/null
+"$VENV_PIP" install --upgrade pipreqs >/dev/null
+
+# 3) Generate requirements.txt using pipreqs (only if missing)
 if [[ ! -f "$TARGET_DIR/requirements.txt" ]]; then
-  cat > "$TARGET_DIR/requirements.txt" <<EOF
-# Auto-generated on import ($IMPORT_DATE)
-# Add and pin dependencies as required
-EOF
+  echo "[*] Generating requirements.txt using pipreqs"
+  # Note: ignore the venv folder so it doesn't pollute dependency detection
+  "$VENV_PIPREQS" "$TARGET_DIR" \
+    --force \
+    --encoding utf-8 \
+    --ignore "$VENV_DIR"
+
   REQ_CREATED=true
 fi
 
+# Create virtual environment if missing
 if [[ ! -d "$TARGET_DIR/venv" ]]; then
+  echo "[*] Creating virtual environment"
   python3 -m venv "$TARGET_DIR/venv"
   VENV_CREATED=true
 fi
