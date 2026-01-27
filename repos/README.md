@@ -37,3 +37,5 @@ deactivate
 
 Created a script to import projects.
 Then I have fixed code in project so it runs, e.g., csv path or removing GUI code.
+
+diabetes_predictive_analysis: fixed standardization (scaler) because scaling was implemented but not applied due to a coding error
