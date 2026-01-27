@@ -43,3 +43,5 @@ diabetes_predictive_analysis: fixed standardization (scaler) because scaling was
 cars-classification: fixed nan values from dataset
 
 Rock-or-Mine-prediction: fix numpy coding error & remove input prediction
+
+Deep-Learning-Classification: fix Keras API shape formatting issue
