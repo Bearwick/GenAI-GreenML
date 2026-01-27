@@ -1,0 +1,10 @@
+# Ignore virtual environment
+venv/
+can/
+
+# Ignore Python bytecode
+__pycache__/
+*.pyc
+
+# Ignore saved model and scaler
+*.joblib
