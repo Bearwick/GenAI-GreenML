@@ -19,15 +19,14 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-pip install pipreqs
-pipreqs .
+## If requirements.txt exists
+
+```
+cd repos/[project]
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
 ```
 deactivate
 ```
-
-gjengangere ikke installert:
-numpy
-pandas
-matplotlib
-scikit-learn
