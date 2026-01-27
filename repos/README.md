@@ -32,3 +32,8 @@ pip install -r requirements.txt
 ```
 deactivate
 ```
+
+### notes on process
+
+Created a script to import projects.
+Then I have fixed code in project so it runs, e.g., csv path.
