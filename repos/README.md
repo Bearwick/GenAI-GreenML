@@ -22,3 +22,9 @@ pip install -r requirements.txt
 ```
 deactivate
 ```
+
+gjengangere ikke installert:
+numpy
+pandas
+matplotlib
+scikit-learn
