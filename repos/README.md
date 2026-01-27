@@ -41,3 +41,5 @@ Then I have fixed code in project so it runs, e.g., csv path or removing GUI cod
 diabetes_predictive_analysis: fixed standardization (scaler) because scaling was implemented but not applied due to a coding error
 
 cars-classification: fixed nan values from dataset
+
+Rock-or-Mine-prediction: fix numpy coding error & remove input prediction
