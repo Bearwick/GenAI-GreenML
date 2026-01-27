@@ -7,7 +7,7 @@ This markdown file describes the process of locating the desired ML projects and
 ## Adding ML Projects
 
 ```
-./scripts/import_repo.sh
+./scripts/import_repo.sh [url]
 ```
 
 ## If no requirements.txt
@@ -26,6 +26,8 @@ cd repos/[project]
 source venv/bin/activate
 pip install -r requirements.txt
 ```
+
+## Deactivate Virtual Environment (venv)
 
 ```
 deactivate
