@@ -39,6 +39,12 @@ deactivate
 ./scripts/run_ml_projects.sh
 ```
 
+## Run Projects and Capture Telemetry
+
+```
+./scripts/run_ml_projects_telemetry.sh
+```
+
 ### notes on process
 
 Created a script to import projects.
