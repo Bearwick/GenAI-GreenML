@@ -10,7 +10,7 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 df = pd.read_csv(r"Iris.csv")
@@ -30,7 +30,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 pipeline = Pipeline([
     ("scaler", StandardScaler()),
-    ("model", LogisticRegression(max_iter=200))
+    ("model", SVC(kernel="linear"))
 ])
 
 pipeline.fit(X_train, y_train)
@@ -39,13 +39,13 @@ y_pred = pipeline.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
 
 print("=" * 50)
-print("Model: Logistic Regression")
+print("Model: Support Vector Machine")
 print(f"Accuracy: {accuracy:.4f}")
 print(classification_report(y_test, y_pred))
 
 cm = confusion_matrix(y_test, y_pred)
 sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
-plt.title("Confusion Matrix - Logistic Regression")
+plt.title("Confusion Matrix - SVM")
 plt.xlabel("Predicted")
 plt.ylabel("Actual")
 plt.show()
