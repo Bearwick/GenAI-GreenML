@@ -33,6 +33,12 @@ pip install -r requirements.txt
 deactivate
 ```
 
+## Run Projects to Verify run file
+
+```
+./scripts/run_ml_projects.sh
+```
+
 ### notes on process
 
 Created a script to import projects.
@@ -49,3 +55,5 @@ Deep-Learning-Classification: fix Keras API shape formatting issue
 CT_Project: fix pandas TypeError
 
 Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity: fix tensorflow ImportError & scikit-learn TypeError & Keras AttributeError & printing TypeError
+
+SparkMLClassification: split into two projects.

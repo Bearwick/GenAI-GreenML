@@ -42,7 +42,7 @@ def generate_csv(output_results):
 
 def algorithm():
     print("Knn Clasifier")    
-    k_value: int = int(input("Enter the value of k: "))
+    k_value: int = 1#int(input("Enter the value of k: ")) or 1
 
     #Open and normalize data
     data_entrenamiento = open_data('Data/Diabetes-Training.csv')
