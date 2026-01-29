@@ -3,7 +3,6 @@ set -euo pipefail
 
 REPOS_DIR="repos"
 RESULTS_DIR="results"
-SCRIPTS=("original_telemetry.py" "assisted.py" "autonomous.py")
 
 mkdir -p "$RESULTS_DIR"
 
@@ -13,6 +12,7 @@ LOG_FILE="$RESULTS_DIR/results_$TIMESTAMP.csv"
 echo "timestamp,project,script,status,accuracy,mem_delta_mb,exec_time_s,energy_j,notes" > "$LOG_FILE"
 
 OS_NAME="$(uname -s)"
+MACOS_AVG_POWER_W=20
 
 # ---------------- PYTHON PICKER ----------------
 pick_python() {
@@ -56,13 +56,18 @@ for project in "$REPOS_DIR"/*; do
 
   project_name=$(basename "$project")
 
-  for script in "${SCRIPTS[@]}"; do
-    script_path="$project/$script"
+  script_files=()
+  while IFS= read -r -d '' script_path; do
+    script_files+=("$script_path")
+  done < <(find "$project" -maxdepth 1 -type f -name "GENAIGREENML*.py" -print0)
 
-    if [[ ! -f "$script_path" ]]; then
-      echo "$(date -Iseconds),$project_name,$script,SKIPPED,,,$$,," >> "$LOG_FILE"
-      continue
-    fi
+  if [[ ${#script_files[@]} -eq 0 ]]; then
+    echo "$(date -Iseconds),$project_name,GENAIGREENML*.py,SKIPPED,,,$$,," >> "$LOG_FILE"
+    continue
+  fi
+
+  for script_path in "${script_files[@]}"; do
+    script="$(basename "$script_path")"
 
     echo "▶ Running $project_name / $script"
 
@@ -109,7 +114,9 @@ for project in "$REPOS_DIR"/*; do
         NOTES="energy not available"
       fi
     else
-      NOTES="energy not supported on macOS"
+      # Approximate energy on macOS using a constant average power draw.
+      ENERGY_J=$(echo "scale=3; $EXEC_TIME * $MACOS_AVG_POWER_W" | bc)
+      NOTES="energy approx on macOS using ${MACOS_AVG_POWER_W}W"
     fi
 
     STATUS="OK"
