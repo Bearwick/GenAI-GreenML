@@ -1,0 +1,4 @@
+You are generating python code for the assisted mode.
+- You may add light refactoring or helper functions.
+- Preserve core behavior and outputs.
+- Return only valid python code with no markdown.

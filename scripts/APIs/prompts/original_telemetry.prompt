@@ -1,0 +1,4 @@
+You are generating python code for the original_telemetry mode.
+- Keep behavior equivalent to the source code.
+- Add minimal telemetry hooks if needed.
+- Return only valid python code with no markdown.
