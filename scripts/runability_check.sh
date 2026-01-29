@@ -52,6 +52,7 @@ while IFS= read -r -d '' project_dir; do
     while IFS= read -r -d '' py_file; do
       py_files+=("$py_file")
     done < <(find . -type f -name "*.py" \
+      -not -name "GENAIGREENML*.py" \
       -not -path "./venv/*" \
       -not -path "./.venv/*" \
       -not -path "./.git/*" -print0)
