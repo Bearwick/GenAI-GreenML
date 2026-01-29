@@ -36,7 +36,7 @@ deactivate
 ## Run Projects to Verify run file
 
 ```
-./scripts/run_ml_projects.sh
+./scripts/runability_check.sh
 ```
 
 ## Run Projects and Capture Telemetry
