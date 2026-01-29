@@ -207,4 +207,4 @@ marimo/_lsp/
 __marimo__/
 
 # Added myself
-.DS_Store
+.DS_StoreAPI.env
