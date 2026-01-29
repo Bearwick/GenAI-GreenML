@@ -42,7 +42,7 @@ deactivate
 ## Run Projects and Capture Telemetry
 
 ```
-./scripts/run_ml_projects_telemetry.sh
+./scripts/run_ml_projects.sh
 ```
 
 ### notes on process
