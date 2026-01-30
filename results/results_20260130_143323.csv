@@ -1,0 +1,39 @@
+timestamp,project,script,status,accuracy,mem_delta_mb,exec_time_s,energy_j,notes
+2026-01-30T14:33:25+01:00,Algorithms_KnnClasifier,GENAIGREENML_autonomous_gemini.py,OK,0.770000,0,1.253223000,25.064460000,energy approx on macOS using 20W
+2026-01-30T14:33:25+01:00,Algorithms_KnnClasifier,GENAIGREENML_original_telemetry.py,OK,0.720000,0,.415842000,8.316840000,energy approx on macOS using 20W
+2026-01-30T14:33:26+01:00,Algorithms_KnnClasifier,GENAIGREENML_assisted_gemini.py,OK,0.370000,0,.248394000,4.967880000,energy approx on macOS using 20W
+2026-01-30T14:33:30+01:00,Annotated_Colab_Notebook,GENAIGREENML_autonomous_gemini.py,OK,0.855768,0,3.374083000,67.481660000,energy approx on macOS using 20W
+2026-01-30T14:33:34+01:00,Annotated_Colab_Notebook,GENAIGREENML_original_telemetry.py,OK,0.860916,0,3.956476000,79.129520000,energy approx on macOS using 20W
+2026-01-30T14:33:36+01:00,Annotated_Colab_Notebook,GENAIGREENML_assisted_gemini.py,OK,0.864601,0,1.843112000,36.862240000,energy approx on macOS using 20W
+2026-01-30T14:33:37+01:00,BREAST-CANCER-PREDICTION-SYSTEM,GENAIGREENML_autonomous_gemini.py,OK,0.973684,0,1.084361000,21.687220000,energy approx on macOS using 20W
+2026-01-30T14:33:39+01:00,BREAST-CANCER-PREDICTION-SYSTEM,GENAIGREENML_original_telemetry.py,OK,0.903509,0,.964069000,19.281380000,energy approx on macOS using 20W
+2026-01-30T14:33:40+01:00,BREAST-CANCER-PREDICTION-SYSTEM,GENAIGREENML_assisted_gemini.py,OK,0.903509,0,.966428000,19.328560000,energy approx on macOS using 20W
+2026-01-30T14:33:41+01:00,BreastCancer_Classification,GENAIGREENML_autonomous_gemini.py,OK,0.982456,0,1.144609000,22.892180000,energy approx on macOS using 20W
+2026-01-30T14:33:46+01:00,BreastCancer_Classification,GENAIGREENML_original_telemetry.py,OK,0.919463,0,4.793679000,95.873580000,energy approx on macOS using 20W
+2026-01-30T14:33:49+01:00,BreastCancer_Classification,GENAIGREENML_assisted_gemini.py,OK,0.920000,0,2.674885000,53.497700000,energy approx on macOS using 20W
+2026-01-30T14:33:53+01:00,CT_Project,GENAIGREENML_autonomous_gemini.py,OK,0.983857,0,3.479108000,69.582160000,energy approx on macOS using 20W
+2026-01-30T14:33:55+01:00,CT_Project,GENAIGREENML_original_telemetry.py,OK,0.966816,0,1.317695000,26.353900000,energy approx on macOS using 20W
+2026-01-30T14:33:56+01:00,CT_Project,GENAIGREENML_assisted_gemini.py,OK,0.965919,0,1.130433000,22.608660000,energy approx on macOS using 20W
+2026-01-30T14:33:56+01:00,Classification-with-xgboost-on-binary.csv-data,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,DecisionTreeClassifier,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,Deep-Learning-Classification,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,HWStudentGradPredictor,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,Iris-Classification-ML-problem,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,Iris-Flower-Classification-Codealpha,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,Iris-Flower-Classification-Codealpha2,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,Iris-Flower-Classification-Codealpha3,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,Iris-ML-Lab,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,ML_CSV_Classification,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,Network_Intrusion_Detection_System,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,Rock-or-Mine-prediction,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,SCT_ML_3,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,SparkMLClassification,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,SparkMLClassification2,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,animals-classification,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,cancer_prediction,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,cars-classification,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,diabetes_predictive_analysis,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,dyslexia-randomforest,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,spam-ham-detection,GENAIGREENML*.py,SKIPPED,,,3827,,
+2026-01-30T14:33:56+01:00,student-math-ml-analysis,GENAIGREENML*.py,SKIPPED,,,3827,,

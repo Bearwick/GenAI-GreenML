@@ -1,0 +1,14 @@
+Your task is to produce a baseline original version of the provided code.
+This is not an optimisation task. You must not change the algorithmic behavior, model choices or code in general. 
+
+Your task is to:
+- Remove comments
+- Remove interactive inputs
+- Remove plots and visualizations
+
+Lastly, add a accuracy print of the model in the format:
+print(f"ACCURACY={accuracy:.6f}")
+
+Return only valid python code with no markdown.
+
+Code and possibly dataset headers (mind the dataset headers could be wrong, take basis in the code): 
