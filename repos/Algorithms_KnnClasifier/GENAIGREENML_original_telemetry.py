@@ -20,7 +20,7 @@ def euclidean_distance(value_1, value_2):
     return np.sqrt(np.sum((value_1 - value_2) ** 2))
 
 def knn(X, y, current_instance, k):
-    distance_list: list = []
+    distance_list = []
     for i in range(len(X)):
         dist = euclidean_distance(current_instance, X[i])
         distance_list.append((dist, y[i]))
@@ -35,7 +35,7 @@ def generate_csv(output_results):
     pd.DataFrame(output_results, columns=["Instance", "tested_negative", "tested_positive", "Assigned class"]).to_csv('result_count.csv', index = False)
 
 def algorithm():
-    k_value: int = 1
+    k_value = 1
     data_entrenamiento = open_data('Data/Diabetes-Training.csv')
     normalized_entrenamiento = normalize_data(data_entrenamiento)
     data_clasificacion = open_data('Data/Diabetes-Clasification.csv')
@@ -44,8 +44,8 @@ def algorithm():
     y_train = data_entrenamiento['class'].values
     X_test = normalized_clasificacion.values
     y_test = data_clasificacion['class'].values
-    correct_counts: int = 0
-    output_results: list = []
+    correct_counts = 0
+    output_results = []
     for i in range(len(X_test)):
         class_count = knn(X_train, y_train, X_test[i], k_value)
         positive_count = class_count['tested_positive']

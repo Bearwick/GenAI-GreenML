@@ -115,13 +115,17 @@ for project in "$REPOS_DIR"/*; do
       "autonomous"
   done
 
-  # Update requirements.txt using project's venv pipreqs if available.
-  if [[ -x "$project/venv/bin/pipreqs" ]]; then
-    "$project/venv/bin/pipreqs" "$project" \
+  # Update requirements.txt using project's venv interpreter.
+  if [[ -x "$project/venv/bin/python" ]]; then
+    if ! "$project/venv/bin/python" -m pip show pipreqs >/dev/null 2>&1; then
+      "$project/venv/bin/python" -m pip install -q pipreqs >/dev/null 2>&1 || \
+        echo "[!] pipreqs install failed for $project_name"
+    fi
+    "$project/venv/bin/python" -m pipreqs "$project" \
       --force --encoding utf-8 --ignore "$project/venv" >/dev/null 2>&1 || \
       echo "[!] pipreqs failed for $project_name"
   else
-    echo "[!] venv pipreqs not found; skipping requirements update for $project_name"
+    echo "[!] venv python not found; skipping requirements update for $project_name"
   fi
 done
 
