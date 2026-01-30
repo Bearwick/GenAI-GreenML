@@ -39,6 +39,12 @@ deactivate
 ./scripts/runability_check.sh
 ```
 
+## Generate LLM Code
+
+```
+./scripts/generate_llm_code.sh
+```
+
 ## Run Projects and Capture Telemetry
 
 ```

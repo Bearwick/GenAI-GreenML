@@ -71,6 +71,11 @@ for project in "$REPOS_DIR"/*; do
 
     echo "▶ Running $project_name / $script"
 
+    if [[ -f "$project/requirements.txt" && -x "$project/venv/bin/pip" ]]; then
+      "$project/venv/bin/pip" install -r "$project/requirements.txt" >/dev/null 2>&1 || \
+        echo "[!] pip install failed for $project_name"
+    fi
+
     # Energy before
     ENERGY_BEFORE=""
     [[ "$OS_NAME" == "Linux" ]] && ENERGY_BEFORE=$(read_energy_linux)
@@ -80,11 +85,12 @@ for project in "$REPOS_DIR"/*; do
 
     (
       cd "$project"
-      if [[ -f "venv/bin/activate" ]]; then
-        # shellcheck disable=SC1091
-        source "venv/bin/activate" || true
+      if [[ -x "venv/bin/python" ]]; then
+        "venv/bin/python" "$script" >"$OUTPUT_FILE" 2>&1
+      else
+        echo "[!] venv python missing for $project_name" >"$OUTPUT_FILE"
+        exit 1
       fi
-      python "$script" >"$OUTPUT_FILE" 2>&1
     ) &
     PID=$!
 

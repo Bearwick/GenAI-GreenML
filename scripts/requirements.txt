@@ -1,0 +1,5 @@
+# Placeholder for API client dependencies (Gemini/OpenAI/Claude/etc.)
+# Example:
+# google-genai
+# openai
+# anthropic

@@ -4,9 +4,11 @@ set -euo pipefail
 REPOS_DIR="repos"
 BASE_NAME="GENAIGREENML"
 GEMINI_API_SCRIPT="scripts/APIs/gemini_api.py"
+GEMINI_REQUESTS=0
+GEMINI_PYTHON="scripts/venv/bin/python"
 
 # Default LLMs used when none are provided as args.
-ALL_LLMS=("gemini" "chatGPT" "claude")
+ALL_LLMS=("gemini") # "chatGPT" "claude"
 
 if [[ ! -d "$REPOS_DIR" ]]; then
   echo "Repos directory not found: $REPOS_DIR" >&2
@@ -26,6 +28,11 @@ generate_file() {
 
   local generated_code=""
   if [[ "$llm_name" == "gemini" && -f "$GEMINI_API_SCRIPT" ]]; then
+    GEMINI_REQUESTS=$((GEMINI_REQUESTS + 1))
+    if (( GEMINI_REQUESTS % 10 == 0 )); then
+      echo "[i] Gemini rate limit pause (60s) after $GEMINI_REQUESTS requests"
+      sleep 60
+    fi
     dataset_headers=""
     csv_file="$(find "$project" -type f -name "*.csv" \
       -not -path "$project/venv/*" \
@@ -36,7 +43,17 @@ generate_file() {
     if [[ -n "$csv_file" ]]; then
       dataset_headers="$(head -n 1 "$csv_file" | tr -d '\r')"
     fi
-    generated_code="$(python3 "$GEMINI_API_SCRIPT" --mode "$mode" --headers "$dataset_headers" < "$src_file" 2>/dev/null || true)"
+    if [[ -x "$GEMINI_PYTHON" ]]; then
+      generated_code="$("$GEMINI_PYTHON" "$GEMINI_API_SCRIPT" --mode "$mode" --headers "$dataset_headers" < "$src_file" 2>/dev/null || true)"
+    else
+      echo "[!] Gemini venv python not found at $GEMINI_PYTHON"
+      return
+    fi
+  fi
+
+  if [[ -z "$generated_code" ]]; then
+    echo "[i] Skipping $llm_name (not implemented or no response)"
+    return
   fi
 
   {
@@ -44,11 +61,7 @@ generate_file() {
     echo "# LLM: $llm_name"
     echo "# Mode: $mode"
     echo ""
-    if [[ -n "$generated_code" ]]; then
-      echo "$generated_code"
-    else
-      cat "$src_file"
-    fi
+    echo "$generated_code"
   } > "$out_file"
 }
 

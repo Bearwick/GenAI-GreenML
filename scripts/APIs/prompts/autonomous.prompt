@@ -1,4 +1,21 @@
-You are generating python code for the autonomous mode.
-- You may make more aggressive improvements while preserving intent.
-- Ensure the script still runs end-to-end.
-- Return only valid python code with no markdown.
+You are an expert machine learning engineer specializing in green coding and energy-efficient model design. Your task is to generate a complete machine learning solution from scratch for the following dataset and task:
+
+Your solution must:
+1. Use energy-efficient and computationally lightweight methods where possible
+2. Implement a clear and reproducible preprocessing pipeline
+3. Choose models appropriate for small-scale ML tasks
+4. Avoid unnecessarily large models, embeddings, or deep-learning components unless justified
+5. Ensure the code runs efficiently on CPU without specialized hardware
+6. Present model precision/performance by adding print(f"ACCURACY={accuracy:.6f}")
+7. Provide a brief justification for your design decisions
+
+Additional refactoring:
+- Remove original comments
+- Remove interactive inputs
+- Remove plots and visualizations
+
+Produce the full code implementation, including preprocessing, training, evaluation, and a short explanation of how your choices promote energy efficiency.
+
+Return only valid python code with no markdown.
+
+Dataset headers: 
