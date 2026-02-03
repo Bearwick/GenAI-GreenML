@@ -45,7 +45,7 @@ poll_memory() {
   while kill -0 "$pid" 2>/dev/null; do
     rss=$(ps -o rss= -p "$pid" 2>/dev/null | awk '{print $1}')
     [[ -n "$rss" && "$rss" -gt "$peak" ]] && peak="$rss"
-    sleep 0.05
+    sleep 0.005
   done
   echo "$peak"
 }
