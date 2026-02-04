@@ -48,7 +48,9 @@ deactivate
 ## Generate LLM Code
 
 ```
-./scripts/generate_llm_code.sh
+cd scripts
+source venv/bin/activate
+./generate_llm_code.sh
 ```
 
 ## Run Projects and Capture Telemetry

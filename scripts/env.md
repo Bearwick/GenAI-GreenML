@@ -17,3 +17,5 @@ To add additional LLMs:
 
 1. Add LLM name to the ALL_LLMS list on line 11 in generate_llm_code.sh
 2. TODO
+3.
+4. source API.env
