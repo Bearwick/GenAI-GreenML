@@ -51,6 +51,10 @@ deactivate
 ./scripts/run_ml_projects.sh
 ```
 
+```
+python scripts/run_ml_projects.py
+```
+
 ### notes on process
 
 Created a script to import projects.
