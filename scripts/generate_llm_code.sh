@@ -34,14 +34,45 @@ generate_file() {
       sleep 60
     fi
     dataset_headers=""
-    csv_file="$(find "$project" -type f -name "*.csv" \
+    dataset_file=""
+    # 1) Prefer a dataset named GENAIGREENMLDATASET.<ext>
+    dataset_file="$(find "$project" -type f -name "GENAIGREENMLDATASET.*" \
       -not -path "$project/venv/*" \
       -not -path "$project/.venv/*" \
       -not -path "$project/.git/*" \
       -not -path "$project/.*/**" \
       -print -quit)"
-    if [[ -n "$csv_file" ]]; then
-      dataset_headers="$(head -n 1 "$csv_file" | tr -d '\r')"
+
+    # 2) If no preferred dataset, try to find first dataset filename referenced in code.
+    if [[ -z "$dataset_file" ]]; then
+      dataset_ref="$(LC_ALL=C grep -Eo '[^\"'\"']+\\.(csv|tsv|txt|json|jsonl|xlsx|xls|parquet|feather|npy|npz|pkl|pickle|h5|hdf5|arff|sav|mat)' "$src_file" | head -n 1 || true)"
+      if [[ -n "$dataset_ref" ]]; then
+        dataset_file="$(find "$project" -type f -name "$dataset_ref" \
+          -not -path "$project/venv/*" \
+          -not -path "$project/.venv/*" \
+          -not -path "$project/.git/*" \
+          -not -path "$project/.*/**" \
+          -print -quit)"
+      fi
+    fi
+
+    # 3) Fallback to first dataset file found.
+    if [[ -z "$dataset_file" ]]; then
+      dataset_file="$(find "$project" -type f \\( \
+          -name "*.csv" -o -name "*.tsv" -o -name "*.txt" -o -name "*.json" -o -name "*.jsonl" -o \
+          -name "*.xlsx" -o -name "*.xls" -o -name "*.parquet" -o -name "*.feather" -o \
+          -name "*.npy" -o -name "*.npz" -o -name "*.pkl" -o -name "*.pickle" -o \
+          -name "*.h5" -o -name "*.hdf5" -o -name "*.arff" -o -name "*.sav" -o -name "*.mat" \\) \
+        -not -name "requirements.txt" \
+        -not -path "$project/venv/*" \
+        -not -path "$project/.venv/*" \
+        -not -path "$project/.git/*" \
+        -not -path "$project/.*/**" \
+        -print -quit)"
+    fi
+
+    if [[ -n "$dataset_file" ]]; then
+      dataset_headers="$(head -n 1 "$dataset_file" | tr -d '\r')"
     fi
     if [[ -x "$GEMINI_PYTHON" ]]; then
       generated_code="$("$GEMINI_PYTHON" "$GEMINI_API_SCRIPT" --mode "$mode" --headers "$dataset_headers" < "$src_file" 2>/dev/null || true)"
@@ -70,6 +101,16 @@ for project in "$REPOS_DIR"/*; do
 
   project_name=$(basename "$project")
   echo "[*] Project: $project_name"
+
+  if find "$project" -type f -name "GENAIGREENMLDATASET.*" \
+    -not -path "$project/venv/*" \
+    -not -path "$project/.venv/*" \
+    -not -path "$project/.git/*" \
+    -not -path "$project/.*/**" \
+    -print -quit | grep -q .; then
+    echo "[i] Skipping $project_name (GENAIGREENMLDATASET present)"
+    continue
+  fi
 
   src_file=""
   if [[ -f "$project/original.py" ]]; then

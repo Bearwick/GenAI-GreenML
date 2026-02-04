@@ -39,6 +39,12 @@ deactivate
 ./scripts/runability_check.sh
 ```
 
+## Check for Conflicting Datasets in Projects
+
+```
+./scripts/dataset_check.sh
+```
+
 ## Generate LLM Code
 
 ```
