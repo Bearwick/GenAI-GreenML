@@ -2,6 +2,7 @@
 # LLM: gemini
 # Mode: original_telemetry
 
+import csv
 import numpy as np
 import pandas as pd
 
@@ -60,5 +61,4 @@ def algorithm():
     generate_csv(output_results)
     print(f"ACCURACY={accuracy:.6f}")
 
-if __name__ == "__main__":
-    algorithm()
+algorithm()

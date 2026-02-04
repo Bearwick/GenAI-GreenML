@@ -2,67 +2,73 @@
 # LLM: gemini
 # Mode: assisted
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
-def open_data(path):
-    return pd.read_csv(path)
+def load_and_preprocess(train_path, test_path):
+    df_train = pd.read_csv(train_path)
+    df_test = pd.read_csv(test_path)
 
-def normalize_data(df):
-    features = df.iloc[:, :-1]
-    return (features - features.mean()) / features.std()
+    y_train = df_train['class'].values
+    y_test = df_test['class'].values
 
-def knn_predict(X_train, y_train, X_test, k):
-    results = []
-    for test_row in X_test:
-        distances = np.sqrt(np.sum((X_train - test_row) ** 2, axis=1))
+    x_train_raw = df_train.iloc[:, :-1].values
+    x_test_raw = df_test.iloc[:, :-1].values
+
+    x_train = (x_train_raw - x_train_raw.mean(axis=0)) / x_train_raw.std(axis=0)
+    x_test = (x_test_raw - x_test_raw.mean(axis=0)) / x_test_raw.std(axis=0)
+
+    return x_train, y_train, x_test, y_test
+
+def run_knn_optimized():
+    k = 1
+    x_train, y_train, x_test, y_test = load_and_preprocess('Data/Diabetes-Training.csv', 'Data/Diabetes-Clasification.csv')
+    
+    num_test = x_test.shape[0]
+    predictions = []
+    results_data = []
+    correct_count = 0
+
+    for i in range(num_test):
+        diff = x_train - x_test[i]
+        dist_sq = np.sum(diff**2, axis=1)
         
         if k == 1:
-            nearest_idx = np.argmin(distances)
-            k_indices = [nearest_idx]
+            nn_idx = np.argmin(dist_sq)
+            nearest_labels = [y_train[nn_idx]]
         else:
-            k_indices = np.argpartition(distances, k)[:k]
-            
-        k_labels = y_train[k_indices]
-        pos_count = np.sum(k_labels == 'tested_positive')
-        neg_count = np.sum(k_labels == 'tested_negative')
-        
-        prediction = 'tested_positive' if pos_count >= neg_count else 'tested_negative'
-        results.append((neg_count, pos_count, prediction))
-    return results
+            nn_indices = np.argpartition(dist_sq, k)[:k]
+            nearest_labels = y_train[nn_indices]
 
-def algorithm():
-    k_value = 1
+        pos_count = 0
+        neg_count = 0
+        for label in nearest_labels:
+            if label == 'tested_positive':
+                pos_count += 1
+            else:
+                neg_count += 1
+        
+        assigned_class = 'tested_positive' if pos_count >= neg_count else 'tested_negative'
+        
+        results_data.append([i + 1, neg_count, pos_count, assigned_class])
+        
+        if assigned_class == y_test[i]:
+            correct_count += 1
+
+    pd.DataFrame(results_data, columns=["Instance", "tested_negative", "tested_positive", "Assigned class"]).to_csv('result_count.csv', index=False)
     
-    train_df = open_data('Data/Diabetes-Training.csv')
-    test_df = open_data('Data/Diabetes-Clasification.csv')
-    
-    X_train = normalize_data(train_df).values
-    y_train = train_df['class'].values
-    X_test = normalize_data(test_df).values
-    y_test = test_df['class'].values
-    
-    predictions = knn_predict(X_train, y_train, X_test, k_value)
-    
-    output_data = []
-    correct_counts = 0
-    
-    for i, (neg, pos, pred) in enumerate(predictions):
-        output_data.append([i + 1, neg, pos, pred])
-        if pred == y_test[i]:
-            correct_counts += 1
-            
-    pd.DataFrame(output_data, columns=["Instance", "tested_negative", "tested_positive", "Assigned class"]).to_csv('result_count.csv', index=False)
-    
-    accuracy = correct_counts / len(y_test)
+    accuracy = correct_count / num_test
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
-    algorithm()
+    run_knn_optimized()
 
-# OPTIMIZATIONS APPLIED:
-# 1. Vectorization: Replaced the manual loop and custom function for Euclidean distance with NumPy's broadcasted operations (axis-wise summation), drastically reducing Python-level overhead.
-# 2. Efficient Partitioning: Replaced the O(N log N) full sort of distances with O(N) selection using np.argpartition (or np.argmin for k=1), which is significantly faster for large training sets.
-# 3. Memory & Data Movement: Minimized data movement by converting Pandas DataFrames to NumPy arrays once. Removed redundant class dictionary initializations inside the loop.
-# 4. Redundant Computation: Streamlined the normalization process and removed unnecessary intermediate list structures and redundant function calls.
-# 5. Optimized Boolean Counting: Used NumPy's vectorized comparison (summing boolean masks) to count class votes instead of iterating through a list of neighbors.
+"""
+OPTIMIZATIONS APPLIED:
+1. Vectorized Preprocessing: Replaced pandas-based normalization with NumPy broadcasting, reducing overhead from high-level pandas calls.
+2. Vectorized Distance Computation: Replaced the manual loop for Euclidean distance with NumPy subtraction and summation across the entire training matrix, significantly reducing runtime complexity from O(N*M) Python-level operations to optimized C-level operations.
+3. Efficient Sorting: Replaced the full sort (O(N log N)) of distances with np.argmin (for k=1) or np.argpartition (O(N) for k>1) to find the nearest neighbors.
+4. Memory Management: Avoided creating large intermediate lists and dictionary objects within the inner loop by utilizing NumPy arrays and local counters.
+5. Reduced Redundancy: Removed the redundant square root calculation for distance comparisons, as squared distance maintains the same rank order (though kept standard logic for exact behavior compatibility).
+6. Minimized Data Movement: Processed data directly in NumPy arrays to avoid the overhead of repeated pandas indexing and structure copying.
+"""
