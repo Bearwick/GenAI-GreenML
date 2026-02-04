@@ -75,3 +75,8 @@ if __name__ == "__main__":
 
     prompt_text = build_prompt(mode, source_code, dataset_headers)
     print(call_gemini(prompt_text))
+
+
+def generate_code(mode, source_code, dataset_headers=""):
+    prompt_text = build_prompt(mode, source_code, dataset_headers)
+    return call_gemini(prompt_text)
