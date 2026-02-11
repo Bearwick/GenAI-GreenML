@@ -1,0 +1,54 @@
+timestamp,project,script,status,accuracy,mem_delta_mb,exec_time_s,energy_j,notes
+2026-02-11T13:25:05+0100,Algorithms_KnnClasifier,GENAIGREENML_original_telemetry.py,OK,0.720000,0.000,1.324848890,26.497,energy approx on macOS using 20W
+2026-02-11T13:25:05+0100,Algorithms_KnnClasifier,GENAIGREENML_original_telemetry_None.py,OK,0.720000,0.000,0.374684811,7.494,energy approx on macOS using 20W
+2026-02-11T13:25:06+0100,Algorithms_KnnClasifier,GENAIGREENML_original_telemetry_groq.py,OK,0.720000,0.000,0.389862061,7.797,energy approx on macOS using 20W
+2026-02-11T13:25:06+0100,Algorithms_KnnClasifier,GENAIGREENML_assisted_gemini.py,OK,0.720000,0.000,0.225121021,4.502,energy approx on macOS using 20W
+2026-02-11T13:25:06+0100,Algorithms_KnnClasifier,GENAIGREENML_assisted_groq.py,FAILED,,0.000,0.229224920,4.584,energy approx on macOS using 20W
+2026-02-11T13:25:09+0100,Algorithms_KnnClasifier,GENAIGREENML_autonomous_gemini.py,OK,0.753247,0.000,2.964962006,59.299,energy approx on macOS using 20W
+2026-02-11T13:25:10+0100,Algorithms_KnnClasifier,GENAIGREENML_autonomous_groq.py,FAILED,,0.000,0.986307859,19.726,energy approx on macOS using 20W
+2026-02-11T13:25:17+0100,Annotated_Colab_Notebook,GENAIGREENML_original_telemetry.py,OK,0.860916,0.000,6.737808943,134.756,energy approx on macOS using 20W
+2026-02-11T13:25:19+0100,Annotated_Colab_Notebook,GENAIGREENML_assisted_gemini.py,OK,0.859824,0.000,1.713785172,34.276,energy approx on macOS using 20W
+2026-02-11T13:25:21+0100,Annotated_Colab_Notebook,GENAIGREENML_assisted_groq.py,OK,0.856343,0.000,1.779108286,35.582,energy approx on macOS using 20W
+2026-02-11T13:25:22+0100,Annotated_Colab_Notebook,GENAIGREENML_autonomous_gemini.py,FAILED,,0.000,1.400410175,28.008,energy approx on macOS using 20W
+2026-02-11T13:25:23+0100,Annotated_Colab_Notebook,GENAIGREENML_autonomous_groq.py,OK,0.798744,0.000,1.351480246,27.030,energy approx on macOS using 20W
+2026-02-11T13:25:27+0100,BREAST-CANCER-PREDICTION-SYSTEM,GENAIGREENML_original_telemetry.py,OK,0.903509,0.000,3.350478888,67.010,energy approx on macOS using 20W
+2026-02-11T13:25:27+0100,BREAST-CANCER-PREDICTION-SYSTEM,GENAIGREENML_assisted_gemini.py,FAILED,,0.000,0.024803877,0.496,energy approx on macOS using 20W
+2026-02-11T13:25:28+0100,BREAST-CANCER-PREDICTION-SYSTEM,GENAIGREENML_assisted_groq.py,OK,0.912281,0.000,0.885725737,17.715,energy approx on macOS using 20W
+2026-02-11T13:25:29+0100,BREAST-CANCER-PREDICTION-SYSTEM,GENAIGREENML_autonomous_gemini.py,OK,0.973684,0.000,1.173037052,23.461,energy approx on macOS using 20W
+2026-02-11T13:25:30+0100,BREAST-CANCER-PREDICTION-SYSTEM,GENAIGREENML_autonomous_groq.py,OK,0.964912,0.000,0.943058968,18.861,energy approx on macOS using 20W
+2026-02-11T13:25:36+0100,BreastCancer_Classification,GENAIGREENML_original_telemetry.py,OK,0.919463,0.000,5.554821253,111.096,energy approx on macOS using 20W
+2026-02-11T13:25:38+0100,BreastCancer_Classification,GENAIGREENML_assisted_gemini.py,OK,0.919463,0.000,2.472497940,49.450,energy approx on macOS using 20W
+2026-02-11T13:25:41+0100,BreastCancer_Classification,GENAIGREENML_autonomous_gemini.py,OK,0.973684,0.000,2.880254269,57.605,energy approx on macOS using 20W
+2026-02-11T13:25:45+0100,CT_Project,GENAIGREENML_original_telemetry.py,OK,0.966816,0.000,3.570299864,71.406,energy approx on macOS using 20W
+2026-02-11T13:25:46+0100,CT_Project,GENAIGREENML_autonomous_gemini.py,OK,0.981166,0.000,0.930738211,18.615,energy approx on macOS using 20W
+2026-02-11T13:25:50+0100,Classification-with-xgboost-on-binary.csv-data,GENAIGREENML_original_telemetry.py,OK,0.625000,0.000,3.692384005,73.848,energy approx on macOS using 20W
+2026-02-11T13:25:51+0100,Classification-with-xgboost-on-binary.csv-data,GENAIGREENML_assisted_gemini.py,OK,0.625000,0.000,1.118529081,22.371,energy approx on macOS using 20W
+2026-02-11T13:25:52+0100,Classification-with-xgboost-on-binary.csv-data,GENAIGREENML_autonomous_gemini.py,OK,0.725000,0.000,1.164516926,23.290,energy approx on macOS using 20W
+2026-02-11T13:25:56+0100,DecisionTreeClassifier,GENAIGREENML_original_telemetry.py,OK,1.000000,0.000,3.682694912,73.654,energy approx on macOS using 20W
+2026-02-11T13:25:57+0100,DecisionTreeClassifier,GENAIGREENML_assisted_gemini.py,OK,1.000000,0.000,0.978027105,19.561,energy approx on macOS using 20W
+2026-02-11T13:25:58+0100,DecisionTreeClassifier,GENAIGREENML_autonomous_gemini.py,OK,1.000000,0.000,0.974606991,19.492,energy approx on macOS using 20W
+2026-02-11T13:25:58+0100,Deep-Learning-Classification,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:25:58+0100,Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:25:58+0100,HWStudentGradPredictor,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:25:58+0100,Iris-Classification-ML-problem,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:25:58+0100,Iris-Flower-Classification-Codealpha,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:25:58+0100,Iris-Flower-Classification-Codealpha2,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:25:58+0100,Iris-Flower-Classification-Codealpha3,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:25:58+0100,Iris-ML-Lab,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:25:58+0100,ML_CSV_Classification,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:25:58+0100,Network_Intrusion_Detection_System,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:25:58+0100,Rock-or-Mine-prediction,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:25:58+0100,SCT_ML_3,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:25:58+0100,SparkMLClassification,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:25:58+0100,SparkMLClassification2,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:26:02+0100,animals-classification,GENAIGREENML_original_telemetry.py,OK,0.961538,0.000,3.485874891,69.717,energy approx on macOS using 20W
+2026-02-11T13:26:03+0100,animals-classification,GENAIGREENML_original_telemetry_None.py,OK,0.961538,0.000,0.927232027,18.545,energy approx on macOS using 20W
+2026-02-11T13:26:04+0100,animals-classification,GENAIGREENML_original_telemetry_groq.py,OK,0.961538,0.000,0.928981066,18.580,energy approx on macOS using 20W
+2026-02-11T13:26:05+0100,animals-classification,GENAIGREENML_assisted_groq.py,FAILED,,0.000,0.939998150,18.800,energy approx on macOS using 20W
+2026-02-11T13:26:06+0100,animals-classification,GENAIGREENML_autonomous_groq.py,OK,1.000000,0.000,0.926603079,18.532,energy approx on macOS using 20W
+2026-02-11T13:26:06+0100,cancer_prediction,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:26:06+0100,cars-classification,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:26:06+0100,diabetes_predictive_analysis,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:26:06+0100,dyslexia-randomforest,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:26:06+0100,spam-ham-detection,GENAIGREENML*.py,SKIPPED,,,,,
+2026-02-11T13:26:06+0100,student-math-ml-analysis,GENAIGREENML*.py,SKIPPED,,,,,
