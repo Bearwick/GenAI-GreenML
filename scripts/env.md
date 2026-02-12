@@ -1,6 +1,6 @@
 # Environment Variables Setup
 
-Copy/paste this from the repo root to create `API.env`:
+Run from repo root to create `API.env`:
 
 ```bash
 cat <<'EOF' > API.env
@@ -28,7 +28,7 @@ source API.env
 
 Add LLM API under the APIs folder and make sure the module exposes:<br>generate_code(mode, source_code, headers) -> str
 
-## generate_llm_code_2.py
+## generate_llm_code.py
 
 1. Update DEFAULT_ALL_LLMS on line 75 with the LLM name.
 
@@ -41,13 +41,3 @@ Add LLM API under the APIs folder and make sure the module exposes:<br>generate_
    ```
    source API.env
    ```
-
-## generate_llm_code.py (to be deleted)
-
-Then, insert API keys to your desired LLMs.
-To add additional LLMs:
-
-1. Add LLM name to the ALL_LLMS list on line 11 in generate_llm_code.sh
-2. TODO
-3.
-4. source API.env
