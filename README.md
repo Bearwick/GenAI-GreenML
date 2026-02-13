@@ -15,7 +15,6 @@ This dataset was developed as part of a master’s thesis at the **Norwegian Uni
 4. [Adding LLMs](#adding-llms)
 5. [Generate LLM Code](#generate-llm-code)
    1. [Runability Check](#runability-check)
-   2. [Running](#running)
 6. [Run Projects and Capture Telemetry](#run-projects-and-capture-telemetry)
 
 ## Repository Information
@@ -100,21 +99,16 @@ source API.env
 ```
 cd scripts
 source venv/bin/activate
-./generate_llm_code.sh
+python ./generate_llm_code.py
 ```
 
-### Runability Check (might delete)
+### Runability Check
+
+This scripts verifies that all ML projects runs. You can skip this check for now, but it exists if there are any problems with the telemetry script below.
+Note: it only runs the original python code in each ML projects, i.e., it skips if there are multiple python files. That also means, any plots or visuals will be shown.
 
 ```
 ./scripts/runability_check.sh
-```
-
-#### If no requirements.txt
-
-```
-cd ./repos/[project path]
-python3 -m venv venv
-pip freeze > requirements.txt
 ```
 
 ## Run Projects and Capture Telemetry

@@ -5,6 +5,7 @@ Your task is to:
 - Remove comments
 - Remove interactive inputs
 - Remove plots and visualizations
+- Remove all original prints
 
 Lastly, add a accuracy print of the model in the format:
 print(f"ACCURACY={accuracy:.6f}")

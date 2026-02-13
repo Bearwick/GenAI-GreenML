@@ -13,6 +13,7 @@ Additional refactoring:
 - Remove original comments
 - Remove interactive inputs
 - Remove plots and visualizations
+- Remove all original prints
 
 Important:
 - The only print should be the accuracy
