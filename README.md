@@ -94,6 +94,10 @@ Finally, add API key to API.env and source from project root:
 source API.env
 ```
 
+### Free LLM Groq
+
+Groq is a free LLM API but is currenlty commented out because of performance. If wanted, uncomment where 'groq' appears in `generate_llm_code.py`
+
 ## Generate LLM Code
 
 ```

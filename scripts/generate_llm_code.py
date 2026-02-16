@@ -72,7 +72,7 @@ DEFAULT_IGNORE_DIR_NAMES = {
     ".vscode",
 }
 
-DEFAULT_ALL_LLMS = ["gemini", "chatgpt", "codex", "claude", "groq"]
+DEFAULT_ALL_LLMS = ["gemini", "chatgpt", "codex", "claude"] # "groq"
 
 
 @dataclass(frozen=True)
@@ -441,7 +441,7 @@ def load_llm_clients(apis_dir: Path) -> Dict[str, Optional[LLMClient]]:
     registry["chatgpt"] = _try_load("chatgpt", "chatgpt_api")
     registry["codex"] = _try_load("codex", "openai_codex_api")
     registry["claude"] = _try_load("claude", "claude_api")
-    registry["groq"] = _try_load("groq", "groq_api")
+    # registry["groq"] = _try_load("groq", "groq_api")
 
     return registry
 
