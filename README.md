@@ -13,6 +13,7 @@ This dataset was developed as part of a master’s thesis at the **Norwegian Uni
 2. [Adding ML Projects](#adding-ml-projects)
 3. [Environment Variables Setup](#environment-variables-setup)
 4. [Adding LLMs](#adding-llms)
+   1. [Free LLM API](#free-llm-groq)
 5. [Generate LLM Code](#generate-llm-code)
    1. [Runability Check](#runability-check)
 6. [Run Projects and Capture Telemetry](#run-projects-and-capture-telemetry)
