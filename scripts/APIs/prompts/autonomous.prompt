@@ -1,4 +1,5 @@
-You are an expert machine learning engineer specializing in green coding and energy-efficient model design. Your task is to generate a complete machine learning solution from scratch for the following dataset and task:
+You are an expert machine learning engineer specializing in green coding and energy-efficient model design.
+Your task is to generate a complete machine learning solution from scratch for the dataset.
 
 Your solution must:
 1. Use energy-efficient and computationally lightweight methods where possible
@@ -6,18 +7,16 @@ Your solution must:
 3. Choose models appropriate for small-scale ML tasks
 4. Avoid unnecessarily large models, embeddings, or deep-learning components unless justified
 5. Ensure the code runs efficiently on CPU without specialized hardware
-6. Present model precision/performance by adding print(f"ACCURACY={accuracy:.6f}")
-7. Provide a brief justification for your design decisions
+6. Provide a brief justification for your design decisions
 
-Additional refactoring:
+Refactoring:
 - Remove original comments
 - Remove interactive inputs
 - Remove plots and visualizations
 - Remove all original prints
 - Remove output such as saving of trained model
 
-Produce the full code implementation, including preprocessing, training, evaluation, and a short explanation of how your choices promote energy efficiency.
+Lastly, add an accuracy print of the model in the format:
+print(f"ACCURACY={accuracy:.6f}")
 
 Return only valid python code with no markdown.
-
-Dataset headers: 
