@@ -659,7 +659,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         # (Primary-only) original_telemetry
         primary_client = clients.get(primary_llm_name)
         if primary_client is not None:
-            code = generate(primary_client, "original_telemetry", src_file, headers, project_dir.name)
+            code = generate(primary_client, "original_telemetry", src_file, None, project_dir.name)
             if code:
                 out = output_path(project_dir, config.base_name, "original_telemetry", primary_llm_name)
                 write_output_file(

@@ -6,10 +6,11 @@ Your task is to:
 - Remove interactive inputs
 - Remove plots and visualizations
 - Remove all original prints
+- Remove output such as saving of trained model
 
 Lastly, add a accuracy print of the model in the format:
 print(f"ACCURACY={accuracy:.6f}")
 
 Return only valid python code with no markdown.
 
-Code and possibly dataset headers (mind the dataset headers could be wrong, take basis in the code): 
+Code: 

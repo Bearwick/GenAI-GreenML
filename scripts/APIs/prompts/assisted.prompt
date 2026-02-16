@@ -14,6 +14,7 @@ Additional refactoring:
 - Remove interactive inputs
 - Remove plots and visualizations
 - Remove all original prints
+- Remove output such as saving of trained model
 
 Requirements:
 1. Preserve the original behavior and expected outputs
@@ -24,4 +25,4 @@ Requirements:
 
 Return only valid python code with no markdown.
 
-Code and possibly dataset headers (mind the dataset headers could be wrong, take basis in the code): 
+Dataset headers and code: 

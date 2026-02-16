@@ -14,9 +14,7 @@ Additional refactoring:
 - Remove interactive inputs
 - Remove plots and visualizations
 - Remove all original prints
-
-Important:
-- The only print should be the accuracy
+- Remove output such as saving of trained model
 
 Produce the full code implementation, including preprocessing, training, evaluation, and a short explanation of how your choices promote energy efficiency.
 
