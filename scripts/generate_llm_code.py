@@ -683,6 +683,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 continue
 
             for mode in modes:
+                if mode == "autonomous":
+                    src_file = None
                 code = generate(client, mode, src_file, headers, project_dir.name)
                 if not code:
                     logging.info("[i] Skipping %s %s (no response)", llm_name, mode)
