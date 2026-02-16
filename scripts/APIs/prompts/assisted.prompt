@@ -14,7 +14,7 @@ Additional refactoring:
 - Remove interactive inputs
 - Remove plots and visualizations
 - Remove all original prints
-- Remove I/O except dataset, e.g., saving of trained model
+- Remove output such as saving of trained model
 
 Requirements:
 1. Preserve the original behavior and expected outputs

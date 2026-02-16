@@ -2,59 +2,60 @@
 # LLM: groq
 # Mode: autonomous
 
-"""
-Energy‑efficient spam email classifier.
-
-- TF‑IDF with min_df=2 and sublinear_tf reduces the feature space.
-- LogisticRegression with the liblinear solver works directly on sparse matrices and
-  converges quickly for binary classification.
-- No large embeddings or deep learning components are used.
-- The script prints only the final accuracy, keeping I/O minimal.
-"""
-
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
+import joblib
 
-# Load the dataset
-df = pd.read_csv('mail_data.csv')
-df = df.fillna('')
+# --------------------------
+# Energy‑efficient spam classifier
+# --------------------------
+# 1. Lightweight preprocessing: replace NaNs with empty strings.
+# 2. TF‑IDF vectorization with a limited feature set (max_features=5000) to keep the model small.
+# 3. LogisticRegression with the 'liblinear' solver is fast and works well on sparse data.
+# 4. No deep learning or large embeddings; training is done on CPU only.
+# 5. Model and vectorizer are persisted for future inference.
+# --------------------------
+
+# Load data
+data = pd.read_csv('mail_data.csv')
+
+# Replace missing values
+data = data.where(pd.notnull(data), '')
 
 # Encode labels: spam → 0, ham → 1
-df['Category'] = df['Category'].map({'spam': 0, 'ham': 1}).astype(int)
+data['Category'] = data['Category'].map({'spam': 0, 'ham': 1}).astype(int)
 
-X = df['Message']
-y = df['Category']
+# Split features and labels
+X = data['Message']
+y = data['Category']
 
-# Train / test split
+# Train‑test split
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-# Vectorize text with TF‑IDF (sparse representation)
+# Vectorize text
 vectorizer = TfidfVectorizer(
-    min_df=2,
     stop_words='english',
     lowercase=True,
-    sublinear_tf=True
+    max_features=5000,
+    min_df=2
 )
-
 X_train_vec = vectorizer.fit_transform(X_train)
 X_test_vec = vectorizer.transform(X_test)
 
-# Train a lightweight logistic regression model
-clf = LogisticRegression(
-    solver='liblinear',
-    penalty='l2',
-    C=1.0,
-    max_iter=1000
-)
-clf.fit(X_train_vec, y_train)
+# Train logistic regression
+model = LogisticRegression(solver='liblinear', random_state=42)
+model.fit(X_train_vec, y_train)
 
-# Evaluate on the test set
-y_pred = clf.predict(X_test_vec)
-acc = accuracy_score(y_test, y_pred)
+# Evaluate
+y_pred = model.predict(X_test_vec)
+accuracy = accuracy_score(y_test, y_pred)
 
-print(f"ACCURACY={acc:.6f}")
+# Persist model and vectorizer
+joblib.dump((vectorizer, model), 'spam_classifier.joblib')
+
+print(f"ACCURACY={accuracy:.6f}")

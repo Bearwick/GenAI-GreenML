@@ -3,34 +3,60 @@
 # Mode: autonomous
 
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.impute import SimpleImputer
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
+import joblib
 
 # Load dataset
-df = pd.read_csv('music.csv')
+data = pd.read_csv('music.csv')
 
-# Energy‑efficient preprocessing:
-# Encode the single categorical feature with label encoding (fast and lightweight)
-le = LabelEncoder()
-df['gender'] = le.fit_transform(df['gender'])
+# Separate features and target
+X = data.drop(columns=['genre'])
+y = data['genre']
 
-# Features and target
-X = df[['age', 'gender']]
-y = df['genre']
+# Preprocessing for numeric features
+numeric_features = ['age']
+numeric_transformer = Pipeline(steps=[
+    ('imputer', SimpleImputer(strategy='median')),
+    ('scaler', StandardScaler())
+])
 
-# Train‑test split with stratification to preserve class proportions
+# Preprocessing for categorical features
+categorical_features = ['gender']
+categorical_transformer = Pipeline(steps=[
+    ('imputer', SimpleImputer(strategy='most_frequent')),
+    ('onehot', OneHotEncoder(handle_unknown='ignore'))
+])
+
+# Combine preprocessing steps
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', numeric_transformer, numeric_features),
+        ('cat', categorical_transformer, categorical_features)
+    ])
+
+# Build full pipeline with model
+model_pipeline = Pipeline(steps=[
+    ('preprocessor', preprocessor),
+    ('classifier', DecisionTreeClassifier(max_depth=5, random_state=42))
+])
+
+# Train-test split with stratification for class balance
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
+    X, y, test_size=0.2, random_state=42, stratify=y)
 
-# Lightweight model: decision tree (no deep learning, no embeddings)
-model = DecisionTreeClassifier(random_state=42)
-model.fit(X_train, y_train)
+# Train model
+model_pipeline.fit(X_train, y_train)
 
-# Evaluate
-pred = model.predict(X_test)
-accuracy = accuracy_score(y_test, pred)
-
+# Predict and evaluate
+predictions = model_pipeline.predict(X_test)
+accuracy = accuracy_score(y_test, predictions)
 print(f"ACCURACY={accuracy:.6f}")
+
+# Save trained model for later use
+joblib.dump(model_pipeline, 'trained_model.joblib')

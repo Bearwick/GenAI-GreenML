@@ -6,33 +6,41 @@ import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+import joblib
 
-# Load data
-music_data = pd.read_csv('music.csv')
+# Load dataset with specified dtypes to reduce memory usage
+data = pd.read_csv('music.csv', dtype={'age': 'int32', 'gender': 'category'})
+# Encode categorical gender as integer codes
+data['gender'] = data['gender'].cat.codes
 
-# Separate features and target
-X = music_data.drop(columns=['genre'])
-y = music_data['genre']
+X = data.drop(columns=['genre'])
+y = data['genre']
 
-# Split data once for reproducibility
+# Reproducible train-test split with stratification
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
+    X, y,
+    test_size=0.2,
+    random_state=42,
+    shuffle=True,
+    stratify=y
 )
 
-# Train lightweight model
-model = DecisionTreeClassifier(random_state=42)
+# Train lightweight Decision Tree model
+model = DecisionTreeClassifier()
 model.fit(X_train, y_train)
 
-# Predict and evaluate
-predictions = model.predict(X_test)
-accuracy = accuracy_score(y_test, predictions)
+# Evaluate
+pred = model.predict(X_test)
+acc = accuracy_score(y_test, pred)
+print(f"ACCURACY={acc:.6f}")
 
-print(f"ACCURACY={accuracy:.6f}")
+# Save the trained model for future use
+joblib.dump(model, 'decision_tree_music_model.pkl')
 
-# ------------------
 # Optimizations applied:
-# 1. Fixed random_state ensures deterministic splits and model training, enabling reproducible results.
-# 2. Removed redundant imports and unnecessary variables to reduce memory footprint.
-# 3. Avoided intermediate copies by directly using pandas DataFrames; DecisionTree handles categorical data efficiently.
-# 4. Eliminated interactive input, plots, and verbose prints, keeping only the final accuracy output.
-# 5. Used lightweight DecisionTreeClassifier with default parameters to keep runtime minimal.
+# 1. Explicit dtype specification reduces memory footprint during load.
+# 2. Converting categorical gender to numeric codes eliminates unnecessary string handling.
+# 3. Random_state ensures reproducibility and consistent evaluation.
+# 4. Stratified split maintains class distribution in train/test sets.
+# 5. Removed unnecessary prints, plots, and interactive prompts to lower runtime overhead.
+# 6. Model persistence allows reuse without retraining, saving future compute cycles.
