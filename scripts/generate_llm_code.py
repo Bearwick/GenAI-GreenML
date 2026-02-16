@@ -658,12 +658,20 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
         # (Primary-only) original_telemetry
         primary_client = clients.get(primary_llm_name)
+        out_primary = output_path(project_dir, config.base_name, "original_telemetry", primary_llm_name)
+        if out_primary.exists() and not args.force:
+            try:
+                if out_primary.stat().st_size > 0:
+                    logging.info("[i] Skip existing: %s", out_primary.name)
+                    primary_client = None
+            except OSError:
+                pass
+
         if primary_client is not None:
             code = generate(primary_client, "original_telemetry", src_file, None, project_dir.name)
             if code:
-                out = output_path(project_dir, config.base_name, "original_telemetry", primary_llm_name)
                 write_output_file(
-                    out_file=out,
+                    out_file=out_primary,
                     script_name=Path(__file__).name,
                     llm_name=primary_llm_name,
                     mode="original_telemetry",
@@ -683,14 +691,25 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 continue
 
             for mode in modes:
+                out = output_path(project_dir, config.base_name, mode, llm_name)
+                if out.exists() and not args.force:
+                    try:
+                        if out.stat().st_size > 0:
+                            logging.info("[i] Skip existing: %s", out.name)
+                            continue
+                    except OSError:
+                        pass
+
                 if mode == "autonomous":
-                    src_file = None
-                code = generate(client, mode, src_file, headers, project_dir.name)
+                    src_for_mode = None
+                else:
+                    src_for_mode = src_file
+
+                code = generate(client, mode, src_for_mode, headers, project_dir.name)
                 if not code:
                     logging.info("[i] Skipping %s %s (no response)", llm_name, mode)
                     continue
 
-                out = output_path(project_dir, config.base_name, mode, llm_name)
                 write_output_file(
                     out_file=out,
                     script_name=Path(__file__).name,
