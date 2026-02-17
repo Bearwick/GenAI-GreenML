@@ -17,6 +17,7 @@ This dataset was developed as part of a master’s thesis at the **Norwegian Uni
 5. [Generate LLM Code](#generate-llm-code)
    1. [Runability Check](#runability-check)
 6. [Run Projects and Capture Telemetry](#run-projects-and-capture-telemetry)
+7. [Analyse Results](#analyse-results)
 
 ## Repository Information
 
@@ -125,3 +126,13 @@ python scripts/run_ml_projects.py
 ```
 
 See output in the results folder.
+
+## Analyse Results
+
+The analysis compares assisted and autonomous LLM code against the original code on accuracy, execution time and energy consumption, and prints if they have increased, decreased or are equal.
+
+From project root:
+
+```
+python ./scripts/analyse_results.py
+```
