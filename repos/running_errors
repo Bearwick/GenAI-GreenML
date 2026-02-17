@@ -1,0 +1,7 @@
+Email-spam-detector|original.py
+Binary-classification-of-ASD-using-CNN|original.py
+Svm-GridsearchCV|./SVM.py
+IMDB-Sentiment-Analysis|./solution.py
+MachineLearn-WineClassifier|./ml.py
+svm-hospital-data-classification|./hospitas-data.py
+MaliciousSoftwareClassification|./main.py

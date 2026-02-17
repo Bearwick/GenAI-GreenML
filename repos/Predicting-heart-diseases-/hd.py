@@ -17,7 +17,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 
 #read data
-df = pd.read_csv(r"C:\Users\giga_\Desktop\Radmila_Gigovic_660_2017_VI\heart\heart_dataset_.csv")
+df = pd.read_csv("heart/heart_dataset_.csv")
 
 print(df)
 print("\n")
@@ -183,7 +183,7 @@ print("Percentage of Male Patients: {:.2f}%".format((countMale / (len(df.sex))*1
 
 y = df.target.values
 x_data = df.drop(['target'], axis = 1)
-x = (x_data - np.min(x_data)) / (np.max(x_data) - np.min(x_data)).values
+x = (x_data - x_data.min()) / (x_data.max() - x_data.min())
 
 x_train, x_test, y_train, y_test = train_test_split(x,y,test_size = 0.2,random_state=0)
 

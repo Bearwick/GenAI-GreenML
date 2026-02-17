@@ -1,26 +1,28 @@
 Network_Intrusion_Detection_System|original.py
+Social-Network-Ads|./social_ads.py
 Classification-with-xgboost-on-binary.csv-data|./xgboost_on _binary.py
+Decision-Trees|./decision_tree.py
+FakeNewsPrediction|original.py
 DecisionTreeClassifier|./main.py
 ML_CSV_Classification|original.py
+CodeAlpha_IrisClassification|./iris.py
 diabetes_predictive_analysis|./Clasificacion_diabetes.py
 SparkMLClassification2|./sparkandoHeart.py
+K-Nearest-Neighbor-Algorithm|./knn.py
 Rock-or-Mine-prediction|./rockormineprediction.py
 student-math-ml-analysis|./analysis/student-math.py
 HWStudentGradPredictor|original.py
 Iris-Flower-Classification-Codealpha|./Task-1.py
 cars-classification|./car.py
+Cuisine-Predictor|./Codefile.py
+Simple-Naive-Bayes-on-Iris-Dataset|./data_analyticsiii.py
 SCT_ML_3|./svm_csv_classifiers.py
 Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity|./predict_HERG_activity_Accuracy.py
 SparkMLClassification|./sparkandoDiabetes.py
+Diabetes-Classification-with-SVM|./Diabetes _Prediction_with_SVM.py
 cancer_prediction|original.py
 CT_Project|./spam_email.py
 BREAST-CANCER-PREDICTION-SYSTEM|./code.py
 BreastCancer_Classification|./B_Cancer.py
 animals-classification|./code.py
-spam-ham-detection|./main.py
-Iris-Classification-ML-problem|./iris_classification.py
-dyslexia-randomforest|original.py
-Annotated_Colab_Notebook|./main.py
-Algorithms_KnnClasifier|./Knn_Classifier.py
-Iris-ML-Lab|./iris_ml_lab.py
-Deep-Learning-Classification|./classifcation.py
+Spam-Email-Classifier|./main.py
