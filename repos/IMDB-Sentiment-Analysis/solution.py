@@ -1,6 +1,6 @@
 import pandas as pd
-docs = pd.read_csv('~/Downloads/movie_review_train.csv', header=0, names=['Class', 'text'])
-docs_test = pd.read_csv('~/Downloads/movie_review_test.csv', header=0, names=['Class', 'text'])
+docs = pd.read_csv('movie_review_train.csv', header=0, names=['Class', 'text'])
+docs_test = pd.read_csv('movie_review_test.csv', header=0, names=['Class', 'text'])
 docs.head()
 
 #df.column_name.value_counts() - gives no. of unique inputs in that columns
@@ -8,7 +8,7 @@ docs.Class.value_counts()
 
 neg_res=docs.Class.value_counts()
 neg_res
-print("Neg resp % is ",(neg_res[1]/float(neg_res[0]+neg_res[1]))*100)
+#print("Neg resp % is ",(neg_res[1]/float(neg_res[0]+neg_res[1]))*100)
 
 # mapping labels to 1 and 0
 docs['label'] = docs.Class.map({'Neg':0, 'Pos':1})
@@ -36,12 +36,12 @@ vect = CountVectorizer(stop_words='english',min_df=.03,max_df=.8)
 
 vect.fit(X)
 vect.vocabulary_
-len(vect.get_feature_names())
+len(vect.get_feature_names_out())
 
 # transform
 X_train_transformed = vect.transform(X)
 X_test_transformed =vect.transform(X_test)
-X_test_tranformed
+X_test_transformed
 
 # training the NB model and making predictions
 from sklearn.naive_bayes import MultinomialNB
