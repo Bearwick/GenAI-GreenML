@@ -5,7 +5,7 @@ from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 # read the dataset into a pandas dataframe
-dt = r"C:\Users\LENOVO\Downloads\Compressed\FNews\bodyPerformance1.csv"
+dt = "bodyPerformance.csv"
 df = pd.read_csv(dt)
 
 # print number of samples in the dataset 
