@@ -32,10 +32,15 @@ def rounded(val, places):
 def main():
     latest = latest_results_file()
     rows = []
+    failed = []
     with latest.open("r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
             if row.get("status", "").strip().upper() != "OK":
+                project = row.get("project", "").strip()
+                script = row.get("script", "").strip()
+                if project or script:
+                    failed.append(f"{project}: {script}")
                 continue
             rows.append(row)
 
@@ -153,6 +158,12 @@ def main():
                     c = counts_by_llm[llm][mode][metric]
                     parts.append(f"{metric} inc={c['inc']} dec={c['dec']} eq={c['eq']}")
                 print(" | ".join(parts))
+
+    print(f"\nFailed runs: {len(failed)}")
+    if failed:
+        print("Failed list:")
+        for item in failed:
+            print(item)
 
 
 if __name__ == "__main__":
