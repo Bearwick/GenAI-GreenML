@@ -2,31 +2,33 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import ExtraTreesClassifier
 import pandas as pd
 
-
-# Altere o caminho do arqwuivo csv, ou busque outro modelo de alguma API
-path = 'wine_dataset.csv'
+path = "data/wine_dataset.csv"
 arquivo = pd.read_csv(path)
 
-#Refatora os tipos de vinho
-arquivo['style'] = arquivo['style'].replace('red', 0)
-arquivo['style'] = arquivo['style'].replace('white', 1)
+# Clean label
+arquivo["style"] = (
+    arquivo["style"].astype(str).str.strip().str.lower()
+)
+arquivo = arquivo[arquivo["style"].isin(["red", "white"])].copy()
+arquivo["style"] = arquivo["style"].map({"red": 0, "white": 1}).astype("int64")
 
-# X recebe apenas o tipo enquanto Y recebe todas outras colunas
-x = arquivo['style']
-y = arquivo.drop('style', axis=1)
+X = arquivo.drop(columns=["style"])
+y = arquivo["style"]
 
-# Set as variaveis de teste e treino junto a funcao call
-x_treino, x_teste, y_treino, y_teste = train_test_split(x, y, test_size=0.3)
+# Ensure numeric features
+X = X.apply(pd.to_numeric, errors="coerce")
+mask = X.notna().all(axis=1)
+X = X[mask]
+y = y[mask]
 
-# # Variavel recebe a funcao algoritmo de arvore binaria e inicia o treino das colunas
-modelo = ExtraTreesClassifier(n_estimators=100)
-modelo.fit(x_treino, y_treino)
-#
-#Mostra resultado teste das colunas
-resultado = modelo.score(x_teste, y_teste)
-print("Acurácia: ", resultado)
+X_treino, X_teste, y_treino, y_teste = train_test_split(
+    X, y, test_size=0.3, random_state=42, stratify=y
+)
 
-# Cria a previsao das linha 300 a 600
-previsoes = modelo.predict(x_teste[300:600])
+modelo = ExtraTreesClassifier(n_estimators=100, random_state=42)
+modelo.fit(X_treino, y_treino)
 
+print("Acurácia:", modelo.score(X_teste, y_teste))
+
+previsoes = modelo.predict(X_teste.iloc[300:600])
 print(previsoes)

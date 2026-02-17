@@ -2,8 +2,6 @@ Binary-classification-of-ASD-using-CNN|original.py - bytte ut
 
 
 
-Svm-GridsearchCV|./SVM.py
-IMDB-Sentiment-Analysis|./solution.py
 MachineLearn-WineClassifier|./ml.py
 svm-hospital-data-classification|./hospitas-data.py
 MaliciousSoftwareClassification|./main.py
