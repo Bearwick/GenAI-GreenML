@@ -1,0 +1,3477 @@
+sender,subject,body,urls,filename,label,text
+win@lottery.com,You Won $1000!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_1.eml,spam,"You Won $1000! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+offer@deals.xyz,Verify Your Account!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_10.eml,spam,"Verify Your Account! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+offer@deals.xyz,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_100.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_101.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+prize@free.com,Claim Your Prize Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_102.eml,spam,"Claim Your Prize Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+prize@free.com,Claim Your Prize Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_103.eml,spam,"Claim Your Prize Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+offer@deals.xyz,Claim Your Prize Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_104.eml,spam,"Claim Your Prize Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_105.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+prize@free.com,Urgent: Act Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_106.eml,spam,"Urgent: Act Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+alert@secure.xyz,Urgent: Act Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_107.eml,spam,"Urgent: Act Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,Urgent: Act Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_108.eml,spam,"Urgent: Act Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+offer@deals.xyz,Verify Your Account!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_109.eml,spam,"Verify Your Account! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+offer@deals.xyz,You Won $1000!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_11.eml,spam,"You Won $1000! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,Verify Your Account!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_110.eml,spam,"Verify Your Account! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+offer@deals.xyz,Urgent: Act Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_111.eml,spam,"Urgent: Act Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+win@lottery.com,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_112.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+alert@secure.xyz,Urgent: Act Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_113.eml,spam,"Urgent: Act Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_114.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,Urgent: Act Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_115.eml,spam,"Urgent: Act Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+win@lottery.com,Verify Your Account!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_116.eml,spam,"Verify Your Account! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+offer@deals.xyz,You Won $1000!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_117.eml,spam,"You Won $1000! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+alert@secure.xyz,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_118.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,Claim Your Prize Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_119.eml,spam,"Claim Your Prize Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+win@lottery.com,Verify Your Account!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_12.eml,spam,"Verify Your Account! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+alert@secure.xyz,You Won $1000!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_120.eml,spam,"You Won $1000! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+offer@deals.xyz,Verify Your Account!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_121.eml,spam,"Verify Your Account! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+offer@deals.xyz,Claim Your Prize Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_122.eml,spam,"Claim Your Prize Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+alert@secure.xyz,Claim Your Prize Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_123.eml,spam,"Claim Your Prize Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+prize@free.com,You Won $1000!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_124.eml,spam,"You Won $1000! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+win@lottery.com,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_125.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,Verify Your Account!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_126.eml,spam,"Verify Your Account! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_127.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+alert@secure.xyz,You Won $1000!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_128.eml,spam,"You Won $1000! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+alert@secure.xyz,Claim Your Prize Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_129.eml,spam,"Claim Your Prize Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+offer@deals.xyz,Verify Your Account!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_13.eml,spam,"Verify Your Account! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+prize@free.com,Urgent: Act Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_130.eml,spam,"Urgent: Act Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+offer@deals.xyz,You Won $1000!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_131.eml,spam,"You Won $1000! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+offer@deals.xyz,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_132.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,Urgent: Act Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_133.eml,spam,"Urgent: Act Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+offer@deals.xyz,Urgent: Act Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_134.eml,spam,"Urgent: Act Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,Verify Your Account!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_135.eml,spam,"Verify Your Account! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+win@lottery.com,You Won $1000!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_136.eml,spam,"You Won $1000! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+alert@secure.xyz,Claim Your Prize Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_137.eml,spam,"Claim Your Prize Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+alert@secure.xyz,Claim Your Prize Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_138.eml,spam,"Claim Your Prize Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+alert@secure.xyz,Verify Your Account!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_139.eml,spam,"Verify Your Account! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+offer@deals.xyz,Verify Your Account!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_14.eml,spam,"Verify Your Account! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+alert@secure.xyz,Urgent: Act Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_140.eml,spam,"Urgent: Act Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+alert@secure.xyz,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_141.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+prize@free.com,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_142.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+alert@secure.xyz,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_143.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+win@lottery.com,Verify Your Account!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_144.eml,spam,"Verify Your Account! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_145.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+offer@deals.xyz,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_146.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+alert@secure.xyz,Claim Your Prize Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_147.eml,spam,"Claim Your Prize Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+win@lottery.com,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_148.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+win@lottery.com,Claim Your Prize Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_149.eml,spam,"Claim Your Prize Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+offer@deals.xyz,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_15.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+alert@secure.xyz,Claim Your Prize Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_150.eml,spam,"Claim Your Prize Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,Verify Your Account!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_151.eml,spam,"Verify Your Account! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+offer@deals.xyz,Claim Your Prize Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_152.eml,spam,"Claim Your Prize Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,Urgent: Act Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_153.eml,spam,"Urgent: Act Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+win@lottery.com,Verify Your Account!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_154.eml,spam,"Verify Your Account! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,Urgent: Act Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_155.eml,spam,"Urgent: Act Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,Urgent: Act Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_156.eml,spam,"Urgent: Act Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+win@lottery.com,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_157.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+offer@deals.xyz,You Won $1000!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_158.eml,spam,"You Won $1000! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+offer@deals.xyz,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_159.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+alert@secure.xyz,Urgent: Act Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_16.eml,spam,"Urgent: Act Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+prize@free.com,Urgent: Act Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_160.eml,spam,"Urgent: Act Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_161.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_162.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+win@lottery.com,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_163.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+win@lottery.com,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_164.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+prize@free.com,Claim Your Prize Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_165.eml,spam,"Claim Your Prize Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+offer@deals.xyz,Claim Your Prize Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_166.eml,spam,"Claim Your Prize Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,Verify Your Account!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_167.eml,spam,"Verify Your Account! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+offer@deals.xyz,Urgent: Act Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_168.eml,spam,"Urgent: Act Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+prize@free.com,Verify Your Account!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_169.eml,spam,"Verify Your Account! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+win@lottery.com,Claim Your Prize Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_17.eml,spam,"Claim Your Prize Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+win@lottery.com,Claim Your Prize Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_170.eml,spam,"Claim Your Prize Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+prize@free.com,Urgent: Act Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_171.eml,spam,"Urgent: Act Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+win@lottery.com,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_172.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,Urgent: Act Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_173.eml,spam,"Urgent: Act Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+alert@secure.xyz,You Won $1000!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_174.eml,spam,"You Won $1000! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+alert@secure.xyz,Urgent: Act Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_175.eml,spam,"Urgent: Act Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,Claim Your Prize Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_176.eml,spam,"Claim Your Prize Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_177.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+win@lottery.com,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_178.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,You Won $1000!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_179.eml,spam,"You Won $1000! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+win@lottery.com,Claim Your Prize Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_18.eml,spam,"Claim Your Prize Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+offer@deals.xyz,Verify Your Account!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_180.eml,spam,"Verify Your Account! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+prize@free.com,You Won $1000!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_181.eml,spam,"You Won $1000! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+win@lottery.com,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_182.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_183.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+alert@secure.xyz,Verify Your Account!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_184.eml,spam,"Verify Your Account! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+alert@secure.xyz,Claim Your Prize Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_185.eml,spam,"Claim Your Prize Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+alert@secure.xyz,Urgent: Act Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_186.eml,spam,"Urgent: Act Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,Verify Your Account!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_187.eml,spam,"Verify Your Account! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,You Won $1000!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_188.eml,spam,"You Won $1000! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+alert@secure.xyz,Urgent: Act Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_189.eml,spam,"Urgent: Act Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+alert@secure.xyz,Urgent: Act Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_19.eml,spam,"Urgent: Act Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+offer@deals.xyz,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_190.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,You Won $1000!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_191.eml,spam,"You Won $1000! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+alert@secure.xyz,Urgent: Act Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_192.eml,spam,"Urgent: Act Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+win@lottery.com,Verify Your Account!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_193.eml,spam,"Verify Your Account! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+prize@free.com,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_194.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+alert@secure.xyz,Verify Your Account!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_195.eml,spam,"Verify Your Account! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+offer@deals.xyz,You Won $1000!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_196.eml,spam,"You Won $1000! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+offer@deals.xyz,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_197.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+alert@secure.xyz,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_198.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,Claim Your Prize Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_199.eml,spam,"Claim Your Prize Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+offer@deals.xyz,Claim Your Prize Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_2.eml,spam,"Claim Your Prize Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+alert@secure.xyz,You Won $1000!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_20.eml,spam,"You Won $1000! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,Verify Your Account!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_200.eml,spam,"Verify Your Account! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+win@lottery.com,You Won $1000!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_201.eml,spam,"You Won $1000! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,You Won $1000!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_202.eml,spam,"You Won $1000! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+offer@deals.xyz,Urgent: Act Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_203.eml,spam,"Urgent: Act Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+win@lottery.com,Claim Your Prize Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_204.eml,spam,"Claim Your Prize Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+alert@secure.xyz,Verify Your Account!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_205.eml,spam,"Verify Your Account! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+alert@secure.xyz,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_206.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+win@lottery.com,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_207.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,You Won $1000!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_208.eml,spam,"You Won $1000! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+prize@free.com,Verify Your Account!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_209.eml,spam,"Verify Your Account! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,Urgent: Act Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_21.eml,spam,"Urgent: Act Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,Claim Your Prize Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_210.eml,spam,"Claim Your Prize Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+alert@secure.xyz,Verify Your Account!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_211.eml,spam,"Verify Your Account! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,Verify Your Account!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_212.eml,spam,"Verify Your Account! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+win@lottery.com,Urgent: Act Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_213.eml,spam,"Urgent: Act Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+prize@free.com,Verify Your Account!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_214.eml,spam,"Verify Your Account! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+offer@deals.xyz,Urgent: Act Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_215.eml,spam,"Urgent: Act Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,Verify Your Account!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_216.eml,spam,"Verify Your Account! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+offer@deals.xyz,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_217.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+offer@deals.xyz,You Won $1000!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_218.eml,spam,"You Won $1000! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+win@lottery.com,Verify Your Account!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_219.eml,spam,"Verify Your Account! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+offer@deals.xyz,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_22.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+alert@secure.xyz,You Won $1000!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_220.eml,spam,"You Won $1000! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+prize@free.com,Urgent: Act Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_221.eml,spam,"Urgent: Act Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+alert@secure.xyz,Verify Your Account!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_222.eml,spam,"Verify Your Account! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+win@lottery.com,Urgent: Act Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_223.eml,spam,"Urgent: Act Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,Urgent: Act Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_224.eml,spam,"Urgent: Act Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+alert@secure.xyz,Claim Your Prize Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_225.eml,spam,"Claim Your Prize Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+win@lottery.com,Claim Your Prize Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_226.eml,spam,"Claim Your Prize Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+alert@secure.xyz,Urgent: Act Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_227.eml,spam,"Urgent: Act Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+offer@deals.xyz,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_228.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+alert@secure.xyz,You Won $1000!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_229.eml,spam,"You Won $1000! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+offer@deals.xyz,Urgent: Act Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_23.eml,spam,"Urgent: Act Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+offer@deals.xyz,Claim Your Prize Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_230.eml,spam,"Claim Your Prize Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+alert@secure.xyz,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_231.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_232.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+offer@deals.xyz,Urgent: Act Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_233.eml,spam,"Urgent: Act Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+offer@deals.xyz,Urgent: Act Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_234.eml,spam,"Urgent: Act Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+offer@deals.xyz,Verify Your Account!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_235.eml,spam,"Verify Your Account! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+prize@free.com,Verify Your Account!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_236.eml,spam,"Verify Your Account! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+win@lottery.com,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_237.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+offer@deals.xyz,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_238.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+offer@deals.xyz,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_239.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+offer@deals.xyz,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_24.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+alert@secure.xyz,You Won $1000!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_240.eml,spam,"You Won $1000! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,Urgent: Act Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_241.eml,spam,"Urgent: Act Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+offer@deals.xyz,Claim Your Prize Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_242.eml,spam,"Claim Your Prize Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+alert@secure.xyz,You Won $1000!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_243.eml,spam,"You Won $1000! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_244.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,Claim Your Prize Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_245.eml,spam,"Claim Your Prize Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+alert@secure.xyz,You Won $1000!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_246.eml,spam,"You Won $1000! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,Urgent: Act Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_247.eml,spam,"Urgent: Act Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+offer@deals.xyz,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_248.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+alert@secure.xyz,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_249.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,Claim Your Prize Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_25.eml,spam,"Claim Your Prize Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+alert@secure.xyz,You Won $1000!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_250.eml,spam,"You Won $1000! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+alert@secure.xyz,You Won $1000!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_26.eml,spam,"You Won $1000! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+win@lottery.com,You Won $1000!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_27.eml,spam,"You Won $1000! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+offer@deals.xyz,Urgent: Act Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_28.eml,spam,"Urgent: Act Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,Claim Your Prize Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_29.eml,spam,"Claim Your Prize Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+alert@secure.xyz,You Won $1000!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_3.eml,spam,"You Won $1000! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_30.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+offer@deals.xyz,Claim Your Prize Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_31.eml,spam,"Claim Your Prize Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+prize@free.com,You Won $1000!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_32.eml,spam,"You Won $1000! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,You Won $1000!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_33.eml,spam,"You Won $1000! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+offer@deals.xyz,Verify Your Account!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_34.eml,spam,"Verify Your Account! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+alert@secure.xyz,You Won $1000!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_35.eml,spam,"You Won $1000! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,Verify Your Account!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_36.eml,spam,"Verify Your Account! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+win@lottery.com,You Won $1000!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_37.eml,spam,"You Won $1000! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+alert@secure.xyz,Urgent: Act Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_38.eml,spam,"Urgent: Act Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,Verify Your Account!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_39.eml,spam,"Verify Your Account! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+offer@deals.xyz,Claim Your Prize Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_4.eml,spam,"Claim Your Prize Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+alert@secure.xyz,Urgent: Act Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_40.eml,spam,"Urgent: Act Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+alert@secure.xyz,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_41.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+win@lottery.com,Claim Your Prize Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_42.eml,spam,"Claim Your Prize Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+prize@free.com,Urgent: Act Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_43.eml,spam,"Urgent: Act Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,You Won $1000!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_44.eml,spam,"You Won $1000! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+win@lottery.com,Verify Your Account!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_45.eml,spam,"Verify Your Account! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,You Won $1000!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_46.eml,spam,"You Won $1000! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+offer@deals.xyz,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_47.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+win@lottery.com,Claim Your Prize Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_48.eml,spam,"Claim Your Prize Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_49.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+win@lottery.com,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_5.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+alert@secure.xyz,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_50.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+win@lottery.com,Urgent: Act Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_51.eml,spam,"Urgent: Act Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+prize@free.com,Claim Your Prize Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_52.eml,spam,"Claim Your Prize Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+offer@deals.xyz,You Won $1000!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_53.eml,spam,"You Won $1000! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+alert@secure.xyz,Claim Your Prize Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_54.eml,spam,"Claim Your Prize Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+prize@free.com,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_55.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,Claim Your Prize Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_56.eml,spam,"Claim Your Prize Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+win@lottery.com,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_57.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+alert@secure.xyz,Claim Your Prize Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_58.eml,spam,"Claim Your Prize Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+alert@secure.xyz,You Won $1000!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_59.eml,spam,"You Won $1000! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+win@lottery.com,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_6.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+win@lottery.com,Urgent: Act Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_60.eml,spam,"Urgent: Act Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+offer@deals.xyz,You Won $1000!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_61.eml,spam,"You Won $1000! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+prize@free.com,Claim Your Prize Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_62.eml,spam,"Claim Your Prize Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,Claim Your Prize Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_63.eml,spam,"Claim Your Prize Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+offer@deals.xyz,Claim Your Prize Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_64.eml,spam,"Claim Your Prize Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+prize@free.com,Claim Your Prize Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_65.eml,spam,"Claim Your Prize Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+win@lottery.com,You Won $1000!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_66.eml,spam,"You Won $1000! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+alert@secure.xyz,Claim Your Prize Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_67.eml,spam,"Claim Your Prize Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+offer@deals.xyz,You Won $1000!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_68.eml,spam,"You Won $1000! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+offer@deals.xyz,Urgent: Act Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_69.eml,spam,"Urgent: Act Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_7.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,Verify Your Account!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_70.eml,spam,"Verify Your Account! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+offer@deals.xyz,Urgent: Act Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_71.eml,spam,"Urgent: Act Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+alert@secure.xyz,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_72.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_73.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+alert@secure.xyz,Claim Your Prize Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_74.eml,spam,"Claim Your Prize Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+prize@free.com,You Won $1000!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_75.eml,spam,"You Won $1000! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+offer@deals.xyz,Verify Your Account!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_76.eml,spam,"Verify Your Account! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,You Won $1000!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_77.eml,spam,"You Won $1000! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,Claim Your Prize Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_78.eml,spam,"Claim Your Prize Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+win@lottery.com,Urgent: Act Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_79.eml,spam,"Urgent: Act Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+alert@secure.xyz,Urgent: Act Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_8.eml,spam,"Urgent: Act Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+win@lottery.com,Urgent: Act Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_80.eml,spam,"Urgent: Act Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+win@lottery.com,You Won $1000!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_81.eml,spam,"You Won $1000! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+offer@deals.xyz,Claim Your Prize Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_82.eml,spam,"Claim Your Prize Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+alert@secure.xyz,Urgent: Act Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_83.eml,spam,"Urgent: Act Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+prize@free.com,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_84.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+offer@deals.xyz,Urgent: Act Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_85.eml,spam,"Urgent: Act Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+alert@secure.xyz,You Won $1000!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_86.eml,spam,"You Won $1000! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+alert@secure.xyz,Verify Your Account!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_87.eml,spam,"Verify Your Account! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+win@lottery.com,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_88.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+win@lottery.com,Urgent: Act Now!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_89.eml,spam,"Urgent: Act Now! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+offer@deals.xyz,Claim Your Prize Now!,"Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team",['http://fake.deals/claim'],email_9.eml,spam,"Claim Your Prize Now! Dear User,
+Click here: http://fake.deals/claim to win $1000!
+Hurry!
+Best,
+Team"
+prize@free.com,Verify Your Account!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_90.eml,spam,"Verify Your Account! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+offer@deals.xyz,Verify Your Account!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_91.eml,spam,"Verify Your Account! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+prize@free.com,Urgent: Act Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_92.eml,spam,"Urgent: Act Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,You Won $1000!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_93.eml,spam,"You Won $1000! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+offer@deals.xyz,Claim Your Prize Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_94.eml,spam,"Claim Your Prize Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+alert@secure.xyz,Claim Your Prize Now!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_95.eml,spam,"Claim Your Prize Now! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+prize@free.com,You Won $1000!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_96.eml,spam,"You Won $1000! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+win@lottery.com,Verify Your Account!,"Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin",['http://scam.xyz'],email_97.eml,spam,"Verify Your Account! Congratulations!
+You\u2019ve won a free gift. Visit http://scam.xyz now!
+Cheers,
+Admin"
+alert@secure.xyz,You Won $1000!,"Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support",['http://phish.me/verify.'],email_98.eml,spam,"You Won $1000! Urgent!
+Your account needs verification. Go to http://phish.me/verify.
+Thanks,
+Support"
+offer@deals.xyz,Claim Your Prize Now!,"Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team",['http://offer.deals/promo'],email_99.eml,spam,"Claim Your Prize Now! Win a free iPhone! Click http://offer.deals/promo to claim now!
+Best,
+Promo Team"
+friend@example.com,Meeting Tomorrow,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_1.eml,good,"Meeting Tomorrow Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+support@bank.com,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_10.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+family@gmail.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_100.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+friend@example.com,Catch Up Soon,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_101.eml,good,"Catch Up Soon Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Account Confirmation,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_102.eml,good,"Account Confirmation Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_103.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+support@bank.com,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_104.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+family@gmail.com,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_105.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Catch Up Soon,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_106.eml,good,"Catch Up Soon Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+colleague@university.edu,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_107.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Account Confirmation,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_108.eml,good,"Account Confirmation Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+colleague@university.edu,Account Confirmation,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_109.eml,good,"Account Confirmation Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+family@gmail.com,Catch Up Soon,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_11.eml,good,"Catch Up Soon Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+colleague@university.edu,Catch Up Soon,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_110.eml,good,"Catch Up Soon Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+support@bank.com,Project Update,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_111.eml,good,"Project Update Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Project Update,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_112.eml,good,"Project Update Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Project Update,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_113.eml,good,"Project Update Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_114.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Project Update,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_115.eml,good,"Project Update Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Meeting Tomorrow,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_116.eml,good,"Meeting Tomorrow Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+friend@example.com,Account Confirmation,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_117.eml,good,"Account Confirmation Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+family@gmail.com,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_118.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+family@gmail.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_119.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+colleague@university.edu,Account Confirmation,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_12.eml,good,"Account Confirmation Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Account Confirmation,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_120.eml,good,"Account Confirmation Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+colleague@university.edu,Meeting Tomorrow,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_121.eml,good,"Meeting Tomorrow Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+colleague@university.edu,Project Update,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_122.eml,good,"Project Update Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+family@gmail.com,Catch Up Soon,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_123.eml,good,"Catch Up Soon Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+colleague@university.edu,Catch Up Soon,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_124.eml,good,"Catch Up Soon Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+support@bank.com,Account Confirmation,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_125.eml,good,"Account Confirmation Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Account Confirmation,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_126.eml,good,"Account Confirmation Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_127.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+family@gmail.com,Project Update,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_128.eml,good,"Project Update Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Meeting Tomorrow,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_129.eml,good,"Meeting Tomorrow Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Project Update,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_13.eml,good,"Project Update Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+support@bank.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_130.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+support@bank.com,Meeting Tomorrow,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_131.eml,good,"Meeting Tomorrow Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_132.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Meeting Tomorrow,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_133.eml,good,"Meeting Tomorrow Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Catch Up Soon,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_134.eml,good,"Catch Up Soon Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_135.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_136.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+colleague@university.edu,Project Update,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_137.eml,good,"Project Update Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+support@bank.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_138.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+support@bank.com,Account Confirmation,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_139.eml,good,"Account Confirmation Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+colleague@university.edu,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_14.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Catch Up Soon,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_140.eml,good,"Catch Up Soon Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+family@gmail.com,Catch Up Soon,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_141.eml,good,"Catch Up Soon Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Project Update,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_142.eml,good,"Project Update Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+support@bank.com,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_143.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Account Confirmation,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_144.eml,good,"Account Confirmation Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Catch Up Soon,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_145.eml,good,"Catch Up Soon Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Project Update,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_146.eml,good,"Project Update Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+family@gmail.com,Account Confirmation,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_147.eml,good,"Account Confirmation Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Account Confirmation,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_148.eml,good,"Account Confirmation Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+family@gmail.com,Account Confirmation,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_149.eml,good,"Account Confirmation Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+support@bank.com,Catch Up Soon,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_15.eml,good,"Catch Up Soon Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+family@gmail.com,Account Confirmation,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_150.eml,good,"Account Confirmation Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Project Update,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_151.eml,good,"Project Update Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Catch Up Soon,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_152.eml,good,"Catch Up Soon Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+support@bank.com,Account Confirmation,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_153.eml,good,"Account Confirmation Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+support@bank.com,Account Confirmation,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_154.eml,good,"Account Confirmation Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_155.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+family@gmail.com,Account Confirmation,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_156.eml,good,"Account Confirmation Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+support@bank.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_157.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+family@gmail.com,Catch Up Soon,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_158.eml,good,"Catch Up Soon Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Project Update,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_159.eml,good,"Project Update Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Catch Up Soon,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_16.eml,good,"Catch Up Soon Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+support@bank.com,Account Confirmation,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_160.eml,good,"Account Confirmation Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Catch Up Soon,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_161.eml,good,"Catch Up Soon Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+colleague@university.edu,Account Confirmation,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_162.eml,good,"Account Confirmation Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+friend@example.com,Catch Up Soon,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_163.eml,good,"Catch Up Soon Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+support@bank.com,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_164.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+family@gmail.com,Account Confirmation,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_165.eml,good,"Account Confirmation Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+support@bank.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_166.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+support@bank.com,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_167.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+family@gmail.com,Meeting Tomorrow,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_168.eml,good,"Meeting Tomorrow Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Meeting Tomorrow,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_169.eml,good,"Meeting Tomorrow Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Catch Up Soon,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_17.eml,good,"Catch Up Soon Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Catch Up Soon,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_170.eml,good,"Catch Up Soon Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_171.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+support@bank.com,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_172.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+support@bank.com,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_173.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Project Update,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_174.eml,good,"Project Update Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+support@bank.com,Catch Up Soon,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_175.eml,good,"Catch Up Soon Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_176.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Account Confirmation,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_177.eml,good,"Account Confirmation Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+family@gmail.com,Catch Up Soon,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_178.eml,good,"Catch Up Soon Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+friend@example.com,Catch Up Soon,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_179.eml,good,"Catch Up Soon Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+support@bank.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_18.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+friend@example.com,Catch Up Soon,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_180.eml,good,"Catch Up Soon Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_181.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+family@gmail.com,Project Update,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_182.eml,good,"Project Update Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+family@gmail.com,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_183.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+support@bank.com,Catch Up Soon,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_184.eml,good,"Catch Up Soon Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+friend@example.com,Account Confirmation,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_185.eml,good,"Account Confirmation Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+support@bank.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_186.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+friend@example.com,Project Update,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_187.eml,good,"Project Update Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+family@gmail.com,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_188.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+colleague@university.edu,Account Confirmation,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_189.eml,good,"Account Confirmation Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+family@gmail.com,Project Update,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_19.eml,good,"Project Update Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+support@bank.com,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_190.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+support@bank.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_191.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+support@bank.com,Project Update,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_192.eml,good,"Project Update Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Account Confirmation,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_193.eml,good,"Account Confirmation Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+colleague@university.edu,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_194.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+support@bank.com,Account Confirmation,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_195.eml,good,"Account Confirmation Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+friend@example.com,Project Update,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_196.eml,good,"Project Update Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Meeting Tomorrow,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_197.eml,good,"Meeting Tomorrow Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+support@bank.com,Project Update,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_198.eml,good,"Project Update Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Meeting Tomorrow,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_199.eml,good,"Meeting Tomorrow Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_2.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+friend@example.com,Account Confirmation,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_20.eml,good,"Account Confirmation Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+friend@example.com,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_200.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Project Update,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_201.eml,good,"Project Update Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_202.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+family@gmail.com,Meeting Tomorrow,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_203.eml,good,"Meeting Tomorrow Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+family@gmail.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_204.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+support@bank.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_205.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+family@gmail.com,Catch Up Soon,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_206.eml,good,"Catch Up Soon Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Project Update,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_207.eml,good,"Project Update Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+colleague@university.edu,Project Update,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_208.eml,good,"Project Update Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_209.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+family@gmail.com,Account Confirmation,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_21.eml,good,"Account Confirmation Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+friend@example.com,Meeting Tomorrow,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_210.eml,good,"Meeting Tomorrow Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+family@gmail.com,Account Confirmation,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_211.eml,good,"Account Confirmation Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Project Update,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_212.eml,good,"Project Update Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Account Confirmation,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_213.eml,good,"Account Confirmation Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+family@gmail.com,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_214.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_215.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+support@bank.com,Account Confirmation,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_216.eml,good,"Account Confirmation Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+colleague@university.edu,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_217.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+family@gmail.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_218.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+colleague@university.edu,Account Confirmation,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_219.eml,good,"Account Confirmation Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+support@bank.com,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_22.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Account Confirmation,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_220.eml,good,"Account Confirmation Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+colleague@university.edu,Account Confirmation,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_221.eml,good,"Account Confirmation Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+family@gmail.com,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_222.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+colleague@university.edu,Project Update,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_223.eml,good,"Project Update Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+colleague@university.edu,Meeting Tomorrow,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_224.eml,good,"Meeting Tomorrow Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+support@bank.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_225.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+family@gmail.com,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_226.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Account Confirmation,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_227.eml,good,"Account Confirmation Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Project Update,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_228.eml,good,"Project Update Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+friend@example.com,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_229.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+support@bank.com,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_23.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+colleague@university.edu,Account Confirmation,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_230.eml,good,"Account Confirmation Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+support@bank.com,Account Confirmation,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_231.eml,good,"Account Confirmation Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Meeting Tomorrow,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_232.eml,good,"Meeting Tomorrow Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+family@gmail.com,Catch Up Soon,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_233.eml,good,"Catch Up Soon Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_234.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+family@gmail.com,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_235.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+colleague@university.edu,Catch Up Soon,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_236.eml,good,"Catch Up Soon Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+support@bank.com,Meeting Tomorrow,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_237.eml,good,"Meeting Tomorrow Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+support@bank.com,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_238.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+support@bank.com,Project Update,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_239.eml,good,"Project Update Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+support@bank.com,Account Confirmation,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_24.eml,good,"Account Confirmation Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_240.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+family@gmail.com,Account Confirmation,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_241.eml,good,"Account Confirmation Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+support@bank.com,Catch Up Soon,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_242.eml,good,"Catch Up Soon Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Meeting Tomorrow,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_243.eml,good,"Meeting Tomorrow Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+family@gmail.com,Catch Up Soon,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_244.eml,good,"Catch Up Soon Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Project Update,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_245.eml,good,"Project Update Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+colleague@university.edu,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_246.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Account Confirmation,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_247.eml,good,"Account Confirmation Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Catch Up Soon,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_248.eml,good,"Catch Up Soon Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Project Update,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_249.eml,good,"Project Update Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_25.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+support@bank.com,Account Confirmation,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_250.eml,good,"Account Confirmation Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Account Confirmation,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_26.eml,good,"Account Confirmation Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_27.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+friend@example.com,Project Update,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_28.eml,good,"Project Update Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_29.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+support@bank.com,Catch Up Soon,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_3.eml,good,"Catch Up Soon Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+family@gmail.com,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_30.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+family@gmail.com,Account Confirmation,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_31.eml,good,"Account Confirmation Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_32.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+family@gmail.com,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_33.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+colleague@university.edu,Account Confirmation,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_34.eml,good,"Account Confirmation Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+family@gmail.com,Project Update,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_35.eml,good,"Project Update Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Project Update,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_36.eml,good,"Project Update Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+friend@example.com,Catch Up Soon,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_37.eml,good,"Catch Up Soon Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+family@gmail.com,Meeting Tomorrow,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_38.eml,good,"Meeting Tomorrow Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+support@bank.com,Project Update,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_39.eml,good,"Project Update Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_4.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Account Confirmation,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_40.eml,good,"Account Confirmation Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+support@bank.com,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_41.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Project Update,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_42.eml,good,"Project Update Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Project Update,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_43.eml,good,"Project Update Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Account Confirmation,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_44.eml,good,"Account Confirmation Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+family@gmail.com,Catch Up Soon,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_45.eml,good,"Catch Up Soon Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+support@bank.com,Meeting Tomorrow,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_46.eml,good,"Meeting Tomorrow Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_47.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+family@gmail.com,Account Confirmation,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_48.eml,good,"Account Confirmation Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_49.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+family@gmail.com,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_5.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+support@bank.com,Catch Up Soon,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_50.eml,good,"Catch Up Soon Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Account Confirmation,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_51.eml,good,"Account Confirmation Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Meeting Tomorrow,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_52.eml,good,"Meeting Tomorrow Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+colleague@university.edu,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_53.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+family@gmail.com,Project Update,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_54.eml,good,"Project Update Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+family@gmail.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_55.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+colleague@university.edu,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_56.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+colleague@university.edu,Catch Up Soon,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_57.eml,good,"Catch Up Soon Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Meeting Tomorrow,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_58.eml,good,"Meeting Tomorrow Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+support@bank.com,Meeting Tomorrow,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_59.eml,good,"Meeting Tomorrow Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Meeting Tomorrow,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_6.eml,good,"Meeting Tomorrow Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+friend@example.com,Account Confirmation,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_60.eml,good,"Account Confirmation Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_61.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+colleague@university.edu,Account Confirmation,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_62.eml,good,"Account Confirmation Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+family@gmail.com,Account Confirmation,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_63.eml,good,"Account Confirmation Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+friend@example.com,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_64.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Catch Up Soon,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_65.eml,good,"Catch Up Soon Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Catch Up Soon,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_66.eml,good,"Catch Up Soon Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_67.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+friend@example.com,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_68.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+colleague@university.edu,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_69.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_7.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+support@bank.com,Account Confirmation,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_70.eml,good,"Account Confirmation Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+colleague@university.edu,Project Update,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_71.eml,good,"Project Update Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+support@bank.com,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_72.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_73.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Account Confirmation,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_74.eml,good,"Account Confirmation Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Meeting Tomorrow,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_75.eml,good,"Meeting Tomorrow Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+support@bank.com,Project Update,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_76.eml,good,"Project Update Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+support@bank.com,Account Confirmation,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_77.eml,good,"Account Confirmation Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+colleague@university.edu,Catch Up Soon,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_78.eml,good,"Catch Up Soon Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Project Update,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_79.eml,good,"Project Update Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+support@bank.com,Project Update,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_8.eml,good,"Project Update Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+family@gmail.com,Project Update,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_80.eml,good,"Project Update Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+support@bank.com,Project Update,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_81.eml,good,"Project Update Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+family@gmail.com,Project Update,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_82.eml,good,"Project Update Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Account Confirmation,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_83.eml,good,"Account Confirmation Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+family@gmail.com,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_84.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Catch Up Soon,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_85.eml,good,"Catch Up Soon Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Account Confirmation,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_86.eml,good,"Account Confirmation Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+friend@example.com,Catch Up Soon,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_87.eml,good,"Catch Up Soon Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+friend@example.com,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_88.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+friend@example.com,Account Confirmation,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_89.eml,good,"Account Confirmation Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_9.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+colleague@university.edu,Project Update,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_90.eml,good,"Project Update Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+support@bank.com,Project Update,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_91.eml,good,"Project Update Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
+colleague@university.edu,Meeting Tomorrow,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_92.eml,good,"Meeting Tomorrow Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+support@bank.com,Account Confirmation,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_93.eml,good,"Account Confirmation Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+support@bank.com,Project Update,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_94.eml,good,"Project Update Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+family@gmail.com,Project Update,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_95.eml,good,"Project Update Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+colleague@university.edu,Project Update,"Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah",[],email_96.eml,good,"Project Update Hello Femi,
+The report is ready. Can we review it this week?
+Best,
+Sarah"
+family@gmail.com,Meeting Tomorrow,"Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John",[],email_97.eml,good,"Meeting Tomorrow Hi Femi,
+Let\u2019s meet tomorrow at 10 AM to discuss the project.
+Regards,
+John"
+family@gmail.com,Catch Up Soon,"Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike",[],email_98.eml,good,"Catch Up Soon Hey Femi,
+How about dinner this weekend?
+Cheers,
+Mike"
+colleague@university.edu,Catch Up Soon,"Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team",[],email_99.eml,good,"Catch Up Soon Dear Femi,
+Your account has been updated. Contact us at support@bank.com.
+Thanks,
+Team"
