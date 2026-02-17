@@ -50,6 +50,8 @@ To add a new ML project run the following from project root:
 ./scripts/import_repo.sh [GitHub url]
 ```
 
+If the repository includes multiple python files, rename the correct file to `original.py`
+
 ## Environment Variables Setup
 
 Run from repo root to create `API.env`:
