@@ -66,16 +66,26 @@ for fold_, (trn_idx, val_idx) in enumerate(KF.split(train[features], train[ycol]
     trn_data = lgb.Dataset(train.iloc[trn_idx][features], label=train.iloc[trn_idx][ycol])
     val_data = lgb.Dataset(train.iloc[val_idx][features], label=train.iloc[val_idx][ycol], reference=trn_data)
 
-    clf_lgb = lgb.train(
-        params=params_lgb,
-        train_set=trn_data,
-        valid_sets=[trn_data, val_data],
-        valid_names=('train', 'val'),
-        num_boost_round=50000,
-        early_stopping_rounds=200,
-        verbose_eval=100,
-        feval=custom_accuracy_eval,
+    train_kwargs = dict(
+    params=params_lgb,
+    train_set=trn_data,
+    valid_sets=[trn_data, val_data],
+    valid_names=('train', 'val'),
+    num_boost_round=50000,
+    feval=custom_accuracy_eval,
     )
+
+    try:
+        clf_lgb = lgb.train(
+            **train_kwargs,
+            early_stopping_rounds=200,
+            verbose_eval=100,
+        )
+    except TypeError:
+        clf_lgb = lgb.train(
+            **train_kwargs,
+            callbacks=[lgb.early_stopping(200), lgb.log_evaluation(100)],
+        )
 
     oof_lgb[val_idx] = clf_lgb.predict(train.iloc[val_idx][features], num_iteration=clf_lgb.best_iteration)
     predictions_lgb[:] += (clf_lgb.predict(test[features], num_iteration=clf_lgb.best_iteration) / NFOLD)
