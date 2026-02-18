@@ -7,7 +7,7 @@ Your solution must:
 3. Choose models appropriate for small-scale ML tasks
 4. Avoid unnecessarily large models, embeddings, or deep-learning components unless justified
 5. Ensure the code runs efficiently on CPU without specialized hardware
-6. Provide a brief justification for your design decisions
+6. Provide a brief justification for your design decisions as comments (#)
 
 Refactoring:
 - Remove original comments
@@ -19,4 +19,16 @@ Refactoring:
 Lastly, add an accuracy print of the model in the format:
 print(f"ACCURACY={accuracy:.6f}")
 
-Return only valid python code with no markdown.
+Output format (strict):
+- Return a single valid Python file only.
+- Do not use Markdown code fences (no ```python and no ```).
+- Do not include any prose outside Python syntax.
+- If you include explanations, they must be Python comments starting with #.
+- Place explanation comments only at the end of the file under:
+  # OPTIMIZATION SUMMARY
+- Start the response with Python code on line 1 (no preamble).
+- End the response after the final Python line (no trailing commentary).
+
+Validation before you answer:
+- Ensure the response can be saved as .py and parsed by Python.
+- If any line is not valid Python syntax or a Python comment, rewrite it.

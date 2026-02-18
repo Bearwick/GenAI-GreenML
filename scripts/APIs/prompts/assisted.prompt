@@ -14,7 +14,7 @@ Requirements:
 1. Preserve the original behavior and expected outputs
 2. Do not change the dataset or the ML task
 3. Keep the code readable and modular
-4. Explain each applied optimization briefly at the end
+4. Explain each applied optimization briefly at the end using only Python comments (#)
 
 Refactoring:
 - Remove original comments
@@ -26,4 +26,16 @@ Refactoring:
 Lastly, add an accuracy print of the model in the format:
 print(f"ACCURACY={accuracy:.6f}")
 
-Return only valid python code with no markdown.
+Output format (strict):
+- Return a single valid Python file only.
+- Do not use Markdown code fences (no ```python and no ```).
+- Do not include any prose outside Python syntax.
+- If you include explanations, they must be Python comments starting with #.
+- Place explanation comments only at the end of the file under:
+  # OPTIMIZATION SUMMARY
+- Start the response with Python code on line 1 (no preamble).
+- End the response after the final Python line (no trailing commentary).
+
+Validation before you answer:
+- Ensure the response can be saved as .py and parsed by Python.
+- If any line is not valid Python syntax or a Python comment, rewrite it.
