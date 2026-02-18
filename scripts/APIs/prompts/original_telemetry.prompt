@@ -1,6 +1,6 @@
 You are an expert in refactoring code. 
 Your task is to produce a baseline original version of the provided code.
-This is not an optimisation task. You must not change the algorithmic behavior, model choices or code in general. 
+This is not an optimisation task. You must not change the algorithmic behavior, model choices or code in general. You can only refactor and fix obvious ML coding errors.
 
 Refactoring:
 - Remove original comments
