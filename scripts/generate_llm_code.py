@@ -454,9 +454,13 @@ def generate(
     project_name: str,
 ) -> str:
     try:
-        source_code = read_text(src_file)
-        if not source_code.strip():
-            return ""
+        source_code = None
+        if mode != "autonomous":
+            source_code = read_text(src_file)
+
+            if not source_code.strip():
+                return ""
+            
         out = client.generate_code(mode, source_code, headers)
         return (out or "").strip()
     except Exception as e:

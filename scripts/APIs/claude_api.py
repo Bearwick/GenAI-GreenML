@@ -35,9 +35,17 @@ def call_claude(prompt, model="claude-opus-4-6"):
         }
     ]
     )
-    return response.output_text
+    # Anthropic Messages API returns blocks in response.content, not output_text.
+    blocks = getattr(response, "content", None) or []
+    text_parts = []
+    for block in blocks:
+        block_type = getattr(block, "type", None)
+        if block_type == "text":
+            text = getattr(block, "text", "")
+            if text:
+                text_parts.append(text)
+    return "\n".join(text_parts).strip()
 
 def generate_code(mode, source_code, dataset_headers=""):
     prompt_text = build_prompt(mode, source_code, dataset_headers)
     return call_claude(prompt_text)
-
