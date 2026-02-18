@@ -48,7 +48,7 @@ def build_prompt(mode, source_code, dataset_headers):
     return "\n\n".join(parts)
 
 
-def call_gemini(prompt, model="gemini-3-pro-preview"):
+def call_gemini(prompt, model="gemini-3-flash-preview"):
     # The client picks up GEMINI_API_KEY from the environment.
     repo_env = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "API.env"))
     load_env_file(repo_env)
