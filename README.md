@@ -15,7 +15,8 @@ This dataset was developed as part of a master’s thesis at the **Norwegian Uni
 4. [Adding LLMs](#adding-llms)
    1. [Free LLM API](#free-llm-groq)
 5. [Generate LLM Code](#generate-llm-code)
-   1. [Runability Check](#runability-check)
+   1. [Delete Old Generated Code](#delete-old-generated-code)
+   2. [Runability Check](#runability-check)
 6. [Run Projects and Capture Telemetry](#run-projects-and-capture-telemetry)
 7. [Analyse Results](#analyse-results)
 
@@ -108,6 +109,14 @@ Groq is a free LLM API but is currenlty commented out because of performance. If
 cd scripts
 source venv/bin/activate
 python ./generate_llm_code.py
+```
+
+### Delete Old Generated Code
+
+To delete old generated code, i.e., files with prefix `GENAIGREENML`, run the following from project root:
+
+```
+./scripts/delete_generated_ml.sh
 ```
 
 ### Runability Check
