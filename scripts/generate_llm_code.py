@@ -403,7 +403,7 @@ class LLMClient:
     generate_code: Callable[[str, str, str], str]  # (mode, source_code, headers) -> str
 
 
-def load_llm_clients(apis_dir: Path) -> Dict[str, Optional[LLMClient]]:
+def load_llm_clients(apis_dir: Path, enable_gemini_pause: bool = False) -> Dict[str, Optional[LLMClient]]:
     """
     Imports your modules from scripts/APIs and builds a normalized registry.
 
@@ -424,7 +424,7 @@ def load_llm_clients(apis_dir: Path) -> Dict[str, Optional[LLMClient]]:
                 logging.warning("[!] %s module loaded but missing generate_code()", name)
                 return None
 
-            if name == "gemini":
+            if name == "gemini" and enable_gemini_pause:
                 def wrapped_generate(mode: str, source_code: str, headers: str) -> str:
                     gemini_pause.hit("Gemini")
                     return gen(mode, source_code, headers)
@@ -568,6 +568,11 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         action="store_true",
         help="Do not run pipreqs requirements update per project.",
     )
+    p.add_argument(
+        "--gemini-pause",
+        action="store_true",
+        help="Enable Gemini rate-limit pause (60s every 10 requests). Disabled by default.",
+    )
     return p.parse_args(argv)
 
 
@@ -609,7 +614,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     modes: List[str] = list(args.modes)
 
     # load clients
-    clients = load_llm_clients(config.apis_dir)
+    clients = load_llm_clients(config.apis_dir, enable_gemini_pause=args.gemini_pause)
 
     # warn about missing clients
     for name in llm_names:
