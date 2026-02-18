@@ -27,7 +27,7 @@ def build_prompt(mode, source_code, dataset_headers):
     return "\n\n".join(parts)
 
 
-def call_openai(prompt, model="gpt-4.1-mini"):
+def call_openai(prompt, model="gpt-5.2"):
     client = OpenAI()
     response = client.responses.create(
         model=model,

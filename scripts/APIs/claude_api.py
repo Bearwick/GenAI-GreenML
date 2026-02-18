@@ -23,7 +23,7 @@ def build_prompt(mode, source_code, dataset_headers):
     return "\n\n".join(parts)
 
 
-def call_claude(prompt, model="claude-sonnet-4-5"):
+def call_claude(prompt, model="claude-opus-4-6"):
     client = anthropic.Anthropic()
     response = client.messages.create(
         model=model,
