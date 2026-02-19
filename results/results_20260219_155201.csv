@@ -1,0 +1,16 @@
+timestamp,project,script,status,exit_code,accuracy,mem_delta_mb,exec_time_s,energy_j,notes
+2026-02-19T15:52:03+0100,Air-Quality-Health-Prediction,GENAIGREENML_original_telemetry_gemini.py,OK,0,1.000000,0.000,2.498768091,49.975,energy approx on macOS using 20.0W
+2026-02-19T15:52:05+0100,Air-Quality-Health-Prediction,GENAIGREENML_assisted_chatgpt.py,FAILED,1,,0.000,1.160694122,23.214,energy approx on macOS using 20.0W
+2026-02-19T15:52:06+0100,Air-Quality-Health-Prediction,GENAIGREENML_assisted_codex.py,FAILED,1,,0.000,1.043863058,20.877,energy approx on macOS using 20.0W
+2026-02-19T15:52:07+0100,Air-Quality-Health-Prediction,GENAIGREENML_assisted_gemini.py,FAILED,1,,0.000,1.107168913,22.143,energy approx on macOS using 20.0W
+2026-02-19T15:52:08+0100,Air-Quality-Health-Prediction,GENAIGREENML_autonomous_chatgpt.py,OK,0,0.894470,0.000,1.090149879,21.803,energy approx on macOS using 20.0W
+2026-02-19T15:52:09+0100,Air-Quality-Health-Prediction,GENAIGREENML_autonomous_claude.py,FAILED,1,,0.000,1.034773827,20.695,energy approx on macOS using 20.0W
+2026-02-19T15:52:10+0100,Air-Quality-Health-Prediction,GENAIGREENML_autonomous_codex.py,FAILED,1,,0.000,1.095981121,21.920,energy approx on macOS using 20.0W
+2026-02-19T15:52:11+0100,Air-Quality-Health-Prediction,GENAIGREENML_autonomous_gemini.py,OK,0,0.000000,0.000,0.946305037,18.926,energy approx on macOS using 20.0W
+2026-02-19T15:52:11+0100,Algorithms_KnnClasifier,GENAIGREENML_assisted_chatgpt.py,OK,0,0.750000,0.000,0.344843149,6.897,energy approx on macOS using 20.0W
+2026-02-19T15:52:12+0100,Algorithms_KnnClasifier,GENAIGREENML_assisted_claude.py,FAILED,1,,0.000,0.040318966,0.806,energy approx on macOS using 20.0W
+2026-02-19T15:52:12+0100,Algorithms_KnnClasifier,GENAIGREENML_assisted_codex.py,OK,0,0.720000,0.000,0.240163088,4.803,energy approx on macOS using 20.0W
+2026-02-19T15:52:12+0100,Algorithms_KnnClasifier,GENAIGREENML_assisted_gemini.py,OK,0,0.720000,0.000,0.292659998,5.853,energy approx on macOS using 20.0W
+2026-02-19T15:52:14+0100,Algorithms_KnnClasifier,GENAIGREENML_autonomous_chatgpt.py,OK,0,0.770000,0.000,1.586684942,31.734,energy approx on macOS using 20.0W
+2026-02-19T15:52:14+0100,Algorithms_KnnClasifier,GENAIGREENML_autonomous_claude.py,FAILED,1,,0.000,0.039968967,0.799,energy approx on macOS using 20.0W
+2026-02-19T15:52:15+0100,Algorithms_KnnClasifier,GENAIGREENML_autonomous_codex.py,FAILED,1,,0.000,1.100811005,22.016,energy approx on macOS using 20.0W

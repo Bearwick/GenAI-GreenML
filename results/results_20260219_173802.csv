@@ -1,0 +1,122 @@
+timestamp,project,script,status,exit_code,accuracy,mem_delta_mb,exec_time_s,energy_j,notes
+2026-02-19T17:38:07+0100,Air-Quality-Health-Prediction,GENAIGREENML_original_telemetry_gemini 2.py,OK,0,1.000000,0.000,4.646452904,92.929,energy approx on macOS using 20.0W
+2026-02-19T17:38:08+0100,Air-Quality-Health-Prediction,GENAIGREENML_original_telemetry_gemini.py,OK,0,1.000000,0.000,1.336735010,26.735,energy approx on macOS using 20.0W
+2026-02-19T17:38:09+0100,Air-Quality-Health-Prediction,GENAIGREENML_assisted_chatgpt 2.py,FAILED,1,,0.000,1.096920013,21.938,energy approx on macOS using 20.0W
+2026-02-19T17:38:10+0100,Air-Quality-Health-Prediction,GENAIGREENML_assisted_chatgpt.py,FAILED,1,,0.000,1.000575066,20.012,energy approx on macOS using 20.0W
+2026-02-19T17:38:10+0100,Air-Quality-Health-Prediction,GENAIGREENML_assisted_claude.py,FAILED,1,,0.000,0.040292025,0.806,energy approx on macOS using 20.0W
+2026-02-19T17:38:11+0100,Air-Quality-Health-Prediction,GENAIGREENML_assisted_codex 2.py,OK,0,0.731232,0.000,1.054336786,21.087,energy approx on macOS using 20.0W
+2026-02-19T17:38:12+0100,Air-Quality-Health-Prediction,GENAIGREENML_assisted_codex.py,FAILED,1,,0.000,0.949609041,18.992,energy approx on macOS using 20.0W
+2026-02-19T17:38:13+0100,Air-Quality-Health-Prediction,GENAIGREENML_assisted_gemini 2.py,OK,0,,0.000,1.007725954,20.155,energy approx on macOS using 20.0W
+2026-02-19T17:38:15+0100,Air-Quality-Health-Prediction,GENAIGREENML_assisted_gemini.py,FAILED,1,,0.000,1.057424068,21.148,energy approx on macOS using 20.0W
+2026-02-19T17:38:16+0100,Air-Quality-Health-Prediction,GENAIGREENML_autonomous_chatgpt 2.py,OK,0,0.954128,0.000,1.059186935,21.184,energy approx on macOS using 20.0W
+2026-02-19T17:38:17+0100,Air-Quality-Health-Prediction,GENAIGREENML_autonomous_chatgpt.py,OK,0,0.894470,0.000,1.061282158,21.226,energy approx on macOS using 20.0W
+2026-02-19T17:38:18+0100,Air-Quality-Health-Prediction,GENAIGREENML_autonomous_claude.py,FAILED,1,,0.000,1.000481129,20.010,energy approx on macOS using 20.0W
+2026-02-19T17:38:19+0100,Air-Quality-Health-Prediction,GENAIGREENML_autonomous_codex.py,FAILED,1,,0.000,1.065792084,21.316,energy approx on macOS using 20.0W
+2026-02-19T17:38:20+0100,Air-Quality-Health-Prediction,GENAIGREENML_autonomous_gemini 2.py,FAILED,1,,0.000,0.999685287,19.994,energy approx on macOS using 20.0W
+2026-02-19T17:38:21+0100,Air-Quality-Health-Prediction,GENAIGREENML_autonomous_gemini.py,OK,0,0.000000,0.000,0.945772886,18.915,energy approx on macOS using 20.0W
+2026-02-19T17:38:22+0100,Algorithms_KnnClasifier,GENAIGREENML_original_telemetry_gemini.py,OK,0,0.720000,0.000,0.782982349,15.660,energy approx on macOS using 20.0W
+2026-02-19T17:38:22+0100,Algorithms_KnnClasifier,GENAIGREENML_assisted_chatgpt.py,OK,0,0.750000,0.000,0.237022877,4.740,energy approx on macOS using 20.0W
+2026-02-19T17:38:22+0100,Algorithms_KnnClasifier,GENAIGREENML_assisted_claude.py,FAILED,1,,0.000,0.039862156,0.797,energy approx on macOS using 20.0W
+2026-02-19T17:38:22+0100,Algorithms_KnnClasifier,GENAIGREENML_assisted_codex.py,OK,0,0.720000,0.000,0.238992214,4.780,energy approx on macOS using 20.0W
+2026-02-19T17:38:23+0100,Algorithms_KnnClasifier,GENAIGREENML_assisted_gemini.py,OK,0,0.720000,0.000,0.292703152,5.854,energy approx on macOS using 20.0W
+2026-02-19T17:38:24+0100,Algorithms_KnnClasifier,GENAIGREENML_autonomous_chatgpt.py,OK,0,0.770000,0.000,1.757405281,35.148,energy approx on macOS using 20.0W
+2026-02-19T17:38:24+0100,Algorithms_KnnClasifier,GENAIGREENML_autonomous_claude.py,FAILED,1,,0.000,0.040388823,0.808,energy approx on macOS using 20.0W
+2026-02-19T17:38:25+0100,Algorithms_KnnClasifier,GENAIGREENML_autonomous_codex.py,FAILED,1,,0.000,0.956758738,19.135,energy approx on macOS using 20.0W
+2026-02-19T17:38:26+0100,Algorithms_KnnClasifier,GENAIGREENML_autonomous_gemini.py,OK,0,0.600000,0.000,0.945343018,18.907,energy approx on macOS using 20.0W
+2026-02-19T17:38:28+0100,animals-classification,GENAIGREENML_original_telemetry_gemini.py,OK,0,0.961538,0.000,1.991586924,39.832,energy approx on macOS using 20.0W
+2026-02-19T17:38:29+0100,animals-classification,GENAIGREENML_assisted_chatgpt.py,OK,0,0.961538,0.000,0.935789108,18.716,energy approx on macOS using 20.0W
+2026-02-19T17:38:30+0100,animals-classification,GENAIGREENML_assisted_claude.py,OK,0,0.961538,0.000,0.949289799,18.986,energy approx on macOS using 20.0W
+2026-02-19T17:38:31+0100,animals-classification,GENAIGREENML_assisted_codex.py,OK,0,0.961538,0.000,0.950977802,19.020,energy approx on macOS using 20.0W
+2026-02-19T17:38:32+0100,animals-classification,GENAIGREENML_assisted_gemini.py,OK,0,0.961538,0.000,0.945395231,18.908,energy approx on macOS using 20.0W
+2026-02-19T17:38:33+0100,animals-classification,GENAIGREENML_autonomous_chatgpt.py,OK,0,0.961538,0.000,1.007658958,20.153,energy approx on macOS using 20.0W
+2026-02-19T17:38:34+0100,animals-classification,GENAIGREENML_autonomous_claude.py,FAILED,1,,0.000,0.943688869,18.874,energy approx on macOS using 20.0W
+2026-02-19T17:38:35+0100,animals-classification,GENAIGREENML_autonomous_codex.py,FAILED,1,,0.000,0.955335140,19.107,energy approx on macOS using 20.0W
+2026-02-19T17:38:36+0100,animals-classification,GENAIGREENML_autonomous_gemini.py,OK,0,0.952381,0.000,1.009317875,20.186,energy approx on macOS using 20.0W
+2026-02-19T17:38:41+0100,Annotated_Colab_Notebook,GENAIGREENML_original_telemetry_gemini.py,OK,0,0.860916,0.000,4.782804966,95.656,energy approx on macOS using 20.0W
+2026-02-19T17:38:45+0100,Annotated_Colab_Notebook,GENAIGREENML_assisted_chatgpt.py,OK,0,0.860916,0.000,4.027455091,80.549,energy approx on macOS using 20.0W
+2026-02-19T17:38:47+0100,Annotated_Colab_Notebook,GENAIGREENML_assisted_claude.py,OK,0,0.753975,0.000,2.006572008,40.131,energy approx on macOS using 20.0W
+2026-02-19T17:38:51+0100,Annotated_Colab_Notebook,GENAIGREENML_assisted_codex.py,OK,0,0.860916,0.000,3.776000023,75.520,energy approx on macOS using 20.0W
+2026-02-19T17:38:53+0100,Annotated_Colab_Notebook,GENAIGREENML_assisted_gemini.py,OK,0,0.860916,0.000,1.990576982,39.812,energy approx on macOS using 20.0W
+2026-02-19T17:38:58+0100,Annotated_Colab_Notebook,GENAIGREENML_autonomous_chatgpt.py,OK,0,0.904115,0.000,4.756269217,95.125,energy approx on macOS using 20.0W
+2026-02-19T17:38:58+0100,Annotated_Colab_Notebook,GENAIGREENML_autonomous_claude.py,FAILED,1,,0.000,0.037160873,0.743,energy approx on macOS using 20.0W
+2026-02-19T17:39:00+0100,Annotated_Colab_Notebook,GENAIGREENML_autonomous_codex.py,FAILED,1,,0.000,1.695062876,33.901,energy approx on macOS using 20.0W
+2026-02-19T17:39:01+0100,Annotated_Colab_Notebook,GENAIGREENML_autonomous_gemini.py,OK,0,0.000000,0.000,0.994532108,19.891,energy approx on macOS using 20.0W
+2026-02-19T17:39:03+0100,BREAST-CANCER-PREDICTION-SYSTEM,GENAIGREENML_original_telemetry_gemini.py,OK,0,0.903509,0.000,2.556978941,51.140,energy approx on macOS using 20.0W
+2026-02-19T17:39:04+0100,BREAST-CANCER-PREDICTION-SYSTEM,GENAIGREENML_assisted_chatgpt.py,OK,0,0.912281,0.000,0.286755085,5.735,energy approx on macOS using 20.0W
+2026-02-19T17:39:05+0100,BREAST-CANCER-PREDICTION-SYSTEM,GENAIGREENML_assisted_claude.py,OK,0,0.903509,0.000,0.896759033,17.935,energy approx on macOS using 20.0W
+2026-02-19T17:39:05+0100,BREAST-CANCER-PREDICTION-SYSTEM,GENAIGREENML_assisted_codex.py,OK,0,0.903509,0.000,0.893069267,17.861,energy approx on macOS using 20.0W
+2026-02-19T17:39:06+0100,BREAST-CANCER-PREDICTION-SYSTEM,GENAIGREENML_assisted_gemini.py,FAILED,1,,0.000,0.895554066,17.911,energy approx on macOS using 20.0W
+2026-02-19T17:39:07+0100,BREAST-CANCER-PREDICTION-SYSTEM,GENAIGREENML_autonomous_chatgpt.py,OK,0,1.000000,0.000,1.058995962,21.180,energy approx on macOS using 20.0W
+2026-02-19T17:39:08+0100,BREAST-CANCER-PREDICTION-SYSTEM,GENAIGREENML_autonomous_claude.py,FAILED,1,,0.000,0.949726105,18.995,energy approx on macOS using 20.0W
+2026-02-19T17:39:09+0100,BREAST-CANCER-PREDICTION-SYSTEM,GENAIGREENML_autonomous_codex.py,OK,0,1.000000,0.000,0.948388100,18.968,energy approx on macOS using 20.0W
+2026-02-19T17:39:10+0100,BREAST-CANCER-PREDICTION-SYSTEM,GENAIGREENML_autonomous_gemini.py,FAILED,1,,0.000,0.940603256,18.812,energy approx on macOS using 20.0W
+2026-02-19T17:39:16+0100,BreastCancer_Classification,GENAIGREENML_original_telemetry_gemini.py,OK,0,0.919463,0.000,5.478663921,109.573,energy approx on macOS using 20.0W
+2026-02-19T17:39:21+0100,BreastCancer_Classification,GENAIGREENML_assisted_chatgpt.py,OK,0,0.919463,0.000,4.732654095,94.653,energy approx on macOS using 20.0W
+2026-02-19T17:39:23+0100,BreastCancer_Classification,GENAIGREENML_assisted_claude.py,OK,0,0.919463,0.000,2.373958826,47.479,energy approx on macOS using 20.0W
+2026-02-19T17:39:25+0100,BreastCancer_Classification,GENAIGREENML_assisted_codex.py,FAILED,1,,0.000,2.096590996,41.932,energy approx on macOS using 20.0W
+2026-02-19T17:39:28+0100,BreastCancer_Classification,GENAIGREENML_assisted_gemini.py,OK,0,0.919463,0.000,2.470155239,49.403,energy approx on macOS using 20.0W
+2026-02-19T17:39:29+0100,BreastCancer_Classification,GENAIGREENML_autonomous_chatgpt.py,OK,0,0.928073,0.000,1.717103958,34.342,energy approx on macOS using 20.0W
+2026-02-19T17:39:30+0100,BreastCancer_Classification,GENAIGREENML_autonomous_claude.py,OK,0,,0.000,0.953361034,19.067,energy approx on macOS using 20.0W
+2026-02-19T17:39:31+0100,BreastCancer_Classification,GENAIGREENML_autonomous_codex.py,FAILED,1,,0.000,0.955992937,19.120,energy approx on macOS using 20.0W
+2026-02-19T17:39:32+0100,BreastCancer_Classification,GENAIGREENML_autonomous_gemini.py,OK,0,0.928571,0.000,0.952184200,19.044,energy approx on macOS using 20.0W
+2026-02-19T17:39:35+0100,cancer_prediction,GENAIGREENML_original_telemetry_gemini.py,OK,0,0.982456,0.000,2.086074114,41.721,energy approx on macOS using 20.0W
+2026-02-19T17:39:36+0100,cancer_prediction,GENAIGREENML_assisted_chatgpt.py,OK,0,0.982456,0.000,0.891765118,17.835,energy approx on macOS using 20.0W
+2026-02-19T17:39:37+0100,cancer_prediction,GENAIGREENML_assisted_claude.py,OK,0,0.982456,0.000,0.901417971,18.028,energy approx on macOS using 20.0W
+2026-02-19T17:39:37+0100,cancer_prediction,GENAIGREENML_assisted_codex.py,OK,0,0.982456,0.000,0.892223835,17.844,energy approx on macOS using 20.0W
+2026-02-19T17:39:38+0100,cancer_prediction,GENAIGREENML_assisted_gemini.py,OK,0,0.982456,0.000,0.893701315,17.874,energy approx on macOS using 20.0W
+2026-02-19T17:39:39+0100,cancer_prediction,GENAIGREENML_autonomous_chatgpt.py,OK,0,0.970760,0.000,0.938158035,18.763,energy approx on macOS using 20.0W
+2026-02-19T17:39:39+0100,cancer_prediction,GENAIGREENML_autonomous_claude.py,FAILED,1,,0.000,0.040501118,0.810,energy approx on macOS using 20.0W
+2026-02-19T17:39:40+0100,cancer_prediction,GENAIGREENML_autonomous_codex.py,OK,0,0.973684,0.000,0.946948290,18.939,energy approx on macOS using 20.0W
+2026-02-19T17:39:41+0100,cancer_prediction,GENAIGREENML_autonomous_gemini.py,OK,0,0.973684,0.000,0.895671129,17.913,energy approx on macOS using 20.0W
+2026-02-19T17:39:44+0100,cars-classification,GENAIGREENML_original_telemetry_gemini.py,OK,0,0.703125,0.000,2.620087147,52.402,energy approx on macOS using 20.0W
+2026-02-19T17:39:45+0100,cars-classification,GENAIGREENML_assisted_chatgpt.py,OK,0,0.703125,0.000,0.947723150,18.954,energy approx on macOS using 20.0W
+2026-02-19T17:39:46+0100,cars-classification,GENAIGREENML_assisted_claude.py,OK,0,0.703125,0.000,0.903130054,18.063,energy approx on macOS using 20.0W
+2026-02-19T17:39:47+0100,cars-classification,GENAIGREENML_assisted_codex.py,FAILED,1,,0.000,0.944971800,18.899,energy approx on macOS using 20.0W
+2026-02-19T17:39:48+0100,cars-classification,GENAIGREENML_assisted_gemini.py,OK,0,0.703125,0.000,0.898907900,17.978,energy approx on macOS using 20.0W
+2026-02-19T17:39:49+0100,cars-classification,GENAIGREENML_autonomous_chatgpt.py,FAILED,1,,0.000,0.991743088,19.835,energy approx on macOS using 20.0W
+2026-02-19T17:39:50+0100,cars-classification,GENAIGREENML_autonomous_claude.py,OK,0,,0.000,0.900700092,18.014,energy approx on macOS using 20.0W
+2026-02-19T17:39:51+0100,cars-classification,GENAIGREENML_autonomous_codex.py,OK,0,0.622642,0.000,0.949775934,18.996,energy approx on macOS using 20.0W
+2026-02-19T17:39:52+0100,cars-classification,GENAIGREENML_autonomous_gemini.py,FAILED,1,,0.000,0.957270861,19.145,energy approx on macOS using 20.0W
+2026-02-19T17:39:54+0100,Classification-with-xgboost-on-binary.csv-data,GENAIGREENML_original_telemetry_gemini.py,OK,0,0.625000,0.000,2.199195147,43.984,energy approx on macOS using 20.0W
+2026-02-19T17:39:54+0100,CodeAlpha_IrisClassification,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,CT_Project,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Cuisine-Predictor,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Decision-Trees,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,DecisionTreeClassifier,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Deep-Learning-Classification,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Diabetes-Classification-with-SVM,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,diabetes_predictive_analysis,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,dyslexia-randomforest,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Email-spam-detector,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,FakeNewsPrediction,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,HWStudentGradPredictor,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,IMDB-Sentiment-Analysis,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Iris-Classification-ML-problem,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Iris-Flower-Classification-Codealpha,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Iris-Flower-Classification-Codealpha2,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Iris-Flower-Classification-Codealpha3,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Iris-ML-Lab,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,JunctionalClassifier,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,JunctionalClassifier2,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,JunctionalClassifier3,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,K-Nearest-Neighbor-Algorithm,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,MachineLearn-WineClassifier,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,MaliciousSoftwareClassification,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,ML_CSV_Classification,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Multi-Turn-Intent-Classification,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Na-ve-bayes-algorithm-to-classify-the-fetal-health-,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Network_Intrusion_Detection_System,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Predicting-heart-diseases-,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Rock-or-Mine-prediction,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,SCT_ML_3,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Simple-Naive-Bayes-on-Iris-Dataset,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Social-Network-Ads,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Spam-Email-Classifier,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,spam-ham-detection,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,SparkMLClassification,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,SparkMLClassification2,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,student-math-ml-analysis,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Supervised-Data-mining-Customer-satisfaction-prediction-,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Svm-GridsearchCV,GENAIGREENML*.py,SKIPPED,,,,,,
+2026-02-19T17:39:54+0100,Voting-Data-Classification,GENAIGREENML*.py,SKIPPED,,,,,,

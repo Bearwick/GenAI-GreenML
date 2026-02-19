@@ -72,7 +72,7 @@ DEFAULT_IGNORE_DIR_NAMES = {
     ".vscode",
 }
 
-DEFAULT_ALL_LLMS = ["gemini", "chatgpt", "codex", "claude"] # "groq"
+DEFAULT_ALL_LLMS = ["chatgpt", "gemini", "codex", "claude"] # "groq"
 
 
 @dataclass(frozen=True)
@@ -667,16 +667,19 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
         # (Primary-only) original_telemetry
         primary_client = clients.get(primary_llm_name)
+        skip_primary_existing = False
         out_primary = output_path(project_dir, config.base_name, "original_telemetry", primary_llm_name)
         if out_primary.exists() and not args.force:
             try:
                 if out_primary.stat().st_size > 0:
                     logging.info("[i] Skip existing: %s", out_primary.name)
-                    primary_client = None
+                    skip_primary_existing = True
             except OSError:
                 pass
 
-        if primary_client is not None:
+        if skip_primary_existing:
+            pass
+        elif primary_client is not None:
             code = generate(primary_client, "original_telemetry", src_file, None, project_dir.name)
             if code:
                 write_output_file(

@@ -1,41 +1,27 @@
-You are an expert in refactoring machine-learning code for correctness and reproducibility.
-Your task is to produce a baseline “original” version of the provided code.
+You are an expert in refactoring code. 
+Your task is to produce a baseline original version of the provided code.
+This is not an optimisation task. You must not change the algorithmic behavior, model choices or code in general. 
 
-This is NOT an optimization task:
-	•	Do NOT change the algorithmic behavior, model choices, feature logic, or overall approach.
-	•	You MAY refactor for clarity and fix only obvious ML coding errors that prevent correct execution or produce clearly invalid results (e.g., data leakage, wrong target/feature separation, broken train/test split, incorrect metric usage, nondeterminism that breaks reproducibility, shape/type errors, failing imports).
+BEHAVIOR PRESERVATION (strict)
+	•	Do not change algorithms, model types, hyperparameters, feature sets, preprocessing logic, labels/targets, train/test split logic, randomness behavior, or evaluation logic.
+	•	Do not replace or re-implement functions from other modules (e.g., src.*). Keep the same imports and call the same functions.
+	•	Do not add fallback logic that changes semantics (NO synthetic data generation, NO guessing target columns, NO alternative CSV parsing unless it already existed in the original code).
+	•	If something is missing and the original would error, it is acceptable for the refactored code to error in the same place rather than inventing behavior.
 
-GOALS (strict):
-	1.	Preserve original behavior and expected outputs as closely as possible.
-	2.	Keep the same ML task and dataset.
-	3.	Make the code run end-to-end reliably without manual edits.
-	4.	Keep the code readable and modular, but avoid structural rewrites that change intent.
+Refactoring:
+- Remove original comments
+- Remove interactive inputs
+- Remove plots and visualizations
+- Remove all original prints/logging
+- Remove saving/writing artifacts (models, figures, files) unless the file is the program’s required output.
 
-CLEANUP REQUIREMENTS (strict):
-	•	Remove original comments.
-	•	Remove interactive inputs.
-	•	Remove plots and visualizations.
-	•	Remove all original prints/logging.
-	•	Remove side effects like saving trained models or writing output files, unless producing a file is the program’s required output.
+Lastly, add an accuracy print of the model in the format:
+print(f"ACCURACY={accuracy:.6f}")
 
-FINAL OUTPUT REQUIREMENT (strict):
-Add an accuracy print at the end in exactly this format:
-print(f”ACCURACY={accuracy:.6f}”)
-
-SCHEMA / DATA RELIABILITY (strict):
-	1.	Generated code must run end-to-end without manual edits.
-	2.	Keep stdout minimal: only print ACCURACY=... at end.
-	3. Return only valid Python code (no markdown fences, no prose outside comments).
-
-OUTPUT FORMAT (strict):
+OUTPUT FORMAT (strict)
 	•	Return a single valid Python file only.
-	•	Do not use Markdown code fences (no ```).
-	•	Do not include any prose outside Python syntax.
-	•	If you include explanations, they must be Python comments starting with #.
-	•	Place explanation comments only at the end of the file under: Optimization Summary
-	•	Start the response with Python code on line 1 (no preamble).
-	•	End the response after the final Python line (no trailing commentary).
+	•	No markdown fences. No prose outside Python.
 
-VALIDATION BEFORE YOU ANSWER:
-	•	Ensure the response can be saved as .py and parsed by Python.
-	•	If any line is not valid Python syntax or a Python comment, rewrite it.
+VALIDATION
+	•	The output must be valid Python syntax.
+	•	Do not import new heavy dependencies or change package usage.
