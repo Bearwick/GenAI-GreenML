@@ -455,11 +455,11 @@ def generate(
 ) -> str:
     try:
         source_code = None
-        if mode != "autonomous":
-            source_code = read_text(src_file)
+        #if mode != "autonomous":
+        source_code = read_text(src_file)
 
-            if not source_code.strip():
-                return ""
+        if not source_code.strip():
+            return ""
             
         out = client.generate_code(mode, source_code, headers)
         return (out or "").strip()
@@ -710,7 +710,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                         pass
 
                 if mode == "autonomous":
-                    src_for_mode = None
+                    src_for_mode = src_file #None
                 else:
                     src_for_mode = src_file
 

@@ -42,9 +42,9 @@ def build_prompt(mode, source_code, dataset_headers):
         parts.append("DATASET_HEADERS:")
         parts.append(dataset_headers)
     
-    if mode != "autonomous":
-        parts.append("SOURCE_CODE:")
-        parts.append(source_code)
+    #if mode != "autonomous":
+    parts.append("SOURCE_CODE:")
+    parts.append(source_code)
     return "\n\n".join(parts)
 
 
