@@ -147,3 +147,11 @@ From project root:
 ```
 python ./scripts/analyse_results.py
 ```
+
+### CLI Flag
+
+Select a specific CSV file from the results/ folder.
+
+```
+python3 ./scripts/analyse_results.py --results-file results_20260220_135839.csv
+```
