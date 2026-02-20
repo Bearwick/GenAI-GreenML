@@ -472,11 +472,11 @@ def generate(
 # Output
 # ----------------------------
 
-def output_path(project_dir: Path, base_name: str, mode: str, llm_name: Optional[str]) -> Path:
+def output_path(source_dir: Path, base_name: str, mode: str, llm_name: Optional[str]) -> Path:
     if mode == "original_telemetry":
-        return project_dir / f"{base_name}_original_telemetry_{llm_name}.py"
+        return source_dir / f"{base_name}_original_telemetry_{llm_name}.py"
     assert llm_name is not None
-    return project_dir / f"{base_name}_{mode}_{llm_name}.py"
+    return source_dir / f"{base_name}_{mode}_{llm_name}.py"
 
 
 def write_output_file(
@@ -668,7 +668,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         # (Primary-only) original_telemetry
         primary_client = clients.get(primary_llm_name)
         skip_primary_existing = False
-        out_primary = output_path(project_dir, config.base_name, "original_telemetry", primary_llm_name)
+        out_primary = output_path(src_file.parent, config.base_name, "original_telemetry", primary_llm_name)
         if out_primary.exists() and not args.force:
             try:
                 if out_primary.stat().st_size > 0:
@@ -703,7 +703,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 continue
 
             for mode in modes:
-                out = output_path(project_dir, config.base_name, mode, llm_name)
+                out = output_path(src_file.parent, config.base_name, mode, llm_name)
                 if out.exists() and not args.force:
                     try:
                         if out.stat().st_size > 0:
