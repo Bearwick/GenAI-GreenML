@@ -17,13 +17,13 @@ def build_prompt(mode, source_code, dataset_headers):
         parts.append("DATASET_HEADERS:")
         parts.append(dataset_headers)
     
-    if mode != "autonomous":
-        parts.append("SOURCE_CODE:")
-        parts.append(source_code)
+    #if mode != "autonomous":
+    parts.append("SOURCE_CODE:")
+    parts.append(source_code)
     return "\n\n".join(parts)
 
 
-def call_claude(prompt, model="claude-sonnet-4-5"):
+def call_claude(prompt, model="claude-opus-4-6"):
     client = anthropic.Anthropic()
     response = client.messages.create(
         model=model,
@@ -35,9 +35,17 @@ def call_claude(prompt, model="claude-sonnet-4-5"):
         }
     ]
     )
-    return response.output_text
+    # Anthropic Messages API returns blocks in response.content, not output_text.
+    blocks = getattr(response, "content", None) or []
+    text_parts = []
+    for block in blocks:
+        block_type = getattr(block, "type", None)
+        if block_type == "text":
+            text = getattr(block, "text", "")
+            if text:
+                text_parts.append(text)
+    return "\n".join(text_parts).strip()
 
 def generate_code(mode, source_code, dataset_headers=""):
     prompt_text = build_prompt(mode, source_code, dataset_headers)
     return call_claude(prompt_text)
-

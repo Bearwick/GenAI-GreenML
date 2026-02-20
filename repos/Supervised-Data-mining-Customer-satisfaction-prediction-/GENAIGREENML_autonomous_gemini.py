@@ -3,51 +3,578 @@
 # Mode: autonomous
 
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-data = pd.read_csv("EireJet.csv")
-data = data.dropna()
+def robust_load(filepath):
+    """Robustly load CSV data with common fallbacks."""
+    try:
+        df = pd.read_csv(filepath)
+        if df.shape[1] <= 1:
+            raise ValueError
+    except:
+        df = pd.read_csv(filepath, sep=';', decimal=',')
+    
+    # Normalize column names: strip whitespace, collapse internal spaces, drop Unnamed
+    df.columns = [str(c).strip() for c in df.columns]
+    df.columns = [" ".join(str(c).split()) for c in df.columns]
+    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+    return df
 
-data['Gender'] = data['Gender'].map({'Female': 1, 'Male': 0})
-data['Frequent Flyer'] = data['Frequent Flyer'].map({'Yes': 1, 'No': 0})
-data['Type of Travel'] = data['Type of Travel'].map({'Personal Travel': 1, 'Business travel': 0})
-data['Class'] = data['Class'].map({'Eco': 0, 'Eco Plus': 1, 'Business': 2})
-data['satisfaction'] = data['satisfaction'].map({'neutral or dissatisfied': 0, 'satisfied': 1})
+def get_pipeline_components(df, target_col):
+    """Identify numeric and categorical features and build a preprocessor."""
+    features = [c for c in df.columns if c != target_col]
+    
+    numeric_features = []
+    categorical_features = []
+    
+    for col in features:
+        # Attempt to coerce to numeric to verify type
+        converted = pd.to_numeric(df[col], errors='coerce')
+        if converted.isna().sum() < (len(df) * 0.5) and not (df[col].dtype == object):
+            numeric_features.append(col)
+        else:
+            categorical_features.append(col)
+            
+    return numeric_features, categorical_features
 
-X = data.drop('satisfaction', axis=1)
-y = data['satisfaction']
+# 1. Load Data
+# Assuming EireJet.csv as per the provided source code context
+filename = 'EireJet.csv'
+try:
+    df = robust_load(filename)
+except Exception:
+    # Minimal fallback for testing/empty environments
+    df = pd.DataFrame()
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=100)
+if not df.empty:
+    # 2. Identify Target
+    # We prefer 'satisfaction' based on headers, but fall back to the last column
+    potential_targets = [c for c in df.columns if 'satisfaction' in c.lower()]
+    target = potential_targets[0] if potential_targets else df.columns[-1]
 
-model = HistGradientBoostingClassifier(
-    max_iter=100,
-    max_depth=10,
-    random_state=1,
-    early_stopping=True,
-    validation_fraction=0.1,
-    n_iter_no_change=5
-)
+    # 3. Data Cleaning
+    # Coerce numeric columns and handle target encoding
+    df[target] = df[target].astype(str).str.lower().map({'satisfied': 1, '1': 1, 'yes': 1, 'positive': 1}).fillna(0)
+    
+    # 4. Feature Selection & Pipeline
+    num_cols, cat_cols = get_pipeline_components(df, target)
+    
+    for col in num_cols:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    
+    # Assert we have data to work with
+    df = df.dropna(subset=[target])
+    
+    if len(df) > 10 and df[target].nunique() > 1:
+        X = df.drop(columns=[target])
+        y = df[target]
 
-model.fit(X_train, y_train)
-y_pred = model.predict(X_test)
-accuracy = accuracy_score(y_test, y_pred)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+        # 5. Build Lightweight Pipeline
+        # LogisticRegression is highly energy-efficient and CPU friendly
+        numeric_transformer = Pipeline(steps=[
+            ('imputer', SimpleImputer(strategy='median')),
+            ('scaler', StandardScaler())
+        ])
+
+        categorical_transformer = Pipeline(steps=[
+            ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
+            ('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))
+        ])
+
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ('num', numeric_transformer, num_cols),
+                ('cat', categorical_transformer, cat_cols)
+            ])
+
+        model = Pipeline(steps=[
+            ('preprocessor', preprocessor),
+            ('classifier', LogisticRegression(max_iter=1000, class_weight='balanced', solver='liblinear'))
+        ])
+
+        # 6. Train and Evaluate
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        accuracy = accuracy_score(y_test, y_pred)
+    else:
+        # Trivial baseline if data is insufficient or degenerate
+        accuracy = 0.0
+else:
+    accuracy = 0.0
+
+# 7. Final Output
 print(f"ACCURACY={accuracy:.6f}")
 
+# Optimization Summary:
+# 1. Used LogisticRegression (solver='liblinear') as it is computationally inexpensive (O(nd) complexity) and runs efficiently on single-core CPUs.
+# 2. Replaced heavy ensembles (RandomForest/GradientBoosting) and GridSearch from source to minimize carbon footprint and CPU cycles.
+# 3. Implemented a robust CSV parsing logic with fallback separators to ensure end-to-end execution without manual schema intervention.
+# 4. Used sklearn.Pipeline to prevent redundant data transformations and ensure a lightweight, reproducible workflow.
+# 5. Targeted categorical encoding via OneHotEncoder and basic imputation to maintain a small memory footprint.
+# 6. Avoided SMOTE/oversampling to reduce memory overhead; used 'class_weight=balanced' in the linear model to handle imbalance efficiently.
+# 7. Numeric columns are coerced safely to prevent dtype errors during standardization.
+# 8. All calculations performed using standard libraries (pandas/numpy/sklearn) without requiring high-performance hardware or GPUs.
+# 9. Median imputation used for numeric columns as it is more robust to outliers than mean without significant extra cost.
+# 10. Memory footprint minimized by dropping Unnamed columns and stripping whitespace from headers immediately upon loading.
+[instruction]You are an expert machine learning engineer specializing in green coding and energy-efficient model design.
+Your task is to generate a complete machine learning solution from scratch for the dataset provided.
+
+PRIMARY GOAL:
+Generate an energy-efficient, CPU-friendly baseline ML pipeline that runs end-to-end, is reproducible, and makes robust assumptions about unknown schemas.
+
+SOLUTION REQUIREMENTS (strict):
+	1.	Use energy-efficient and computationally lightweight methods where possible.
+	2.	Implement a clear and reproducible preprocessing pipeline.
+	3.	Choose models appropriate for small-scale ML tasks (prefer linear/logistic regression, Naive Bayes, small trees; avoid large ensembles by default).
+	4.	Avoid unnecessarily large models, embeddings, or deep-learning components unless justified by the task/type.
+	5.	Ensure the code runs efficiently on CPU without specialized hardware.
+	6.	Provide a brief justification for design decisions as comments (#) ONLY at the end under: Optimization Summary
+
+FINAL OUTPUT REQUIREMENT (strict):
+Add an accuracy print at the end in exactly this format:
+print(f”ACCURACY={accuracy:.6f}”)
+
+INPUT & SCHEMA RELIABILITY (strict):
+	1.	Generated code must run end-to-end without manual edits.
+	2.	Do not assume exact column names from memory; derive schema from DATASET_HEADERS (if provided) and actual df.columns.
+	3.	For CSV parsing, implement robust fallback:
+      •	try pandas.read_csv default
+      •	if parsing looks wrong, retry with sep=’;’ and decimal=’,’
+	4.	Strip/normalize column names before use:
+      •	remove surrounding whitespace
+      •	collapse internal whitespace to single spaces
+      •	drop columns like ‘Unnamed: …’
+	5.	Never hard-fail on strict header mismatch. If expected columns are missing:
+      •	select an available subset for features
+      •	choose a target from available numeric columns (prefer a non-constant column)
+      •	continue with a valid baseline model path
+	6.	Before numeric operations/modeling:
+      •	coerce numeric columns with errors=‘coerce’
+      •	handle NaN/inf safely (drop or impute)
+      •	avoid computing medians/means on object dtype
+	7.	When indexing pandas with multiple feature columns, use a list: df[list_of_features]  (never tuple indexing)
+	8.	Include defensive checks:
+      •	assert dataset not empty after preprocessing
+      •	assert train/test split has samples
+      •	if classification target has <2 classes, fallback safely to regression OR a trivial baseline, but still run end-to-end
+	9.	Keep stdout minimal: only print ACCURACY=... at end.
+	10. Return only valid Python code (no markdown fences, no prose outside comments).
+
+TRAINING/EVALUATION RULES (strict):
+	•	Prefer simple train/test split with fixed random_state.
+	•	If classification: compute accuracy on the test set.
+	•	If regression fallback is used: compute an R^2-like bounded score or convert to a stable “accuracy” proxy in [0,1] (documented in # OPTIMIZATION SUMMARY) while still printing as ACCURACY=….
+	•	Use sklearn Pipelines/ColumnTransformer to reduce redundant work and ensure reproducibility.
+	•	Keep feature engineering minimal; prefer standardization for linear models and one-hot encoding for categoricals.
+
+OUTPUT FORMAT (strict):
+	•	Return a single valid Python file only.
+	•	Do not use Markdown code fences (no ```).
+	•	Do not include any prose outside Python syntax.
+	•	If you include explanations, they must be Python comments starting with #.
+	•	Place explanation comments only at the end of the file under: Optimization Summary
+	•	Start the response with Python code on line 1 (no preamble).
+	•	End the response after the final Python line (no trailing commentary).
+
+VALIDATION BEFORE YOU ANSWER:
+	•	Ensure the response can be saved as a .py file and parsed by Python.
+	•	If any line is not valid Python syntax or a Python comment, rewrite it.
+	•	Prefer standard libraries plus numpy/pandas/scikit-learn; do not add heavy dependencies.
+
+DATASET_HEADERS:
+
+Gender,Frequent Flyer,Age,Type of Travel,Class,Flight Distance,Inflight wifi service,Departure/Arrival time convenient,Ease of Online booking,Gate location,Food and drink,Online boarding,Seat comfort,Inflight entertainment,On-board service,Leg room service,Baggage handling,Checkin service,Inflight service,Cleanliness,Departure Delay in Minutes,Arrival Delay in Minutes,satisfaction
+
+SOURCE_CODE:
+
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
+
+#importing all relevant packages 
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn import tree
+from sklearn.model_selection import GridSearchCV
+from sklearn import metrics
+from imblearn.over_sampling import SMOTE  
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
+
+# Importing dataset and performing basic statistics on the data. 
+EJdata = pd.read_csv("EireJet.csv")
+pd.set_option('display.max_columns', None) 
+print(EJdata.head())
+print(EJdata.shape)
+print(EJdata.info())
+print(EJdata.describe())
+
+
+# In[2]:
+
+
+EJdata = EJdata.dropna(how='any',axis=0) 
+print(EJdata.info())
+
+
+# In[3]:
+
+
+# converting 5 categorical features into numeric features and adding them back to the dataset
+
+EJdata['Gender'] = EJdata['Gender'].map({'Female':1, 'Male':0})
+EJdata['Frequent Flyer'] = EJdata['Frequent Flyer'].map({'Yes':1, 'No':0})
+EJdata['Type of Travel'] = EJdata['Type of Travel'].map({'Personal Travel':1, 'Business travel':0})
+EJdata['Class'] = EJdata['Class'].map({'Eco':0,'Eco Plus':1 ,'Business':2 })
+EJdata['satisfaction'] = EJdata['satisfaction'].map({'neutral or dissatisfied':0, 'satisfied':1})
+print(EJdata.info())
+
+
+# In[4]:
+
+
+# Dividing the data into label set and feature set for further analysis
+X = EJdata.drop('satisfaction', axis = 1) # Feature set
+Y = EJdata['satisfaction'] # Label set
+print(type(X))
+print(type(Y))
+print(X.shape)
+print(Y.shape)
+
+
+# In[5]:
+
+
+# Normalizing numerical features so that each feature has mean 0 and variance 1
+feature_scaler = StandardScaler()
+X_scaled = feature_scaler.fit_transform(X)
+
+
+# In[6]:
+
+
+# Dividing the processed data into training set and test set in 70,30 ratio
+X_train, X_test, Y_train, Y_test = train_test_split( X_scaled, Y, test_size = 0.3, random_state = 100)
+
+print(X_train.shape)
+print(X_test.shape)
+
+
+# In[7]:
+
+
+# Dividing dataset into training and test sets for application of SMOTE
+X_train, X_test, Y_train, Y_test = train_test_split( X_scaled, Y, test_size = 0.3, random_state = 100)
+
+print(X_train.shape)
+print(X_test.shape)
+
+# Now,  implementing Oversampling to balance the data; Synthetic Minority Oversampling Technique(SMOTE), printing the values
+# to see the difference 
+print("Number of observations in each class before oversampling (training data): \n", pd.Series(Y_train).value_counts())
+
+smote = SMOTE(random_state = 101)
+X_train,Y_train = smote.fit_sample(X_train,Y_train)
+
+print("Number of observations in each class after oversampling (training data): \n", pd.Series(Y_train).value_counts())
+
+
+# In[8]:
+
+
+# Next ,in order to tune the random forest parameter 'n_estimators' , implementing cross-validation with Grid Search
+rfc = RandomForestClassifier(criterion='entropy', max_features='auto', random_state=1)
+grid_prm = {'n_estimators': [50, 100, 150, 200, 250, 300]}
+
+gd_sr = GridSearchCV(estimator=rfc, param_grid=grid_prm, scoring='precision', cv=5)
+
 """
-DESIGN JUSTIFICATION FOR ENERGY EFFICIENCY:
-1. Model Choice: Used HistGradientBoostingClassifier instead of standard GradientBoosting or RandomForest. 
-   It uses histogram-based binning of continuous features, which drastically reduces the number of split 
-   points the algorithm needs to evaluate, lowering CPU cycles and memory usage.
-2. Training Efficiency: Enabled early_stopping to prevent unnecessary iterations once the model 
-   converges, saving energy by truncating the training process.
-3. Preprocessing: Implemented manual label mapping rather than One-Hot Encoding to keep the 
-   feature dimensionality low, which reduces the computational footprint during both training and inference.
-4. Data Handling: Avoided SMOTE (Synthetic Minority Over-sampling) as it increases the training set size 
-   and computational load; boosted trees generally handle the slight class imbalance present in 
-   satisfaction datasets efficiently without augmentation.
-5. Hardware Optimization: The solution is designed for CPU execution, avoiding the energy overhead 
-   associated with initializing and transferring data to/from a GPU.
+In the above GridSearchCV(), scoring parameter should be set as follows:
+scoring = 'accuracy' when you want to maximize prediction accuracy
+scoring = 'recall' when you want to minimize false negatives
+scoring = 'precision' when you want to minimize false positives
+scoring = 'f1' when you want to balance false positives and false negatives (place equal emphasis on minimizing both)
 """
+gd_sr.fit(X_train, Y_train)
+
+Bestparameter = gd_sr.best_params_
+print(Bestparameter)
+
+bestresult = gd_sr.best_score_ # Mean cross-validated score of the 
+print(bestresult)
+
+
+# In[8]:
+
+
+# Building random forest model using the tuned parameter, n estimator 150
+rfc = RandomForestClassifier(n_estimators=150, criterion='entropy', max_features='auto', random_state=1)
+rfc.fit(X_train,Y_train)
+featimport = pd.Series(rfc.feature_importances_, index=list(X)).sort_values(ascending=False)
+print(featimport)
+
+Y_pred = rfc.predict(X_test)
+print('Classification report: \n', metrics.classification_report(Y_test, Y_pred))
+
+conf_mat = metrics.confusion_matrix(Y_test, Y_pred)
+plt.figure(figsize=(8,6))
+sns.heatmap(conf_mat,annot=True)
+plt.title("Confusion_matrix")
+plt.xlabel("Predicted Class")
+plt.ylabel("Actual class")
+plt.show()
+print('Confusion matrix: \n', conf_mat)
+print('TP: ', conf_mat[1,1])
+print('TN: ', conf_mat[0,0])
+print('FP: ', conf_mat[0,1])
+print('FN: ', conf_mat[1,0])
+
+
+# In[29]:
+
+
+# Tuning AdaBoost parameter 'n_estimators' and using cross-validation using Grid Search method
+Adaboost = AdaBoostClassifier(random_state=1)
+gridparamt = {'n_estimators': [30,35,40,45,50,55,60]}
+
+gd_sr = GridSearchCV(estimator=Adaboost, param_grid=grid_paramt, scoring='precision', cv=5)
+
+"""
+In the above GridSearchCV(), scoring parameter should be set as follows:
+scoring = 'accuracy' when you want to maximize prediction accuracy
+scoring = 'recall' when you want to minimize false negatives
+scoring = 'precision' when you want to minimize false positives
+scoring = 'f1' when you want to balance false positives and false negatives (place equal emphasis on minimizing both)
+"""
+
+gd_sr.fit(X_train, Y_train)
+
+bestparameter = gd_sr.best_params_
+print(bestparameter)
+
+result = gd_sr.best_score_ # Mean cross-validated score of the best_estimator
+print(result)
+
+
+# In[30]:
+
+
+# Building AdaBoost using the tuned parameter
+
+Adaboost = AdaBoostClassifier(n_estimators=50, random_state=1)
+Adaboost.fit(X_train,Y_train)
+featimport = pd.Series(Adaboost.feature_importances_, index=list(X)).sort_values(ascending=False)
+print(featimport)
+
+Y_pred = Adaboost.predict(X_test)
+print('Classification report: \n', metrics.classification_report(Y_test, Y_pred))
+
+conf_mat = metrics.confusion_matrix(Y_test, Y_pred)
+plt.figure(figsize=(8,6))
+sns.heatmap(conf_mat,annot=True)
+plt.title("Confusion_matrix")
+plt.xlabel("Predicted Class")
+plt.ylabel("Actual class")
+plt.show()
+print('Confusion matrix: \n', conf_mat)
+print('TP: ', conf_mat[1,1])
+print('TN: ', conf_mat[0,0])
+print('FP: ', conf_mat[0,1])
+print('FN: ', conf_mat[1,0])
+
+
+# In[ ]:
+
+
+# Now, tuning the gradient boost parameter 'n_estimators' and using cross-validation using grid search method
+Gradientboost = GradientBoostingClassifier(random_state=1)
+grid_param = {'n_estimators': [100,150,200], 'max_depth' : [9,10,11,12], 'max_leaf_nodes': [8,12,16,20,24,28,32]}
+
+grd_sr = GridSearchCV(estimator=Gradientboost, param_grid=grid_param, scoring='precision', cv=5)
+
+"""
+In the above GridSearchCV(), scoring parameter should be set as follows:
+scoring = 'accuracy' when you want to maximize prediction accuracy
+scoring = 'recall' when you want to minimize false negatives
+scoring = 'precision' when you want to minimize false positives
+scoring = 'f1' when you want to balance false positives and false negatives (place equal emphasis on minimizing both)
+"""
+
+grd_sr.fit(X_train, Y_train)
+
+prime_parameters = grd_sr.best_params_
+print(prime_parameters)
+
+result = grd_sr.best_score_  #best score of the estimator , mean cross validates score
+print(result)
+
+
+# In[35]:
+
+
+# Building Gradient Boost using the tuned parameter. 
+Gradientboost = GradientBoostingClassifier(n_estimators=200, max_depth=9, max_leaf_nodes=32, random_state=1)
+Gradientboost.fit(X_train,Y_train)
+featimportance = pd.Series(Gradientboost.feature_importances_, index=list(X)).sort_values(ascending=False)
+print(featimportance)
+
+Y_pred = Gradientboost.predict(X_test)
+print('Classification report: \n', metrics.classification_report(Y_test, Y_pred))
+
+conf_mat = metrics.confusion_matrix(Y_test, Y_pred)
+plt.figure(figsize=(8,6))
+sns.heatmap(conf_mat,annot=True)
+plt.title("Confusion_matrix")
+plt.xlabel("Predicted Class")
+plt.ylabel("Actual class")
+plt.show()
+print('Confusion matrix: \n', conf_mat)
+print('TP: ', conf_mat[1,1])
+print('TN: ', conf_mat[0,0])
+print('FP: ', conf_mat[0,1])
+print('FN: ', conf_mat[1,0])
+
+
+# In[ ]:
+
+
+
+
+
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+
+def robust_load(filepath):
+    """Robustly load CSV data with common fallbacks."""
+    try:
+        df = pd.read_csv(filepath)
+        if df.shape[1] <= 1:
+            raise ValueError
+    except:
+        df = pd.read_csv(filepath, sep=';', decimal=',')
+    
+    # Normalize column names: strip whitespace, collapse internal spaces, drop Unnamed
+    df.columns = [str(c).strip() for c in df.columns]
+    df.columns = [" ".join(str(c).split()) for c in df.columns]
+    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+    return df
+
+def get_pipeline_components(df, target_col):
+    """Identify numeric and categorical features and build a preprocessor."""
+    features = [c for c in df.columns if c != target_col]
+    
+    numeric_features = []
+    categorical_features = []
+    
+    for col in features:
+        # Attempt to coerce to numeric to verify type
+        converted = pd.to_numeric(df[col], errors='coerce')
+        if converted.isna().sum() < (len(df) * 0.5) and not (df[col].dtype == object):
+            numeric_features.append(col)
+        else:
+            categorical_features.append(col)
+            
+    return numeric_features, categorical_features
+
+# 1. Load Data
+# Assuming EireJet.csv as per the provided source code context
+filename = 'EireJet.csv'
+try:
+    df = robust_load(filename)
+except Exception:
+    # Minimal fallback for testing/empty environments
+    df = pd.DataFrame()
+
+if not df.empty:
+    # 2. Identify Target
+    # We prefer 'satisfaction' based on headers, but fall back to the last column
+    potential_targets = [c for c in df.columns if 'satisfaction' in c.lower()]
+    target = potential_targets[0] if potential_targets else df.columns[-1]
+
+    # 3. Data Cleaning
+    # Coerce numeric columns and handle target encoding
+    df[target] = df[target].astype(str).str.lower().map({'satisfied': 1, '1': 1, 'yes': 1, 'positive': 1}).fillna(0)
+    
+    # 4. Feature Selection & Pipeline
+    num_cols, cat_cols = get_pipeline_components(df, target)
+    
+    for col in num_cols:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    
+    # Assert we have data to work with
+    df = df.dropna(subset=[target])
+    
+    if len(df) > 10 and df[target].nunique() > 1:
+        X = df.drop(columns=[target])
+        y = df[target]
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        # 5. Build Lightweight Pipeline
+        # LogisticRegression is highly energy-efficient and CPU friendly
+        numeric_transformer = Pipeline(steps=[
+            ('imputer', SimpleImputer(strategy='median')),
+            ('scaler', StandardScaler())
+        ])
+
+        categorical_transformer = Pipeline(steps=[
+            ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
+            ('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))
+        ])
+
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ('num', numeric_transformer, num_cols),
+                ('cat', categorical_transformer, cat_cols)
+            ])
+
+        model = Pipeline(steps=[
+            ('preprocessor', preprocessor),
+            ('classifier', LogisticRegression(max_iter=1000, class_weight='balanced', solver='liblinear'))
+        ])
+
+        # 6. Train and Evaluate
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        accuracy = accuracy_score(y_test, y_pred)
+    else:
+        # Trivial baseline if data is insufficient or degenerate
+        accuracy = 0.0
+else:
+    accuracy = 0.0
+
+# 7. Final Output
+print(f"ACCURACY={accuracy:.6f}")
+
+# Optimization Summary:
+# 1. Used LogisticRegression (solver='liblinear') as it is computationally inexpensive (O(nd) complexity) and runs efficiently on single-core CPUs.
+# 2. Replaced heavy ensembles (RandomForest/GradientBoosting) and GridSearch from source to minimize carbon footprint and CPU cycles.
+# 3. Implemented a robust CSV parsing logic with fallback separators to ensure end-to-end execution without manual schema intervention.
+# 4. Used sklearn.Pipeline to prevent redundant data transformations and ensure a lightweight, reproducible workflow.
+# 5. Targeted categorical encoding via OneHotEncoder and basic imputation to maintain a small memory footprint.
+# 6. Avoided SMOTE/oversampling to reduce memory overhead; used 'class_weight=balanced' in the linear model to handle imbalance efficiently.
+# 7. Numeric columns are coerced safely to prevent dtype errors during standardization.
+# 8. All calculations performed using standard libraries (pandas/numpy/sklearn) without requiring high-performance hardware or GPUs.
+# 9. Median imputation used for numeric columns as it is more robust to outliers than mean without significant extra cost.
+# 10. Memory footprint minimized by dropping Unnamed columns and stripping whitespace from headers immediately upon loading.

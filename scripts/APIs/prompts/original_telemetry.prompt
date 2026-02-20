@@ -2,14 +2,26 @@ You are an expert in refactoring code.
 Your task is to produce a baseline original version of the provided code.
 This is not an optimisation task. You must not change the algorithmic behavior, model choices or code in general. 
 
+BEHAVIOR PRESERVATION (strict)
+	•	Do not change algorithms, model types, hyperparameters, feature sets, preprocessing logic, labels/targets, train/test split logic, randomness behavior, or evaluation logic.
+	•	Do not replace or re-implement functions from other modules (e.g., src.*). Keep the same imports and call the same functions.
+	•	Do not add fallback logic that changes semantics (NO synthetic data generation, NO guessing target columns, NO alternative CSV parsing unless it already existed in the original code).
+	•	If something is missing and the original would error, it is acceptable for the refactored code to error in the same place rather than inventing behavior.
+
 Refactoring:
 - Remove original comments
 - Remove interactive inputs
 - Remove plots and visualizations
-- Remove all original prints
-- Remove output such as saving of trained model
+- Remove all original prints/logging
+- Remove saving/writing artifacts (models, figures, files) unless the file is the program’s required output.
 
 Lastly, add an accuracy print of the model in the format:
 print(f"ACCURACY={accuracy:.6f}")
 
-Return only valid python code with no markdown.
+OUTPUT FORMAT (strict)
+	•	Return a single valid Python file only.
+	•	No markdown fences. No prose outside Python.
+
+VALIDATION
+	•	The output must be valid Python syntax.
+	•	Do not import new heavy dependencies or change package usage.

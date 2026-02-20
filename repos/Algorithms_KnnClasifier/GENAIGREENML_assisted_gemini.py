@@ -5,52 +5,61 @@
 import pandas as pd
 import numpy as np
 
-def load_and_preprocess(train_path, test_path):
-    train_df = pd.read_csv(train_path)
-    test_df = pd.read_csv(test_path)
-    
-    y_train = train_df.iloc[:, -1].values
-    y_test = test_df.iloc[:, -1].values
-    
-    x_train_raw = train_df.iloc[:, :-1].values
-    x_test_raw = test_df.iloc[:, :-1].values
-    
-    x_train = (x_train_raw - np.mean(x_train_raw, axis=0)) / np.std(x_train_raw, axis=0, ddof=1)
-    x_test = (x_test_raw - np.mean(x_test_raw, axis=0)) / np.std(x_test_raw, axis=0, ddof=1)
-    
-    return x_train, y_train, x_test, y_test
+def load_data(path):
+    try:
+        df = pd.read_csv(path)
+        if df.shape[1] < 2:
+            raise ValueError
+    except (ValueError, pd.errors.ParserError):
+        df = pd.read_csv(path, sep=';', decimal=',')
+    return df
+
+def process_sets(df):
+    features = df.iloc[:, :-1]
+    labels = df.iloc[:, -1].values
+    norm_features = (features - features.mean()) / features.std()
+    return norm_features.values, labels
 
 def run_knn():
+    np.random.seed(42)
     k = 1
-    x_train, y_train, x_test, y_test = load_and_preprocess('Data/Diabetes-Training.csv', 'Data/Diabetes-Clasification.csv')
+
+    train_df = load_data('Data/Diabetes-Training.csv')
+    test_df = load_data('Data/Diabetes-Clasification.csv')
+
+    x_train, y_train = process_sets(train_df)
+    x_test, y_test = process_sets(test_df)
+
+    results = []
+    correct = 0
     
-    correct_counts = 0
-    num_test = x_test.shape[0]
+    for i in range(len(x_test)):
+        distances = np.linalg.norm(x_train - x_test[i], axis=1)
+        
+        nearest_indices = np.argpartition(distances, k)[:k]
+        nearest_labels = y_train[nearest_indices]
+        
+        neg_count = np.count_nonzero(nearest_labels == 'tested_negative')
+        pos_count = np.count_nonzero(nearest_labels == 'tested_positive')
+        
+        assigned = 'tested_negative' if neg_count > pos_count else 'tested_positive'
+        
+        results.append([i + 1, neg_count, pos_count, assigned])
+        if assigned == y_test[i]:
+            correct += 1
+
+    pd.DataFrame(results, columns=["Instance", "tested_negative", "tested_positive", "Assigned class"]).to_csv('result_count.csv', index=False)
     
-    for i in range(num_test):
-        distances_sq = np.sum((x_train - x_test[i])**2, axis=1)
-        
-        if k == 1:
-            winning_label = y_train[np.argmin(distances_sq)]
-        else:
-            partitioned_indices = np.argpartition(distances_sq, k)[:k]
-            neighbor_labels = y_train[partitioned_indices]
-            pos_count = np.count_nonzero(neighbor_labels == 'tested_positive')
-            neg_count = k - pos_count
-            winning_label = 'tested_negative' if neg_count > pos_count else 'tested_positive'
-        
-        if winning_label == y_test[i]:
-            correct_counts += 1
-            
-    accuracy = correct_counts / num_test
+    accuracy = correct / len(y_test)
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
     run_knn()
 
-# OPTIMIZATIONS APPLIED:
-# 1. Vectorization: Replaced Python-based distance loops with NumPy broadcasting to utilize SIMD instructions and minimize interpreter overhead.
-# 2. Algorithmic Complexity: Used np.argmin (O(N)) instead of a full sort (O(N log N)) to find the nearest neighbor for the default k=1.
-# 3. Mathematical Optimization: Removed the expensive square root operation (sqrt) from the Euclidean distance formula, as it does not change the relative ordering of distances.
-# 4. Memory Footprint: Eliminated the creation of large intermediate lists of tuples and dictionaries, performing label counting and distance selection directly on NumPy arrays.
-# 5. Data Movement: Reduced the conversion overhead between Pandas and NumPy by converting to arrays immediately after loading and performing all preprocessing in NumPy.
+# Optimization Summary
+# 1. Vectorized distance calculation: Replaced the manual loop and custom Euclidean function with NumPy's linalg.norm for significant speedup.
+# 2. Optimized neighbor selection: Used np.argpartition instead of full sorting, reducing complexity from O(N log N) to O(N).
+# 3. Efficient normalization: Simplified preprocessing using vectorized Pandas operations to reduce computational overhead.
+# 4. Memory management: Avoided creating intermediate dictionary structures and large lists of tuples inside the KNN loop.
+# 5. Robust IO: Implemented a fallback mechanism for CSV parsing to handle different delimiters and decimal formats automatically.
+# 6. Green coding: Reduced CPU cycles and runtime by minimizing Python-level loops and maximizing low-level C-optimized NumPy operations.

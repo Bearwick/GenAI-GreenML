@@ -4,72 +4,98 @@
 
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
 from sklearn import metrics
 from imblearn.over_sampling import SMOTE
+import warnings
 
-def optimize_and_train():
-    try:
-        df = pd.read_csv("EireJet.csv")
-    except FileNotFoundError:
-        return
+warnings.filterwarnings('ignore')
 
-    df.dropna(axis=0, inplace=True)
+try:
+    df = pd.read_csv("EireJet.csv")
+    if df.shape[1] < 5:
+        raise ValueError
+except Exception:
+    df = pd.read_csv("EireJet.csv", sep=';', decimal=',')
 
-    mapping = {
-        'Gender': {'Female': 1, 'Male': 0},
-        'Frequent Flyer': {'Yes': 1, 'No': 0},
-        'Type of Travel': {'Personal Travel': 1, 'Business travel': 0},
-        'Class': {'Eco': 0, 'Eco Plus': 1, 'Business': 2},
-        'satisfaction': {'neutral or dissatisfied': 0, 'satisfied': 1}
-    }
-    
-    for col, m in mapping.items():
-        if col in df.columns:
-            df[col] = df[col].map(m)
+df.dropna(axis=0, how='any', inplace=True)
 
-    X = df.drop('satisfaction', axis=1)
-    y = df['satisfaction']
+categorical_mappings = {
+    'Gender': {'Female': 1, 'Male': 0},
+    'Frequent Flyer': {'Yes': 1, 'No': 0},
+    'Type of Travel': {'Personal Travel': 1, 'Business travel': 0},
+    'Class': {'Eco': 0, 'Eco Plus': 1, 'Business': 2},
+    'satisfaction': {'neutral or dissatisfied': 0, 'satisfied': 1}
+}
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=100)
+for col, mapping in categorical_mappings.items():
+    if col in df.columns:
+        df[col] = df[col].map(mapping)
 
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
+X_df = df.drop('satisfaction', axis=1)
+Y = df['satisfaction']
 
-    smote = SMOTE(random_state=101)
-    X_resampled, y_resampled = smote.fit_resample(X_train_scaled, y_train)
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X_df)
 
-    rf_model = RandomForestClassifier(n_estimators=150, criterion='entropy', max_features='sqrt', random_state=1, n_jobs=-1)
-    rf_model.fit(X_resampled, y_resampled)
-    rf_preds = rf_model.predict(X_test_scaled)
-    rf_acc = metrics.accuracy_score(y_test, rf_preds)
-    print(f"Random Forest ACCURACY={rf_acc:.6f}")
+X_train, X_test, Y_train, Y_test = train_test_split(X_scaled, Y, test_size=0.3, random_state=100)
 
-    ada_model = AdaBoostClassifier(n_estimators=50, random_state=1)
-    ada_model.fit(X_resampled, y_resampled)
-    ada_preds = ada_model.predict(X_test_scaled)
-    ada_acc = metrics.accuracy_score(y_test, ada_preds)
-    print(f"AdaBoost ACCURACY={ada_acc:.6f}")
+smote = SMOTE(random_state=101)
+X_train_res, Y_train_res = smote.fit_resample(X_train, Y_train)
 
-    gb_model = GradientBoostingClassifier(n_estimators=200, max_depth=9, max_leaf_nodes=32, random_state=1)
-    gb_model.fit(X_resampled, y_resampled)
-    gb_preds = gb_model.predict(X_test_scaled)
-    gb_acc = metrics.accuracy_score(y_test, gb_preds)
-    
-    print(f"Gradient Boosting ACCURACY={gb_acc:.6f}")
-    print(f"ACCURACY={gb_acc:.6f}")
+rfc_grid = GridSearchCV(
+    estimator=RandomForestClassifier(criterion='entropy', max_features='sqrt', random_state=1),
+    param_grid={'n_estimators': [50, 100, 150, 200, 250, 300]},
+    scoring='precision',
+    cv=5,
+    n_jobs=-1
+)
+rfc_grid.fit(X_train_res, Y_train_res)
 
-if __name__ == "__main__":
-    optimize_and_train()
+rfc_final = RandomForestClassifier(n_estimators=150, criterion='entropy', max_features='sqrt', random_state=1)
+rfc_final.fit(X_train_res, Y_train_res)
 
-# OPTIMIZATIONS APPLIED:
-# 1. Eliminated GridSearchCV: Hyperparameter tuning is the most energy-intensive task. 
-#    By using the "best" parameters identified in the original code, we reduce computation by >95%.
-# 2. Reduced Data Movement: Scaled data after splitting and avoided redundant variable copies.
-# 3. Memory Efficiency: Used `inplace=True` for dropping NaNs and direct mapping to reduce memory overhead.
-# 4. Parallel Processing: Added `n_jobs=-1` to the RandomForestClassifier to utilize all CPU cores, reducing total runtime.
-# 5. Removed Redundancy: Removed duplicate `train_test_split` calls and unnecessary print/stat calls.
-# 6. Streamlined Pipeline: Removed visualization libraries (Matplotlib/Seaborn) and plot generation to save CPU cycles and reduce dependencies.
+ada_grid = GridSearchCV(
+    estimator=AdaBoostClassifier(random_state=1),
+    param_grid={'n_estimators': [30, 35, 40, 45, 50, 55, 60]},
+    scoring='precision',
+    cv=5,
+    n_jobs=-1
+)
+ada_grid.fit(X_train_res, Y_train_res)
+
+ada_final = AdaBoostClassifier(n_estimators=50, random_state=1)
+ada_final.fit(X_train_res, Y_train_res)
+
+gb_grid = GridSearchCV(
+    estimator=GradientBoostingClassifier(random_state=1),
+    param_grid={
+        'n_estimators': [100, 150, 200],
+        'max_depth': [9, 10, 11, 12],
+        'max_leaf_nodes': [8, 12, 16, 20, 24, 28, 32]
+    },
+    scoring='precision',
+    cv=5,
+    n_jobs=-1
+)
+gb_grid.fit(X_train_res, Y_train_res)
+
+gb_final = GradientBoostingClassifier(n_estimators=200, max_depth=9, max_leaf_nodes=32, random_state=1)
+gb_final.fit(X_train_res, Y_train_res)
+
+y_pred = gb_final.predict(X_test)
+accuracy = metrics.accuracy_score(Y_test, y_pred)
+print(f"ACCURACY={accuracy:.6f}")
+
+# Optimization Summary
+# 1. Enabled multi-core processing using n_jobs=-1 in all GridSearchCV instances to minimize runtime and energy consumption.
+# 2. Replaced the deprecated fit_sample method with fit_resample from the SMOTE implementation for modern compatibility.
+# 3. Consolidated categorical feature encoding into a single loop over a mapping dictionary to reduce redundant DataFrame traversals.
+# 4. Eliminated duplicate calls to train_test_split and other redundant data processing steps.
+# 5. Implemented a robust CSV loading strategy with fallback parameters to handle various delimiter and decimal formats.
+# 6. Removed all visualization libraries (matplotlib, seaborn) and plotting calls to decrease memory footprint and dependency overhead.
+# 7. Eliminated all unnecessary logging, intermediate prints, and data descriptions to streamline execution.
+# 8. Fixed deprecation warnings by updating max_features='auto' to 'sqrt' in the RandomForest models.
+# 9. Optimized memory management by avoiding the creation of unnecessary intermediate data structures and large copies.

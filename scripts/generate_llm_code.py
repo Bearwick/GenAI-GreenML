@@ -72,7 +72,7 @@ DEFAULT_IGNORE_DIR_NAMES = {
     ".vscode",
 }
 
-DEFAULT_ALL_LLMS = ["gemini", "chatgpt", "codex", "claude"] # "groq"
+DEFAULT_ALL_LLMS = ["chatgpt", "gemini", "codex", "claude"] # "groq"
 
 
 @dataclass(frozen=True)
@@ -403,7 +403,7 @@ class LLMClient:
     generate_code: Callable[[str, str, str], str]  # (mode, source_code, headers) -> str
 
 
-def load_llm_clients(apis_dir: Path) -> Dict[str, Optional[LLMClient]]:
+def load_llm_clients(apis_dir: Path, enable_gemini_pause: bool = False) -> Dict[str, Optional[LLMClient]]:
     """
     Imports your modules from scripts/APIs and builds a normalized registry.
 
@@ -424,7 +424,7 @@ def load_llm_clients(apis_dir: Path) -> Dict[str, Optional[LLMClient]]:
                 logging.warning("[!] %s module loaded but missing generate_code()", name)
                 return None
 
-            if name == "gemini":
+            if name == "gemini" and enable_gemini_pause:
                 def wrapped_generate(mode: str, source_code: str, headers: str) -> str:
                     gemini_pause.hit("Gemini")
                     return gen(mode, source_code, headers)
@@ -454,9 +454,13 @@ def generate(
     project_name: str,
 ) -> str:
     try:
+        source_code = None
+        #if mode != "autonomous":
         source_code = read_text(src_file)
+
         if not source_code.strip():
             return ""
+            
         out = client.generate_code(mode, source_code, headers)
         return (out or "").strip()
     except Exception as e:
@@ -568,6 +572,11 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         action="store_true",
         help="Do not run pipreqs requirements update per project.",
     )
+    p.add_argument(
+        "--gemini-pause",
+        action="store_true",
+        help="Enable Gemini rate-limit pause (60s every 10 requests). Disabled by default.",
+    )
     return p.parse_args(argv)
 
 
@@ -609,7 +618,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     modes: List[str] = list(args.modes)
 
     # load clients
-    clients = load_llm_clients(config.apis_dir)
+    clients = load_llm_clients(config.apis_dir, enable_gemini_pause=args.gemini_pause)
 
     # warn about missing clients
     for name in llm_names:
@@ -658,16 +667,19 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
         # (Primary-only) original_telemetry
         primary_client = clients.get(primary_llm_name)
+        skip_primary_existing = False
         out_primary = output_path(project_dir, config.base_name, "original_telemetry", primary_llm_name)
         if out_primary.exists() and not args.force:
             try:
                 if out_primary.stat().st_size > 0:
                     logging.info("[i] Skip existing: %s", out_primary.name)
-                    primary_client = None
+                    skip_primary_existing = True
             except OSError:
                 pass
 
-        if primary_client is not None:
+        if skip_primary_existing:
+            pass
+        elif primary_client is not None:
             code = generate(primary_client, "original_telemetry", src_file, None, project_dir.name)
             if code:
                 write_output_file(
@@ -701,7 +713,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                         pass
 
                 if mode == "autonomous":
-                    src_for_mode = None
+                    src_for_mode = src_file #None
                 else:
                     src_for_mode = src_file
 
