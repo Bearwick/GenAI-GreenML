@@ -19,6 +19,7 @@ This dataset was developed as part of a master’s thesis at the **Norwegian Uni
    2. [Runability Check](#runability-check)
 6. [Run Projects and Capture Telemetry](#run-projects-and-capture-telemetry)
 7. [Analyse Results](#analyse-results)
+8. [Generate Code Iterations (Failed Scripts)](#generate-code-iterations-failed-scripts)
 
 ## Repository Information
 
@@ -154,4 +155,12 @@ Select a specific CSV file from the results/ folder.
 
 ```
 python3 ./scripts/analyse_results.py --results-file results_20260220_135839.csv
+```
+
+## Generate Code Iterations (Failed Scripts)
+
+The script `move_failed_scripts.py` moves ML projects with failed scripts, except for GENAIGREENML\* files that ran correctly. The ML projects are copied to a folder `failed_generated_code_iteration_N` and then the failed scripts are removed from the ML projects in `repos`.
+
+```
+python ./scripts/move_failed_scripts.py
 ```
