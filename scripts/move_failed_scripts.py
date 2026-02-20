@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import os
 import shutil
 from pathlib import Path
 from typing import Callable, Dict, Set, Tuple
@@ -28,6 +29,8 @@ DEFAULT_IGNORE_DIR_NAMES = {
     ".idea",
     ".vscode",
 }
+
+DELETE_SCAN_SKIP_DIR_NAMES = DEFAULT_IGNORE_DIR_NAMES | {"venv", ".venv"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -141,6 +144,26 @@ def project_copy_ignore_factory(
     return _ignore
 
 
+def find_script_paths_for_delete(project_dir: Path, script_name: str) -> Set[Path]:
+    """
+    Results rows store only script filename (not relative path), so we find matches
+    inside the project while skipping heavy/irrelevant directories.
+    """
+    matches: Set[Path] = set()
+
+    direct = project_dir / script_name
+    if direct.is_file():
+        matches.add(direct)
+        return matches
+
+    for root, dirs, files in os.walk(project_dir):
+        dirs[:] = [d for d in dirs if d not in DELETE_SCAN_SKIP_DIR_NAMES and not d.startswith(".")]
+        if script_name in files:
+            matches.add(Path(root) / script_name)
+
+    return matches
+
+
 def main() -> None:
     args = parse_args()
     root_dir = Path(__file__).resolve().parent.parent
@@ -167,6 +190,8 @@ def main() -> None:
     projects_copied = 0
     projects_missing = 0
     total_failed_scripts = sum(len(v) for v in failed_by_project.values())
+    deleted_files = 0
+    missing_failed_files = 0
 
     print(f"Results file: {results_csv}")
     print(f"Failed projects: {len(failed_by_project)}")
@@ -174,6 +199,17 @@ def main() -> None:
     print(f"Output folder: {output_dir}")
     if args.dry_run:
         print("Mode: dry-run (no files written)")
+        for project, failed_scripts in sorted(failed_by_project.items()):
+            src = repos_dir / project
+            if not src.is_dir():
+                print(f"[missing] {project} (not found in {repos_dir})")
+                continue
+            for script_name in sorted(failed_scripts):
+                paths = find_script_paths_for_delete(src, script_name)
+                if not paths:
+                    print(f"[dry-run delete missing] {project}/{script_name}")
+                for p in sorted(paths):
+                    print(f"[dry-run delete] {p}")
         return
 
     output_dir.mkdir(parents=True, exist_ok=False)
@@ -193,8 +229,20 @@ def main() -> None:
         )
         projects_copied += 1
 
+        for script_name in sorted(failed_scripts):
+            paths = find_script_paths_for_delete(src, script_name)
+            if not paths:
+                missing_failed_files += 1
+                print(f"[delete missing] {project}/{script_name}")
+                continue
+            for p in sorted(paths):
+                p.unlink(missing_ok=True)
+                deleted_files += 1
+
     print(f"Copied projects: {projects_copied}")
     print(f"Missing projects: {projects_missing}")
+    print(f"Deleted failed scripts from repos: {deleted_files}")
+    print(f"Failed scripts not found for delete: {missing_failed_files}")
 
 
 if __name__ == "__main__":
