@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
+import argparse
 import csv
-import os
 from pathlib import Path
 
 
@@ -14,6 +14,35 @@ def latest_results_file() -> Path:
     if not files:
         raise SystemExit("No results_*.csv files found")
     return max(files, key=lambda p: p.stat().st_mtime)
+
+
+def resolve_results_file(results_file: str | None) -> Path:
+    if not results_file:
+        return latest_results_file()
+
+    candidate = Path(results_file)
+    if not candidate.is_absolute():
+        candidate = RESULTS_DIR / candidate
+    candidate = candidate.resolve()
+    results_dir_resolved = RESULTS_DIR.resolve()
+
+    if not candidate.is_file():
+        raise SystemExit(f"Results file not found: {candidate}")
+    if results_dir_resolved not in candidate.parents:
+        raise SystemExit(f"Results file must be inside {RESULTS_DIR}/: {candidate}")
+    if candidate.suffix.lower() != ".csv":
+        raise SystemExit(f"Results file must be a .csv file: {candidate}")
+    return candidate
+
+
+def parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(description="Analyze benchmark results in results/*.csv")
+    p.add_argument(
+        "--results-file",
+        default=None,
+        help="Optional CSV filename/path inside results/ (default: newest results_*.csv).",
+    )
+    return p.parse_args()
 
 
 def to_float(val):
@@ -30,40 +59,75 @@ def rounded(val, places):
 
 
 def main():
-    latest = latest_results_file()
-    rows = []
+    args = parse_args()
+    latest = resolve_results_file(args.results_file)
+    all_rows = []
+    ok_rows = []
     failed = []
     with latest.open("r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
+            all_rows.append(row)
             if row.get("status", "").strip().upper() != "OK":
                 project = row.get("project", "").strip()
                 script = row.get("script", "").strip()
                 if project or script:
                     failed.append(f"{project}: {script}")
                 continue
-            rows.append(row)
+            ok_rows.append(row)
 
-    # Build original lookup per project (only original_telemetry)
+    # Summary counts should reflect all executed files (OK + failed).
+    projects_all = {r.get("project", "").strip() for r in all_rows if r.get("project", "").strip()}
+    scripts_all = {
+        (r.get("project", "").strip(), r.get("script", "").strip())
+        for r in all_rows
+        if r.get("project", "").strip() and r.get("script", "").strip()
+    }
+    assisted_autonomous_all = {
+        (r.get("project", "").strip(), r.get("script", "").strip())
+        for r in all_rows
+        if r.get("project", "").strip()
+        and r.get("script", "").strip()
+        and ("assisted" in r.get("script", "") or "autonomous" in r.get("script", ""))
+    }
+    scripts_ok = {
+        (r.get("project", "").strip(), r.get("script", "").strip())
+        for r in ok_rows
+        if r.get("project", "").strip() and r.get("script", "").strip()
+    }
+    assisted_autonomous_ok = {
+        (r.get("project", "").strip(), r.get("script", "").strip())
+        for r in ok_rows
+        if r.get("project", "").strip()
+        and r.get("script", "").strip()
+        and ("assisted" in r.get("script", "") or "autonomous" in r.get("script", ""))
+    }
+
+    # Build original lookup per project (only original_telemetry) from successful runs.
     original_by_project = {}
-    for r in rows:
+    for r in ok_rows:
         script = r.get("script", "")
         project = r.get("project", "")
         if "original_telemetry" in script:
             if project not in original_by_project:
                 original_by_project[project] = r
 
-    # Keep only rows from projects that have original_telemetry
-    rows = [r for r in rows if r.get("project") in original_by_project]
+    # Keep only successful rows from projects that have successful original_telemetry
+    rows = [r for r in ok_rows if r.get("project") in original_by_project]
+    aa_ok_with_comparable_original = sum(
+        1
+        for r in rows
+        if "assisted" in r.get("script", "") or "autonomous" in r.get("script", "")
+    )
 
-    projects = {r.get("project", "") for r in rows if r.get("project")}
-
-    scripts = [r for r in rows if r.get("project") and r.get("script")]
-
-    print(f"Latest results: {latest}")
-    print(f"ML Projects: {len(projects)}")
-    print(f"Distinct code files: {len(scripts)}")
-    print(f"Assisted + autonomous code files: {len(script)-len(projects)}")
+    print(f"Results file: {latest}")
+    print(f"ML Projects: {len(projects_all)}")
+    print(f"ML Projects with original OK: {len(original_by_project)}")
+    print(f"Distinct code files: {len(scripts_all)}")
+    print(f"Distinct code files (OK): {len(scripts_ok)}")
+    print(f"Assisted + autonomous code files: {len(assisted_autonomous_all)}")
+    print(f"Assisted + autonomous code files (OK): {len(assisted_autonomous_ok)}")
+    print(f"A+A OK with comparable original: {aa_ok_with_comparable_original}")
 
     def init_counts():
         return {"inc": 0, "dec": 0, "eq": 0}
