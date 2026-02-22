@@ -3,10 +3,10 @@ Your task is to produce a baseline original version of the provided code.
 This is not an optimisation task. You must not change the algorithmic behavior, model choices or code in general. 
 
 BEHAVIOR PRESERVATION (strict)
-	•	Do not change algorithms, model types, hyperparameters, feature sets, preprocessing logic, labels/targets, train/test split logic, randomness behavior, or evaluation logic.
-	•	Do not replace or re-implement functions from other modules (e.g., src.*). Keep the same imports and call the same functions.
-	•	Do not add fallback logic that changes semantics (NO synthetic data generation, NO guessing target columns, NO alternative CSV parsing unless it already existed in the original code).
-	•	If something is missing and the original would error, it is acceptable for the refactored code to error in the same place rather than inventing behavior.
+•	Do not change algorithms, model types, hyperparameters, feature sets, preprocessing logic, labels/targets, train/test split logic, randomness behavior, or evaluation logic.
+•	Do not replace or re-implement functions from other modules (e.g., src.*). Keep the same imports and call the same functions.
+•	Do not add fallback logic that changes semantics (NO synthetic data generation, NO guessing target columns, NO alternative CSV parsing unless it already existed in the original code).
+•	If something is missing and the original would error, it is acceptable for the refactored code to error in the same place rather than inventing behavior.
 
 Refactoring:
 - Remove original comments
