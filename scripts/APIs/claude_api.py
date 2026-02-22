@@ -25,6 +25,6 @@ def call_claude(prompt, model="claude-opus-4-6"):
                 text_parts.append(text)
     return "\n".join(text_parts).strip()
 
-def generate_code(mode, source_code, dataset_headers=""):
-    prompt_text = build_prompt(mode, source_code, dataset_headers)
+def generate_code(mode, source_code, dataset_headers="", exampleRowDataset="", datasetPath="", projectContext=""):
+    prompt_text = build_prompt(mode, source_code, dataset_headers, exampleRowDataset, datasetPath, projectContext)
     return call_claude(prompt_text)

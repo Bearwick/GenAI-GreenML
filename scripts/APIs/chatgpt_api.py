@@ -14,6 +14,6 @@ def call_openai(prompt, model="gpt-5.2"):
     return response.output_text
 
 
-def generate_code(mode, source_code, dataset_headers=""):
-    prompt_text = build_prompt(mode, source_code, dataset_headers)
+def generate_code(mode, source_code, dataset_headers="", exampleRowDataset="", datasetPath="", projectContext=""):
+    prompt_text = build_prompt(mode, source_code, dataset_headers, exampleRowDataset, datasetPath, projectContext)
     return call_openai(prompt_text)

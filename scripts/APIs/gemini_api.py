@@ -54,10 +54,10 @@ if __name__ == "__main__":
         if idx + 1 < len(sys.argv):
             dataset_headers = sys.argv[idx + 1].strip()
 
-    prompt_text = build_prompt(mode, source_code, dataset_headers)
+    prompt_text = build_prompt(mode, source_code, dataset_headers, "", "", "")
     print(call_gemini(prompt_text))
 
 
-def generate_code(mode, source_code, dataset_headers=""):
-    prompt_text = build_prompt(mode, source_code, dataset_headers)
+def generate_code(mode, source_code, dataset_headers="", exampleRowDataset="", datasetPath="", projectContext=""):
+    prompt_text = build_prompt(mode, source_code, dataset_headers, exampleRowDataset, datasetPath, projectContext)
     return call_gemini(prompt_text)

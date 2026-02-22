@@ -14,13 +14,30 @@ def load_prompt_template(mode: str) -> str:
     return prompt_path.read_text(encoding="utf-8").strip()
 
 
-def build_prompt(mode: str, source_code: str, dataset_headers: str) -> str:
+def build_prompt(mode: str, source_code: str, dataset_headers: str, exampleRowDataset: str, datasetPath: str, projectContext: str) -> str:
     template = load_prompt_template(mode)
     parts = [template]
-    if dataset_headers:
-        parts.append("DATASET_HEADERS:")
-        parts.append(dataset_headers)
 
-    parts.append("SOURCE_CODE:")
-    parts.append(source_code)
+    if mode != "original_telemetry":
+        if datasetPath:
+            parts.append("DATASET_PATH:")
+            parts.append(datasetPath)
+
+        if dataset_headers:
+            parts.append("DATASET_HEADERS:")
+            parts.append(dataset_headers)
+
+        if exampleRowDataset:
+            parts.append("EXAMPLE_ROW_DATASET:")
+            parts.append(exampleRowDataset)
+
+        if projectContext:
+            parts.append("ML_PROJECT_CONTEXT:")
+            parts.append(projectContext)
+
+    if mode != "autonomous":
+        parts.append("SOURCE_CODE:")
+        parts.append(source_code)
+
+
     return "\n\n".join(parts)

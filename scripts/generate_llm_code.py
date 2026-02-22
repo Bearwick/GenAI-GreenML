@@ -358,6 +358,67 @@ def dataset_headers(dataset_path: Optional[Path]) -> str:
         return ""
 
 
+def dataset_example_row(dataset_path: Optional[Path]) -> str:
+    """
+    Return the first data row after the header line for text-like tabular files.
+    """
+    if not dataset_path:
+        return ""
+    if dataset_path.suffix.lower() not in TEXT_HEADER_EXTS:
+        return ""
+    try:
+        with dataset_path.open("r", encoding="utf-8", errors="ignore") as f:
+            _header = f.readline()
+            return f.readline().strip()
+    except OSError:
+        return ""
+
+
+def project_context(files: List[Path]) -> str:
+    """
+    Collect author-provided project context (README/docs), excluding generated metadata
+    such as SOURCE.md. Keep this bounded to avoid oversized prompts.
+    """
+    context_candidates: List[Path] = []
+    for p in files:
+        if not p.is_file():
+            continue
+        name_lower = p.name.lower()
+        if name_lower == "source.md":
+            continue
+        if name_lower.startswith("readme"):
+            context_candidates.append(p)
+
+    if not context_candidates:
+        return ""
+
+    # Prefer top-level README files first, then shorter paths.
+    context_candidates.sort(key=lambda p: (len(p.parts), p.as_posix().lower()))
+
+    max_chars = 12000
+    chunks: List[str] = []
+    used = 0
+    for p in context_candidates:
+        text = read_text(p).strip()
+        if not text:
+            continue
+        rel = p.as_posix()
+        chunk = f"[FILE: {rel}]\n{text}"
+        if chunks:
+            chunk = "\n\n" + chunk
+        remaining = max_chars - used
+        if remaining <= 0:
+            break
+        if len(chunk) > remaining:
+            chunk = chunk[:remaining].rstrip()
+        chunks.append(chunk)
+        used += len(chunk)
+        if used >= max_chars:
+            break
+
+    return "".join(chunks)
+
+
 def find_dataset_file(project_dir: Path, src_file: Path, files: List[Path]) -> Optional[Path]:
     # 1) Prefer explicit GENAIGREENMLDATASET.*
     preferred = find_preferred_dataset(files)
@@ -400,7 +461,8 @@ class EveryNRequestsPause:
 @dataclass
 class LLMClient:
     name: str
-    generate_code: Callable[[str, str, str], str]  # (mode, source_code, headers) -> str
+    generate_code: Callable[[str, str, str, str, str, str], str]
+    # (mode, source_code, headers, example_row, dataset_path, project_context) -> str
 
 
 def load_llm_clients(apis_dir: Path, enable_gemini_pause: bool = False) -> Dict[str, Optional[LLMClient]]:
@@ -408,7 +470,7 @@ def load_llm_clients(apis_dir: Path, enable_gemini_pause: bool = False) -> Dict[
     Imports your modules from scripts/APIs and builds a normalized registry.
 
     Expected module functions:
-      module.generate_code(mode, source_code, headers) -> str
+      module.generate_code(mode, source_code, headers, example_row, dataset_path, project_context) -> str
     """
     sys.path.insert(0, str(apis_dir))
 
@@ -425,9 +487,16 @@ def load_llm_clients(apis_dir: Path, enable_gemini_pause: bool = False) -> Dict[
                 return None
 
             if name == "gemini" and enable_gemini_pause:
-                def wrapped_generate(mode: str, source_code: str, headers: str) -> str:
+                def wrapped_generate(
+                    mode: str,
+                    source_code: str,
+                    headers: str,
+                    example_row: str,
+                    dataset_path: str,
+                    project_context_text: str,
+                ) -> str:
                     gemini_pause.hit("Gemini")
-                    return gen(mode, source_code, headers)
+                    return gen(mode, source_code, headers, example_row, dataset_path, project_context_text)
 
                 return LLMClient(name=name, generate_code=wrapped_generate)
 
@@ -452,16 +521,17 @@ def generate(
     src_file: Path,
     headers: str,
     project_name: str,
+    exampleRowDataset: str,
+    datasetPath: str,
+    projectContext: str,
 ) -> str:
     try:
-        source_code = None
-        #if mode != "autonomous":
         source_code = read_text(src_file)
 
         if not source_code.strip():
             return ""
             
-        out = client.generate_code(mode, source_code, headers)
+        out = client.generate_code(mode, source_code, headers, exampleRowDataset, datasetPath, projectContext)
         return (out or "").strip()
     except Exception as e:
         logging.error("[!] %s | %s | %s generation failed: %r", project_name, client.name, mode, e)
@@ -653,6 +723,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
         dataset_path = find_dataset_file(project_dir, src_file, files)
         headers = dataset_headers(dataset_path)
+        exampleRowDataset = dataset_example_row(dataset_path)
+        if dataset_path:
+            try:
+                dataset_path_for_prompt = dataset_path.relative_to(project_dir).as_posix()
+            except ValueError:
+                dataset_path_for_prompt = dataset_path.name
+        else:
+            dataset_path_for_prompt = ""
+        projectContext = project_context(files)
 
         if args.dry_run:
             logging.info("    src: %s", src_file.relative_to(project_dir))
@@ -660,6 +739,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 logging.info("    dataset: %s", dataset_path.relative_to(project_dir))
             else:
                 logging.info("    dataset: (none)")
+            if exampleRowDataset:
+                logging.info("    example row: %s", exampleRowDataset[:120])
+            if projectContext:
+                logging.info("    project context: yes")
             processed += 1
             if args.max_projects and processed >= args.max_projects:
                 break
@@ -680,7 +763,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if skip_primary_existing:
             pass
         elif primary_client is not None:
-            code = generate(primary_client, "original_telemetry", src_file, None, project_dir.name)
+            code = generate(
+                primary_client,
+                "original_telemetry",
+                src_file,
+                "",
+                project_dir.name,
+                exampleRowDataset,
+                dataset_path_for_prompt,
+                projectContext,
+            )
             if code:
                 write_output_file(
                     out_file=out_primary,
@@ -712,12 +804,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     except OSError:
                         pass
 
-                if mode == "autonomous":
-                    src_for_mode = src_file #None
-                else:
-                    src_for_mode = src_file
-
-                code = generate(client, mode, src_for_mode, headers, project_dir.name)
+                code = generate(
+                    client,
+                    mode,
+                    src_file,
+                    headers,
+                    project_dir.name,
+                    exampleRowDataset,
+                    dataset_path_for_prompt,
+                    projectContext,
+                )
                 if not code:
                     logging.info("[i] Skipping %s %s (no response)", llm_name, mode)
                     continue
