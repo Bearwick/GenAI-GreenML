@@ -1,6 +1,0 @@
-graphviz==0.21
-ipython==9.10.0
-matplotlib==3.10.8
-numpy==2.4.2
-pandas==3.0.0
-scikit_learn==1.8.0
