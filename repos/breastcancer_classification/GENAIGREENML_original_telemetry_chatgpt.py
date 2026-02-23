@@ -30,10 +30,8 @@ def propagate(w, b, X, Y):
     m = X.shape[1]
     A = sigmoid(np.dot(w.T, X) + b)
     cost = (-1 / m) * np.sum(Y * np.log(A) + (1 - Y) * (np.log(1 - A)))
-
     dw = (1 / m) * np.dot(X, (A - Y).T)
     db = (1 / m) * np.sum(A - Y)
-
     cost = np.squeeze(cost)
     grads = {"dw": dw, "db": db}
     return grads, cost
@@ -47,9 +45,10 @@ def optimize(w, b, X, Y, num_iters, alpha, print_cost=False):
         db = grads["db"]
         w = w - alpha * dw
         b = b - alpha * db
-
         if i % 100 == 0:
             costs.append(cost)
+        if print_cost and i % 100 == 0:
+            pass
 
     params = {"w": w, "b": b}
     grads = {"dw": dw, "db": db}
@@ -60,12 +59,9 @@ def predict(w, b, X):
     m = X.shape[1]
     y_pred = np.zeros(shape=(1, m))
     w = w.reshape(X.shape[0], 1)
-
     A = sigmoid(np.dot(w.T, X) + b)
-
     for i in range(A.shape[1]):
         y_pred[0, i] = 1 if A[0, i] > 0.5 else 0
-
     assert y_pred.shape == (1, m)
     return y_pred
 
@@ -84,14 +80,16 @@ def model(X_train, Y_train, num_iters=2000, alpha=0.5, print_cost=False):
     Y_test = np.array(Y_test)
     Y_test = Y_test.T
 
+    y_prediction_train = predict(w, b, X_train)
     y_prediction_test = predict(w, b, X_test)
+
     accuracy = 100 - np.mean(np.abs(y_prediction_test - Y_test)) * 100
     print(f"ACCURACY={accuracy:.6f}")
 
     d = {
         "costs": costs,
         "Y_prediction_test": y_prediction_test,
-        "Y_prediction_train": predict(w, b, X_train),
+        "Y_prediction_train": y_prediction_train,
         "w": w,
         "b": b,
         "learning_rate": alpha,

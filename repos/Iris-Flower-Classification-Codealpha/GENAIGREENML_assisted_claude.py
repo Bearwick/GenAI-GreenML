@@ -3,11 +3,13 @@
 # Mode: assisted
 
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
+
+np.random.seed(42)
 
 try:
     df = pd.read_csv("Iris.csv")
@@ -16,36 +18,39 @@ try:
 except Exception:
     df = pd.read_csv("Iris.csv", sep=";", decimal=",")
 
-if "Id" in df.columns:
-    df.drop(columns=["Id"], inplace=True)
+id_cols = [c for c in df.columns if c.lower() == "id"]
+if id_cols:
+    df.drop(columns=id_cols, inplace=True)
+
+target_col = [c for c in df.columns if c.lower() == "species"][0]
 
 label_encoder = LabelEncoder()
-df["Species"] = label_encoder.fit_transform(df["Species"])
+df[target_col] = label_encoder.fit_transform(df[target_col])
 
-X = df.drop("Species", axis=1)
-y = df["Species"]
+X = df.drop(target_col, axis=1).values
+y = df[target_col].values
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-pipeline = Pipeline([
-    ("scaler", StandardScaler()),
-    ("model", LogisticRegression(max_iter=200, solver="lbfgs", random_state=42))
-])
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
 
-pipeline.fit(X_train, y_train)
-y_pred = pipeline.predict(X_test)
+model = LogisticRegression(max_iter=200, random_state=42, solver="lbfgs")
+model.fit(X_train, y_train)
 
+y_pred = model.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
 
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Removed seaborn/matplotlib imports and all visualization code to eliminate unnecessary computation and memory usage.
-# Removed cross_val_score call which re-fitted the model 5 additional times without contributing to final accuracy output.
-# Removed classification_report and confusion_matrix computations that were only used for printing.
-# Removed all original print/logging statements.
-# Added robust CSV parsing fallback (default then sep=';' with decimal=',').
-# Added random_state=42 to LogisticRegression for reproducibility.
-# Kept the same dataset, task, model, pipeline, and train/test split to preserve original behavior and accuracy.
+# Removed seaborn/matplotlib imports and all visualization code to eliminate unused dependencies and rendering overhead.
+# Removed cross_val_score since its result was only printed; this avoids 5 extra fit/predict cycles.
+# Replaced Pipeline with direct scaler + model calls to reduce object construction overhead.
+# Converted DataFrame to NumPy arrays early (`.values`) to reduce memory footprint and speed up sklearn operations.
+# Removed all intermediate print statements, classification_report, and confusion_matrix computation that were not needed for final output.
+# Added robust CSV fallback parsing and column name detection from actual data rather than hardcoded assumptions.
+# Set random_state on LogisticRegression and global numpy seed for full reproducibility.

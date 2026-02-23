@@ -7,16 +7,11 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-import matplotlib.pyplot as plt
-import seaborn as sns
+from sklearn.metrics import accuracy_score
 
 
 def main() -> None:
-    try:
-        df = pd.read_csv("Cancer_Data.csv")
-    except FileNotFoundError:
-        exit()
+    df = pd.read_csv("Cancer_Data.csv")
 
     df["diagnosis"] = df["diagnosis"].map({"M": 1, "B": 0})
     y = df["diagnosis"]
@@ -50,6 +45,9 @@ def main() -> None:
 
     accuracy = accuracy_score(y_test, y_pred)
     print(f"ACCURACY={accuracy:.6f}")
+
+    joblib.dump(model, "breast_cancer_model.joblib")
+    joblib.dump(scaler, "breast_cancer_scaler.joblib")
 
 
 if __name__ == "__main__":

@@ -4,140 +4,103 @@
 
 import pandas as pd
 import numpy as np
+import sys
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.impute import SimpleImputer
-from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LogisticRegression, Ridge
-from sklearn.metrics import accuracy_score, r2_score
-
-def load_data(filepath):
-    """Robust CSV loader with fallback parameters."""
-    try:
-        df = pd.read_csv(filepath)
-        # Check if single column (wrong separator)
-        if df.shape[1] <= 1:
-            raise ValueError
-    except Exception:
-        df = pd.read_csv(filepath, sep=';', decimal=',')
-    return df
-
-def clean_columns(df):
-    """Normalize column names and remove artifacts."""
-    df.columns = [str(c).strip() for c in df.columns]
-    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-    return df
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import accuracy_score
 
 def run_pipeline():
-    filename = "cat_dog_data.csv"
+    # 1. Robust CSV Parsing
+    file_path = 'cat_dog_data.csv'
     try:
-        df = load_data(filename)
+        df = pd.read_csv(file_path)
+        # If pandas incorrectly parsed a single column, retry with common delimiters
+        if df.shape[1] <= 1:
+            df = pd.read_csv(file_path, sep=';', decimal=',')
     except Exception:
-        # Create empty df to trigger fail-safe if file missing
-        df = pd.DataFrame()
+        # If reading fails, exit with zero accuracy to remain end-to-end safe
+        print(f"ACCURACY=0.000000")
+        return
+
+    # 2. Schema Normalization
+    # Strip whitespace and collapse internal whitespace
+    df.columns = [" ".join(str(c).strip().split()) for c in df.columns]
+    # Drop 'Unnamed' columns
+    df = df.loc[:, ~df.columns.str.contains('^Unnamed', case=False)]
 
     if df.empty:
-        # Exit gracefully if no data
-        print("ACCURACY=0.000000")
+        print(f"ACCURACY=0.000000")
         return
 
-    df = clean_columns(df)
-
-    # Identify target and features
+    # 3. Target and Feature Identification
+    # Prefer 'label' but fallback to the last column
     target_col = 'label' if 'label' in df.columns else df.columns[-1]
-    feature_cols = [c for c in df.columns if c != target_col]
+    
+    # Identify feature columns (numeric preferred)
+    X_raw = df.drop(columns=[target_col])
+    
+    # Robust numeric conversion for features
+    for col in X_raw.columns:
+        X_raw[col] = pd.to_numeric(X_raw[col], errors='coerce')
+    
+    # Drop columns that are entirely NaN after coercion
+    X_raw = X_raw.dropna(axis=1, how='all')
+    feature_list = X_raw.columns.tolist()
 
-    if not feature_cols:
-        print("ACCURACY=0.000000")
+    if not feature_list:
+        print(f"ACCURACY=0.000000")
         return
 
-    # Basic data cleaning: handle NaN and convert types
-    X = df[feature_cols].copy()
-    y = df[target_col].copy()
+    # 4. Preprocess Target
+    y_raw = df[target_col].astype(str).str.strip()
+    unique_classes = y_raw.unique()
 
-    # Drop rows where target is NaN
-    mask = y.notna()
-    X = X[mask]
-    y = y[mask]
-
-    if len(X) < 2:
-        print("ACCURACY=0.000000")
-        return
-
-    # Determine task: Classification or Regression
-    # If target is object or has few unique values relative to size
-    is_classification = False
-    if y.dtype == 'object' or y.nunique() < 20:
-        is_classification = True
-        # Ensure categories are encoded for the model
-        y = y.astype(str)
-        unique_classes = np.unique(y)
-        if len(unique_classes) < 2:
-            # Trivial case
-            print("ACCURACY=1.000000")
-            return
-    else:
-        y = pd.to_numeric(y, errors='coerce')
-        y = y.fillna(y.mean())
-
-    # Split
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    # Preprocessing
-    numeric_features = X.select_dtypes(include=['int64', 'float64']).columns.tolist()
-    categorical_features = X.select_dtypes(include=['object', 'category']).columns.tolist()
-
-    numeric_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='median')),
-        ('scaler', StandardScaler())
+    # 5. Pipeline Construction
+    # Energy efficient: Logistic Regression is a lightweight linear model.
+    # Pipeline handles scaling and imputation in one pass.
+    pipeline = Pipeline([
+        ('imputer', SimpleImputer(strategy='mean')),
+        ('scaler', StandardScaler()),
+        ('classifier', LogisticRegression(
+            max_iter=500, 
+            solver='lbfgs', 
+            class_weight='balanced',
+            random_state=42
+        ))
     ])
 
-    categorical_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
-        ('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))
-    ])
-
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ('num', numeric_transformer, numeric_features),
-            ('cat', categorical_transformer, categorical_features)
-        ],
-        remainder='drop'
-    )
-
-    if is_classification:
-        # Energy-efficient linear model
-        model = LogisticRegression(max_iter=1000, solver='liblinear')
+    # 6. Training and Evaluation
+    if len(unique_classes) < 2:
+        # Fallback for single class datasets
+        accuracy = 1.0
     else:
-        model = Ridge()
-
-    clf = Pipeline(steps=[('preprocessor', preprocessor),
-                          ('classifier', model)])
-
-    # Fit
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
-
-    # Metric
-    if is_classification:
-        accuracy = accuracy_score(y_test, y_pred)
-    else:
-        # For regression, we use a clipped R2-based proxy for "accuracy" in [0,1]
-        score = r2_score(y_test, y_pred)
-        accuracy = max(0, min(1, score))
+        try:
+            X_train, X_test, y_train, y_test = train_test_split(
+                X_raw[feature_list], y_raw, test_size=0.2, random_state=42
+            )
+            
+            if len(X_train) > 0:
+                pipeline.fit(X_train, y_train)
+                predictions = pipeline.predict(X_test)
+                accuracy = accuracy_score(y_test, predictions)
+            else:
+                accuracy = 0.0
+        except Exception:
+            # Fallback for unexpected data-related failures
+            accuracy = 0.0
 
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
     run_pipeline()
 
-# Optimization Summary
-# 1. Model Choice: LogisticRegression (with liblinear) and Ridge are chosen for high energy efficiency on CPU.
-# 2. They have O(n_features * n_samples) complexity, making them significantly faster than non-linear SVMs or Ensembles.
-# 3. Robustness: Implemented a robust CSV reader and column cleaner to handle malformed files or whitespace.
-# 4. Pipeline: Used sklearn.Pipeline to prevent data leakage and minimize redundant transformations.
-# 5. Preprocessing: SimpleImputer and StandardScaler ensure convergence for linear models with minimal compute overhead.
-# 6. Memory: Avoided heavy deep learning or large-scale embeddings to stay within low-resource CPU constraints.
-# 7. Fallback: Includes logic to switch between classification and regression based on target distribution to ensure end-to-end execution.
-# 8. Constraints: All categorical features are One-Hot Encoded only if present; otherwise, numerical scaling is preferred.
+# OPTIMIZATION SUMMARY
+# 1. Model Selection: Used Logistic Regression instead of large ensembles (Random Forest/XGBoost) to minimize CPU instructions per inference.
+# 2. Lightweight Preprocessing: StandardScaling and Mean Imputation are O(n) operations, ensuring low memory and power consumption.
+# 3. Computational Efficiency: Avoided expensive hyperparameter tuning and cross-validation to reduce energy footprint during training.
+# 4. Robustness: Implemented multi-stage CSV parsing and schema normalization to prevent crashes on non-standard formatting.
+# 5. Scalability: The pipeline uses scikit-learn's optimized C-based implementations for matrix operations, which are highly efficient on CPU.
+# 6. Fallback Logic: Included checks for empty datasets or single-class targets to ensure the script returns a valid value instead of an error.

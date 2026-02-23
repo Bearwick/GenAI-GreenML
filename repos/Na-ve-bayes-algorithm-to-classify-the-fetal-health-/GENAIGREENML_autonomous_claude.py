@@ -4,101 +4,94 @@
 
 import pandas as pd
 import numpy as np
-from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-import warnings
-warnings.filterwarnings("ignore")
+from sklearn.preprocessing import StandardScaler
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import accuracy_score
 
 # Robust CSV loading
 df = None
-for sep, decimal in [(',', '.'), (';', ','), ('\t', '.')]:
-    try:
-        df = pd.read_csv("fetal_health.csv", sep=sep, decimal=decimal)
-        if df.shape[1] > 1:
-            break
-    except Exception:
-        continue
-
-if df is None or df.shape[1] <= 1:
-    try:
+try:
+    df = pd.read_csv("fetal_health.csv")
+    if df.shape[1] < 3:
         df = pd.read_csv("fetal_health.csv", sep=';', decimal=',')
-    except Exception:
-        df = pd.read_csv("fetal_health.csv")
+except Exception:
+    df = pd.read_csv("fetal_health.csv", sep=';', decimal=',')
 
 # Normalize column names
 df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
 df = df.loc[:, ~df.columns.str.startswith('Unnamed')]
 
-# Identify target column
+# Define target and features based on known schema
 target_col = None
-expected_target = 'fetal_health'
-for col in df.columns:
-    if col.lower().replace('_', '').replace(' ', '') == 'fetalhealth':
-        target_col = col
-        break
+if 'fetal_health' in df.columns:
+    target_col = 'fetal_health'
+else:
+    # Fallback: pick last numeric column as target
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    if numeric_cols:
+        target_col = numeric_cols[-1]
 
-if target_col is None:
-    # Fallback: use last column as target
-    target_col = df.columns[-1]
+assert target_col is not None, "No suitable target column found"
 
-# Coerce all columns to numeric
-for col in df.columns:
-    df[col] = pd.to_numeric(df[col], errors='coerce')
+feature_cols = [c for c in df.columns if c != target_col]
 
-# Drop rows with NaN in target
+# Coerce all to numeric
+for c in df.columns:
+    df[c] = pd.to_numeric(df[c], errors='coerce')
+
+# Drop rows with NaN/inf in target
+df = df.replace([np.inf, -np.inf], np.nan)
 df = df.dropna(subset=[target_col])
 
-# Separate features and target
-feature_cols = [c for c in df.columns if c != target_col]
-X = df[feature_cols].copy()
-y = df[target_col].copy()
+# For features, impute NaN with median
+for c in feature_cols:
+    if df[c].isna().any():
+        df[c] = df[c].fillna(df[c].median())
 
-# Handle NaN/inf in features
-X = X.replace([np.inf, -np.inf], np.nan)
-X = X.fillna(X.median())
+# Drop any remaining rows with NaN
+df = df.dropna()
 
-# Assert dataset is not empty
-assert X.shape[0] > 0, "Dataset is empty after preprocessing"
-assert len(feature_cols) > 0, "No feature columns found"
+assert len(df) > 10, "Dataset too small after preprocessing"
 
-# Determine task type
+X = df[list(feature_cols)]
+y = df[target_col]
+
+# Convert target to int for classification
+y = y.astype(int)
+
 n_classes = y.nunique()
-is_classification = n_classes >= 2 and n_classes <= 50
+assert n_classes >= 2, "Target must have at least 2 classes for classification"
 
-# Train/test split
+# Train/test split: 70/30 as specified in project context
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.3, random_state=42, stratify=y if is_classification else None
+    X, y, test_size=0.30, random_state=42, stratify=y
 )
 
-assert X_train.shape[0] > 0, "Training set is empty"
-assert X_test.shape[0] > 0, "Test set is empty"
+assert len(X_train) > 0 and len(X_test) > 0, "Empty train or test split"
 
-if is_classification:
-    # Gaussian Naive Bayes is lightweight and energy-efficient
-    pipe = Pipeline([
-        ('scaler', StandardScaler()),
-        ('clf', GaussianNB())
-    ])
-    pipe.fit(X_train, y_train)
-    y_pred = pipe.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-else:
-    # Fallback to regression with R^2 clamped to [0,1]
-    from sklearn.linear_model import Ridge
-    pipe = Pipeline([
-        ('scaler', StandardScaler()),
-        ('reg', Ridge(alpha=1.0))
-    ])
-    pipe.fit(X_train, y_train)
-    r2 = pipe.score(X_test, y_test)
-    accuracy = max(0.0, min(1.0, r2))
+# Build pipeline: StandardScaler + GaussianNB
+# Naive Bayes is energy-efficient, fast on CPU, and explicitly requested by project context
+pipeline = Pipeline([
+    ('scaler', StandardScaler()),
+    ('clf', GaussianNB())
+])
+
+pipeline.fit(X_train, y_train)
+
+y_pred = pipeline.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
 
 print(f"ACCURACY={accuracy:.6f}")
 
 # OPTIMIZATION SUMMARY
-# 1. Gaussian Naive Bayes chosen as the primary classifier: O(n*d) training,
-#    extremely lightweight, no iterative optimization, minimal memory footprint.
-# 2. StandardScaler used to normalize features before
+# 1. Model choice: GaussianNB - explicitly requested by project context (Naive Bayes classifier).
+#    It is one of the most energy-efficient classifiers: O(n*d) training, O(d*k) prediction,
+#    minimal memory footprint, and extremely fast on CPU.
+# 2. Preprocessing: StandardScaler normalizes features which can help GaussianNB when features
+#    have very different scales. This is a lightweight linear transformation.
+# 3. No large ensembles, no deep learning, no heavy feature engineering - keeps computation minimal.
+# 4. 70/30 stratified split matches the project requirement and ensures class distribution is preserved.
+# 5. Robust CSV parsing with fallback for different delimiters/decimal formats.
+# 6. All numeric coercion and

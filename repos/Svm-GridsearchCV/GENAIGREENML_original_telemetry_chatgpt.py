@@ -7,44 +7,38 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
+dt = "bodyPerformance.csv"
+df = pd.read_csv(dt)
 
-def main() -> None:
-    dt = "bodyPerformance.csv"
-    df = pd.read_csv(dt)
+X = df.drop(["Blass"], axis=1)
+y = df["Blass"]
 
-    X = df.drop(["Blass"], axis=1)
-    y = df["Blass"]
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+svm = SVC()
 
-    svm = SVC()
+param_grid = {
+    "C": [1, 0.1, 0.01, 0.001],
+    "gamma": [1, 0.1, 0.01, 0.001],
+    "kernel": ["rbf", "sigmoid"],
+}
 
-    param_grid = {
-        "C": [1, 0.1, 0.01, 0.001],
-        "gamma": [1, 0.1, 0.01, 0.001],
-        "kernel": ["rbf", "sigmoid"],
-    }
+grid_search = GridSearchCV(svm, param_grid, cv=5)
+grid_search.fit(X_train, y_train)
 
-    grid_search = GridSearchCV(svm, param_grid, cv=5)
-    grid_search.fit(X_train, y_train)
+svm = SVC(
+    C=grid_search.best_params_["C"],
+    gamma=grid_search.best_params_["gamma"],
+    kernel=grid_search.best_params_["kernel"],
+)
+svm.fit(X_train, y_train)
 
-    svm = SVC(
-        C=grid_search.best_params_["C"],
-        gamma=grid_search.best_params_["gamma"],
-        kernel=grid_search.best_params_["kernel"],
-    )
-    svm.fit(X_train, y_train)
+y_pred = svm.predict(X_test)
 
-    y_pred = svm.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
+accuracy = accuracy_score(y_test, y_pred)
+_ = classification_report(y_test, y_pred)
+_ = confusion_matrix(y_test, y_pred)
 
-    classification_report(y_test, y_pred)
-    confusion_matrix(y_test, y_pred)
-
-    print(f"ACCURACY={accuracy:.6f}")
-
-
-if __name__ == "__main__":
-    main()
+print(f"ACCURACY={accuracy:.6f}")

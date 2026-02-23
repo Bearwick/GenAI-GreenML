@@ -2,10 +2,9 @@
 # LLM: gemini
 # Mode: assisted
 
-import numpy as np
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
@@ -13,50 +12,42 @@ def load_data(file_path):
     try:
         df = pd.read_csv(file_path)
         if df.shape[1] <= 1:
-            df = pd.read_csv(file_path, sep=';', decimal=',')
-    except Exception:
-        return None, None
+            raise ValueError
+    except (ValueError, pd.errors.ParserError):
+        df = pd.read_csv(file_path, sep=';', decimal=',')
     
-    X = df.iloc[:, :-1].to_numpy(dtype=np.float32)
-    y = df.iloc[:, -1].to_numpy()
+    X = df.iloc[:, :-1].values.astype(np.float32)
+    y = df.iloc[:, -1].values
     return X, y
 
-def run_pipeline(file_path='grafici.csv'):
+def run_pipeline(file_path):
     X, y = load_data(file_path)
-    if X is None:
-        return
-
+    
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
-
-    scaler = StandardScaler(copy=False)
-    scaler.fit(X_train)
-    X_train = scaler.transform(X_train)
-    X_test = scaler.transform(X_test)
-
+    
     model = RandomForestClassifier(
         n_estimators=100, 
         class_weight='balanced', 
-        random_state=42, 
+        random_state=42,
         n_jobs=-1
     )
     model.fit(X_train, y_train)
-
+    
     y_pred = model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
     
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
-    run_pipeline()
+    run_pipeline('grafici.csv')
 
 # Optimization Summary
-# 1. Removed redundant cross-validation and duplicate model training to reduce CPU cycles and energy consumption.
-# 2. Replaced matplotlib and joblib dependencies with standard libraries to minimize memory footprint and avoid unnecessary I/O.
-# 3. Optimized data loading using to_numpy(dtype=np.float32) to reduce memory overhead from 64-bit defaults.
-# 4. Implemented 'copy=False' in StandardScaler to perform in-place scaling where possible, reducing peak memory usage.
-# 5. Added 'stratify=y' in train_test_split to ensure stable results with potentially fewer iterations/smaller datasets.
-# 6. Used 'n_jobs=-1' in RandomForestClassifier to leverage multi-core efficiency, reducing total runtime.
-# 7. Removed all plotting, logging, and file-saving operations to eliminate unnecessary disk I/O and graphics processing.
-# 8. Implemented a robust CSV parsing fallback to ensure the script runs end-to-end without manual intervention.
+# 1. Removed StandardScaler: RandomForest is a tree-based algorithm and is scale-invariant, making scaling redundant and computationally wasteful.
+# 2. Removed redundant Cross-Validation: Streamlined the evaluation to a single train-test split to reduce total CPU cycles and energy consumption.
+# 3. Optimized Data Types: Cast feature matrix to float32 to reduce memory footprint.
+# 4. Parallelized Training: Enabled n_jobs=-1 in RandomForestClassifier to utilize all available CPU cores, reducing total execution runtime.
+# 5. Robust Data Ingestion: Implemented a fallback mechanism for CSV parsing to handle different delimiters/decimals without manual intervention.
+# 6. Eliminated Overhead: Removed all visualization code, unused imports (joblib, matplotlib, SVC), and file I/O operations (saving/loading models) to minimize disk activity and memory usage.
+# 7. Optimized Data Splitting: Added 'stratify=y' to train_test_split to ensure stable and representative class distributions in training/testing sets, improving reproducibility.

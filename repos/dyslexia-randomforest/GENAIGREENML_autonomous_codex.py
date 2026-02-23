@@ -2,25 +2,23 @@
 # LLM: codex
 # Mode: autonomous
 
-import os
-import numpy as np
 import pandas as pd
+import numpy as np
+import re
 import warnings
-
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
-from sklearn.metrics import accuracy_score, r2_score
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, LabelEncoder
 from sklearn.linear_model import LogisticRegression, Ridge
-from sklearn.dummy import DummyClassifier, DummyRegressor
+from sklearn.metrics import accuracy_score, r2_score
+from sklearn.dummy import DummyClassifier
 
 warnings.filterwarnings("ignore")
 
-EXPECTED_HEADERS = [h.strip() for h in """
-AF3_Shannon,AF3_Energy0_4,AF3_Energy4_8,AF3_Energy8_10,AF3_Energy10_12,AF3_Energy13_19,AF3_Energy20_30,AF3_Energy30_60,F3_Shannon,F3_Energy0_4,F3_Energy4_8,F3_Energy8_10,F3_Energy10_12,F3_Energy13_19,F3_Energy20_30,F3_Energy30_60,F7_Energy0_4,F7_Energy4_8,F7_Energy8_10,F7_Energy10_12,F7_Energy13_19,F7_Energy20_30,F7_Energy30_60,FC5_Shannon,FC5_Energy0_4,FC5_Energy4_8,FC5_Energy8_10,FC5_Energy10_12,FC5_Energy13_19,FC5_Energy20_30,FC5_Energy30_60,O1_Shannon,O1_Energy0_4,O1_Energy4_8,O1_Energy8_10,O1_Energy10_12,O1_Energy13_19,O1_Energy20_30,O1_Energy30_60,P7_Shannon,P7_Energy0_4,P7_Energy4_8,P7_Energy8_10,P7_Energy10_12,P7_Energy13_19,P7_Energy20_30,P7_Energy30_60,T7_Shannon,T7_Energy0_4,T7_Energy4_8,T7_Energy8_10,T7_Energy10_12,T7_Energy13_19,T7_Energy20_30,T7_Energy30_60,AF4_Shannon,AF4_Energy0_4,AF4_Energy4_8,AF4_Energy8_10,AF4_Energy10_12,AF4_Energy13_19,AF4_Energy20_30,AF4_Energy30_60,F4_Shannon,F4_Energy0_4,F4_Energy4_8,F4_Energy8_10,F4_Energy10_12,F4_Energy13_19,F4_Energy20_30,F4_Energy30_60,F8_Shannon,F8_Energy0_4,F8_Energy4_8,F8_Energy8_10,F8_Energy10_12,F8_Energy13_19,F8_Energy20_30,F8_Energy30_60,FC6_Shannon,FC6_Energy0_4,FC6_Energy4_8,FC6_Energy8_10,FC6_Energy10_12,FC6_Energy13_19,FC6_Energy20_30,FC6_Energy30_60,O2_Shannon,O2_Energy0_4,O2_Energy4_8,O2_Energy8_10,O2_Energy10_12,O2_Energy13_19,O2_Energy20_30,O2_Energy30_60,T8_Shannon,T8_Energy0_4,T8_Energy4_8,T8_Energy8_10,T8_Energy10_12,T8_Energy13_19,T8_Energy20_30,T8_Energy30_60,P8_Shannon,P8_Energy0_4,P8_Energy4_8,P8_Energy8_10,P8_Energy10_12,P8_Energy13_19,P8_Energy20_30,P8_Energy30_60,class
-""".split(",") if h.strip()]
+DATASET_PATH = "trainingfinal.csv"
+DATASET_HEADERS = "AF3_Shannon,AF3_Energy0_4,AF3_Energy4_8,AF3_Energy8_10,AF3_Energy10_12,AF3_Energy13_19,AF3_Energy20_30,AF3_Energy30_60,F3_Shannon,F3_Energy0_4,F3_Energy4_8,F3_Energy8_10,F3_Energy10_12,F3_Energy13_19,F3_Energy20_30,F3_Energy30_60,F7_Energy0_4,F7_Energy4_8,F7_Energy8_10,F7_Energy10_12,F7_Energy13_19,F7_Energy20_30,F7_Energy30_60,FC5_Shannon,FC5_Energy0_4,FC5_Energy4_8,FC5_Energy8_10,FC5_Energy10_12,FC5_Energy13_19,FC5_Energy20_30,FC5_Energy30_60,O1_Shannon,O1_Energy0_4,O1_Energy4_8,O1_Energy8_10,O1_Energy10_12,O1_Energy13_19,O1_Energy20_30,O1_Energy30_60,P7_Shannon,P7_Energy0_4,P7_Energy4_8,P7_Energy8_10,P7_Energy10_12,P7_Energy13_19,P7_Energy20_30,P7_Energy30_60,T7_Shannon,T7_Energy0_4,T7_Energy4_8,T7_Energy8_10,T7_Energy10_12,T7_Energy13_19,T7_Energy20_30,T7_Energy30_60,AF4_Shannon,AF4_Energy0_4,AF4_Energy4_8,AF4_Energy8_10,AF4_Energy10_12,AF4_Energy13_19,AF4_Energy20_30,AF4_Energy30_60,F4_Shannon,F4_Energy0_4,F4_Energy4_8,F4_Energy8_10,F4_Energy10_12,F4_Energy13_19,F4_Energy20_30,F4_Energy30_60,F8_Shannon,F8_Energy0_4,F8_Energy4_8,F8_Energy8_10,F8_Energy10_12,F8_Energy13_19,F8_Energy20_30,F8_Energy30_60,FC6_Shannon,FC6_Energy0_4,FC6_Energy4_8,FC6_Energy8_10,FC6_Energy10_12,FC6_Energy13_19,FC6_Energy20_30,FC6_Energy30_60,O2_Shannon,O2_Energy0_4,O2_Energy4_8,O2_Energy8_10,O2_Energy10_12,O2_Energy13_19,O2_Energy20_30,O2_Energy30_60,T8_Shannon,T8_Energy0_4,T8_Energy4_8,T8_Energy8_10,T8_Energy10_12,T8_Energy13_19,T8_Energy20_30,T8_Energy30_60,P8_Shannon,P8_Energy0_4,P8_Energy4_8,P8_Energy8_10,P8_Energy10_12,P8_Energy13_19,P8_Energy20_30,P8_Energy30_60,class"
 
 def read_csv_with_fallback(path):
     try:
@@ -29,211 +27,167 @@ def read_csv_with_fallback(path):
         df = pd.read_csv(path, sep=';', decimal=',')
         return df
     if df.shape[1] == 1:
-        col0 = df.columns[0]
-        if isinstance(col0, str) and ';' in col0:
-            try:
-                df2 = pd.read_csv(path, sep=';', decimal=',')
-                if df2.shape[1] > 1:
-                    df = df2
-            except Exception:
-                pass
-    return df
-
-def clean_columns(df):
-    cols = []
-    for c in df.columns:
-        c = str(c).strip()
-        c = " ".join(c.split())
-        cols.append(c)
-    df.columns = cols
-    drop_cols = [c for c in df.columns if c.lower().startswith('unnamed')]
-    if drop_cols:
-        df = df.drop(columns=drop_cols)
-    return df
-
-def load_dataset():
-    csv_files = [f for f in os.listdir('.') if f.lower().endswith('.csv')]
-    if not csv_files:
-        raise FileNotFoundError("No CSV file found")
-    csv_files = sorted(csv_files, key=lambda f: os.path.getsize(f), reverse=True)
-    best_df = None
-    for f in csv_files:
         try:
-            df = read_csv_with_fallback(f)
+            df2 = pd.read_csv(path, sep=';', decimal=',')
+            if df2.shape[1] > df.shape[1]:
+                df = df2
         except Exception:
-            continue
-        df = clean_columns(df)
-        cols_lower = [c.lower() for c in df.columns]
-        if 'class' not in cols_lower and len(df.columns) == len(EXPECTED_HEADERS):
-            df.columns = EXPECTED_HEADERS
-            cols_lower = [c.lower() for c in df.columns]
-        if df.shape[1] < 2:
-            continue
-        if any(c in cols_lower for c in ['class', 'target', 'label', 'y']):
-            best_df = df
-            break
-        if best_df is None:
-            best_df = df
-    if best_df is None:
-        best_df = clean_columns(read_csv_with_fallback(csv_files[0]))
-    return best_df
+            pass
+    return df
 
-def select_target(df):
-    cols_lower = {c.lower(): c for c in df.columns}
-    for name in ['class', 'target', 'label', 'y']:
-        if name in cols_lower:
-            return cols_lower[name]
-    if 'class' in [h.lower() for h in EXPECTED_HEADERS] and len(df.columns) == len(EXPECTED_HEADERS):
-        return 'class'
-    numeric_candidates = []
+def clean_name(name):
+    return re.sub(r'\s+', ' ', str(name).strip())
+
+def is_numeric_like(x):
+    try:
+        float(str(x))
+        return True
+    except Exception:
+        return False
+
+headers_list = [clean_name(h) for h in DATASET_HEADERS.split(',') if str(h).strip() != '']
+
+df = read_csv_with_fallback(DATASET_PATH)
+df.columns = [clean_name(c) for c in df.columns]
+df = df.loc[:, [c for c in df.columns if not str(c).lower().startswith('unnamed')]]
+
+if len(headers_list) == df.shape[1]:
+    num_like_count = sum([is_numeric_like(c) for c in df.columns])
+    if num_like_count >= len(df.columns) * 0.5 or ('class' in headers_list and 'class' not in df.columns):
+        df.columns = headers_list
+
+assert df.shape[0] > 0 and df.shape[1] > 0
+
+df = df.replace([np.inf, -np.inf], np.nan)
+
+for col in df.columns:
+    if pd.api.types.is_numeric_dtype(df[col]):
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    else:
+        converted = pd.to_numeric(df[col], errors='coerce')
+        if converted.notna().mean() >= 0.5:
+            df[col] = converted
+
+def choose_target_column(df):
+    for cand in ['class', 'target', 'label', 'y']:
+        if cand in df.columns:
+            return cand
+    best_col = None
+    best_unique = None
     for col in df.columns:
-        ser = pd.to_numeric(df[col], errors='coerce')
-        if ser.notna().sum() > 0:
-            numeric_candidates.append(col)
-    for col in numeric_candidates:
-        ser = pd.to_numeric(df[col], errors='coerce')
-        if ser.nunique(dropna=True) > 1:
-            return col
-    return df.columns[-1]
+        uniq = df[col].nunique(dropna=True)
+        if uniq <= 1:
+            continue
+        if best_unique is None or uniq < best_unique:
+            best_unique = uniq
+            best_col = col
+    if best_col is None:
+        best_col = df.columns[-1]
+    return best_col
 
-def is_classification_target(y):
-    if pd.api.types.is_bool_dtype(y) or str(y.dtype).startswith('category'):
-        return True
-    if y.dtype == object:
-        return True
-    y_num = pd.to_numeric(y, errors='coerce')
-    n_unique = y_num.nunique(dropna=True)
-    if n_unique <= 20:
-        return True
-    return False
+target_col = choose_target_column(df)
 
-df = load_dataset()
-assert df is not None and df.shape[0] > 0
+df = df.dropna(subset=[target_col])
+assert df.shape[0] > 0
 
-target_col = select_target(df)
-if target_col not in df.columns:
-    target_col = df.columns[-1]
+if df.shape[0] < 2:
+    df = pd.concat([df, df], ignore_index=True)
 
+X = df.drop(columns=[target_col])
 y = df[target_col]
-X = df.drop(columns=[target_col]).copy()
 
 if X.shape[1] == 0:
-    X = pd.DataFrame({'__dummy__': np.zeros(len(y))})
+    X = pd.DataFrame({'dummy': np.zeros(len(df))})
 
-classification = is_classification_target(y)
+unique_vals = y.nunique(dropna=True)
+is_classification = bool((y.dtype == object) or (unique_vals <= 20))
 
-if classification:
-    mask = y.notna()
-    X = X.loc[mask].copy()
-    y = y.loc[mask]
-    le = LabelEncoder()
-    y = le.fit_transform(y.astype(str))
-    n_classes = len(le.classes_)
+if is_classification:
+    if y.dtype == object or pd.api.types.is_bool_dtype(y):
+        le = LabelEncoder()
+        y = le.fit_transform(y.astype(str))
 else:
     y = pd.to_numeric(y, errors='coerce')
-    mask = y.notna() & np.isfinite(y)
-    X = X.loc[mask].copy()
-    y = y.loc[mask]
-    n_classes = None
+    mask = pd.Series(y).notna()
+    X = X.loc[mask]
+    y = pd.Series(y).loc[mask]
+    if len(y) < 2:
+        X = pd.concat([X, X], ignore_index=True)
+        y = pd.concat([y, y], ignore_index=True)
+    unique_vals = pd.Series(y).nunique(dropna=True)
 
-numeric_cols = []
-categorical_cols = []
-for col in X.columns:
-    series = X[col]
-    if pd.api.types.is_numeric_dtype(series):
-        numeric_cols.append(col)
-        X[col] = pd.to_numeric(series, errors='coerce')
-    else:
-        coerced = pd.to_numeric(series, errors='coerce')
-        if coerced.notna().mean() > 0.8:
-            X[col] = coerced
-            numeric_cols.append(col)
-        else:
-            categorical_cols.append(col)
-
-if numeric_cols:
-    X[numeric_cols] = X[numeric_cols].replace([np.inf, -np.inf], np.nan)
-    X[numeric_cols] = X[numeric_cols].astype(np.float32)
-
-if len(numeric_cols) == 0 and len(categorical_cols) == 0:
-    X = pd.DataFrame({'__dummy__': np.zeros(len(y), dtype=np.float32)})
-    numeric_cols = ['__dummy__']
-
-assert X.shape[0] > 0
-
-test_size = 0.2 if len(X) >= 5 else 0.5
 stratify = None
-if classification and n_classes is not None and n_classes > 1:
-    counts = np.bincount(y)
-    if np.min(counts) >= 2:
-        stratify = y
+if is_classification and unique_vals > 1:
+    try:
+        class_counts = pd.Series(y).value_counts()
+        n_samples = len(y)
+        n_classes = int(unique_vals)
+        if (class_counts >= 2).all() and n_samples * 0.2 >= n_classes:
+            stratify = y
+    except Exception:
+        stratify = None
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=test_size, random_state=42, stratify=stratify
+    X, y, test_size=0.2, random_state=42, stratify=stratify
 )
 assert len(X_train) > 0 and len(X_test) > 0
 
-numeric_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='median')),
-    ('scaler', StandardScaler(with_mean=False))
-])
-
-try:
-    ohe = OneHotEncoder(handle_unknown='ignore', sparse=True)
-except TypeError:
-    ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=True)
-
-categorical_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='most_frequent')),
-    ('onehot', ohe)
-])
+numeric_features = [c for c in X.columns if pd.api.types.is_numeric_dtype(X[c])]
+categorical_features = [c for c in X.columns if c not in numeric_features]
 
 transformers = []
-if numeric_cols:
-    transformers.append(('num', numeric_transformer, numeric_cols))
-if categorical_cols:
-    transformers.append(('cat', categorical_transformer, categorical_cols))
+if len(numeric_features) > 0:
+    transformers.append(('num', Pipeline([
+        ('imputer', SimpleImputer(strategy='median')),
+        ('scaler', StandardScaler(with_mean=False))
+    ]), numeric_features))
+if len(categorical_features) > 0:
+    transformers.append(('cat', Pipeline([
+        ('imputer', SimpleImputer(strategy='most_frequent')),
+        ('onehot', OneHotEncoder(handle_unknown='ignore'))
+    ]), categorical_features))
 
-preprocess = ColumnTransformer(transformers=transformers)
+preprocess = ColumnTransformer(transformers=transformers, remainder='drop', sparse_threshold=0.3)
 
-if classification:
-    train_classes = np.unique(y_train)
-    if len(train_classes) < 2:
+if is_classification:
+    if unique_vals < 2:
         model = DummyClassifier(strategy='most_frequent')
     else:
-        if len(train_classes) == 2:
-            model = LogisticRegression(max_iter=200, solver='liblinear')
-        else:
-            model = LogisticRegression(max_iter=200, solver='saga', multi_class='auto', n_jobs=1)
+        solver = 'lbfgs' if unique_vals > 2 else 'liblinear'
+        model = LogisticRegression(max_iter=200, solver=solver)
 else:
-    if pd.Series(y_train).nunique() <= 1:
-        model = DummyRegressor(strategy='mean')
-    else:
-        model = Ridge(alpha=1.0, random_state=42)
+    model = Ridge(alpha=1.0)
 
-clf = Pipeline(steps=[('preprocess', preprocess), ('model', model)])
+pipeline = Pipeline(steps=[('preprocess', preprocess), ('model', model)])
+pipeline.fit(X_train, y_train)
+y_pred = pipeline.predict(X_test)
 
-clf.fit(X_train, y_train)
-y_pred = clf.predict(X_test)
-
-if classification:
-    accuracy = accuracy_score(y_test, y_pred)
+if is_classification:
+    try:
+        accuracy = accuracy_score(y_test, y_pred)
+    except Exception:
+        accuracy = 0.0
 else:
-    if len(y_test) >= 2:
+    try:
         r2 = r2_score(y_test, y_pred)
-        if np.isnan(r2):
+    except Exception:
+        r2 = np.nan
+    if r2 is None or not np.isfinite(r2):
+        try:
+            mae = np.mean(np.abs(np.array(y_test) - np.array(y_pred)))
+            accuracy = 1.0 / (1.0 + mae) if np.isfinite(mae) else 0.0
+        except Exception:
             accuracy = 0.0
-        else:
-            accuracy = max(0.0, min(1.0, (r2 + 1.0) / 2.0))
     else:
-        err = float(np.mean(np.abs(y_test - y_pred)))
-        denom = float(np.mean(np.abs(y_test)) + 1e-8)
-        score = 1.0 - err / denom
-        accuracy = max(0.0, min(1.0, score))
+        accuracy = max(0.0, min(1.0, (r2 + 1.0) / 2.0))
+
+if accuracy is None or not np.isfinite(accuracy):
+    accuracy = 0.0
+accuracy = float(accuracy)
 
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# - Selected lightweight linear or dummy models to reduce CPU usage while maintaining a strong baseline.
-# - Used simple imputation, scaling, and sparse one-hot encoding in a single pipeline for efficient preprocessing.
-# - Added robust schema handling, numeric coercion, and a bounded regression accuracy proxy for stability.
+# - Used lightweight linear models (LogisticRegression/Ridge) for energy-efficient CPU training and inference.
+# - Minimal preprocessing with imputation, scaling, and one-hot encoding via ColumnTransformer ensures reproducibility.
+# - Robust schema handling and safe fallbacks (dummy model, bounded regression proxy) guarantee end-to-end execution.

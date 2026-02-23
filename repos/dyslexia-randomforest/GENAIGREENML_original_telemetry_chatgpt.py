@@ -56,15 +56,16 @@ def confmatrix_of_RandomForest(trainingdata_filepath, testdata_filepath, criteri
         accuracies.append(score)
         y_pred = model.predict(x_test)
         conf = confusion_matrix(y_test, y_pred, labels=[0, 1])
-        a[x] = conf.flatten()
+        array_1d = conf.flatten()
+        a[x] = array_1d
 
     conf = np.mean(np.array([a[0], a[1], a[2], a[3], a[4]]), axis=0)
-    accuracy = float(np.mean(accuracies))
+
+    accuracy = float(np.mean(np.array(accuracies)))
     print(f"ACCURACY={accuracy:.6f}")
+
     return conf
 
 
 if __name__ == "__main__":
-    conf = confmatrix_of_RandomForest(
-        "entire brain_training_2.csv", "entire brain_test_2.csv"
-    )
+    conf = confmatrix_of_RandomForest("entire brain_training_2.csv", "entire brain_test_2.csv")

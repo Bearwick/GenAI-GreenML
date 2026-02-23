@@ -5,88 +5,80 @@
 import pandas as pd
 import numpy as np
 import random
-from sklearn.preprocessing import LabelEncoder
+import warnings
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 import xgboost as xgb
 
+DATASET_PATH = "xgboost_on _binary.csv"
 DATASET_HEADERS = "admit,gre,gpa,rank"
-EXPECTED_COLS = [c.strip() for c in DATASET_HEADERS.split(",") if c.strip()]
+SEED = 42
 
-def read_csv_robust(path, expected_cols):
-    try:
-        df = pd.read_csv(path)
-    except Exception:
+def read_csv_robust(path, expected_headers):
+    df = pd.read_csv(path)
+    if df.shape[1] != len(expected_headers):
         df = pd.read_csv(path, sep=";", decimal=",")
-        return df
-    if df.shape[1] == 1 and len(expected_cols) > 1:
-        try:
-            df_alt = pd.read_csv(path, sep=";", decimal=",")
-            if df_alt.shape[1] > 1:
-                df = df_alt
-        except Exception:
-            pass
-    return df
-
-def align_columns(df, expected_cols):
     df.columns = [str(c).strip() for c in df.columns]
-    lower_cols = [c.lower() for c in df.columns]
-    lower_expected = [c.lower() for c in expected_cols]
-    if set(lower_expected).issubset(set(lower_cols)):
-        mapping = {}
-        for exp in expected_cols:
-            exp_lower = exp.lower()
-            if exp_lower in lower_cols:
-                actual = df.columns[lower_cols.index(exp_lower)]
-                mapping[actual] = exp
-        if mapping:
-            df = df.rename(columns=mapping)
-    elif df.shape[1] == len(expected_cols):
-        df.columns = expected_cols
+    if df.shape[1] == len(expected_headers) and set(df.columns) != set(expected_headers):
+        df.columns = expected_headers
     return df
 
-def resolve_column(df, expected_name, fallback_index):
-    if expected_name:
-        for col in df.columns:
-            if col.lower() == expected_name.lower():
-                return col
-    if fallback_index is not None and 0 <= fallback_index < len(df.columns):
-        return df.columns[fallback_index]
+def match_column(expected, columns):
+    if expected is None:
+        return None
+    expected_lower = str(expected).lower()
+    for col in columns:
+        if str(col).lower() == expected_lower:
+            return col
     return None
 
+def build_model(seed):
+    try:
+        return xgb.XGBClassifier(random_state=seed, use_label_encoder=False, eval_metric="logloss")
+    except TypeError:
+        return xgb.XGBClassifier(random_state=seed)
+
 def main():
-    np.random.seed(42)
-    random.seed(42)
-    df = read_csv_robust("xgboost_on _binary.csv", EXPECTED_COLS)
-    df = align_columns(df, EXPECTED_COLS)
-    target_expected = EXPECTED_COLS[0] if EXPECTED_COLS else None
-    rank_expected = EXPECTED_COLS[-1] if EXPECTED_COLS else None
-    target_col = resolve_column(df, target_expected, 0)
-    rank_col = resolve_column(df, rank_expected, len(df.columns) - 1)
-    if target_col is None or rank_col is None:
-        raise ValueError("Required columns not found")
-    le_admit = LabelEncoder()
-    df[target_col] = le_admit.fit_transform(df[target_col])
-    le_rank = LabelEncoder()
-    df[rank_col] = le_rank.fit_transform(df[rank_col])
-    if len(le_admit.classes_) == 2:
-        y = df.pop(target_col)
-        df_encoded = pd.get_dummies(df, columns=[rank_col], drop_first=True)
+    warnings.filterwarnings("ignore")
+    random.seed(SEED)
+    np.random.seed(SEED)
+
+    expected_headers = [h.strip() for h in DATASET_HEADERS.split(",") if h.strip()]
+    df = read_csv_robust(DATASET_PATH, expected_headers)
+
+    target_expected = expected_headers[0] if expected_headers else None
+    rank_expected = expected_headers[-1] if expected_headers else None
+
+    target_base = match_column(target_expected, df.columns) or (df.columns[0] if len(df.columns) > 0 else None)
+    rank_col = match_column(rank_expected, df.columns)
+
+    categorical_cols = []
+    if target_base and target_base in df.columns:
+        categorical_cols.append(target_base)
+    if rank_col and rank_col in df.columns and rank_col != target_base:
+        categorical_cols.append(rank_col)
+
+    if categorical_cols:
+        df_encoded = pd.get_dummies(df, columns=categorical_cols, drop_first=True)
     else:
-        df_encoded = pd.get_dummies(df, columns=[target_col, rank_col], drop_first=True)
-        target_dummy = f"{target_col}_1"
-        if target_dummy not in df_encoded.columns:
-            dummy_cols = [c for c in df_encoded.columns if c.startswith(f"{target_col}_")]
-            if len(dummy_cols) == 1:
-                target_dummy = dummy_cols[0]
-            else:
-                raise ValueError("Target dummy column not found")
-        y = df_encoded.pop(target_dummy)
-    X = df_encoded
+        df_encoded = df
+
+    admit_cols = [c for c in df_encoded.columns if target_base and str(c).startswith(f"{target_base}_")]
+    if admit_cols:
+        target_col = admit_cols[0]
+    elif target_base in df_encoded.columns:
+        target_col = target_base
+    else:
+        target_col = df_encoded.columns[0]
+
+    X = df_encoded.drop(columns=[target_col])
+    y = df_encoded[target_col]
+
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
+        X, y, test_size=0.2, random_state=SEED
     )
-    model = xgb.XGBClassifier(random_state=42, n_jobs=1, verbosity=0)
+
+    model = build_model(SEED)
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
@@ -94,9 +86,10 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 # Optimization Summary
 # - Removed exploratory analysis, plotting, and unused metrics to eliminate redundant computation and I/O.
-# - Implemented a minimal robust CSV read with a single fallback parse to avoid repeated data movement.
-# - Standardized column handling and used in-place column pop to reduce memory copies.
-# - Skipped target one-hot encoding when binary to preserve outputs while simplifying preprocessing.
-# - Fixed random seeds and limited XGBoost threads for deterministic, reproducible execution.
+# - Simplified preprocessing by directly one-hot encoding categorical columns without redundant label encoding.
+# - Implemented robust CSV loading with delimiter/decimal fallback and standardized headers.
+# - Set fixed random seeds and model random_state to ensure reproducible results.
+# - Minimized intermediate structures by computing only the required target and accuracy metric.

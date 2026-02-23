@@ -6,7 +6,6 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
 import joblib
 
 
@@ -31,12 +30,8 @@ def train_model():
     model.fit(X_train_tfidf, y_train)
 
     X_test_tfidf = vectorizer.transform(X_test)
-    y_pred = model.predict(X_test_tfidf)
-    accuracy = accuracy_score(y_test, y_pred)
+    accuracy = model.score(X_test_tfidf, y_test)
     print(f"ACCURACY={accuracy:.6f}")
-
-    joblib.dump(model, "fake_news_model.pkl")
-    joblib.dump(vectorizer, "tfidf_vectorizer.pkl")
 
 
 if __name__ == "__main__":

@@ -2,77 +2,116 @@
 # LLM: chatgpt
 # Mode: assisted
 
+import os
+import random
+import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 
 
-RANDOM_SEED = 42
+SEED = 42
 
 
-def _read_csv_robust(path: str) -> pd.DataFrame:
+def _set_reproducible_seeds(seed: int) -> None:
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+
+
+def _read_csv_robust(path: str, expected_headers: list[str]) -> pd.DataFrame:
     df = pd.read_csv(path)
-    if df.shape[1] == 1:
+    if not _looks_like_expected_schema(df, expected_headers):
         df = pd.read_csv(path, sep=";", decimal=",")
+    if not _looks_like_expected_schema(df, expected_headers):
+        df.columns = [str(c).strip() for c in df.columns]
     return df
 
 
-def _select_text_column(df: pd.DataFrame) -> str:
-    cols_lower = {c.lower(): c for c in df.columns}
-    if "text" in cols_lower:
-        return cols_lower["text"]
+def _looks_like_expected_schema(df: pd.DataFrame, expected_headers: list[str]) -> bool:
+    cols = [str(c).strip().lower() for c in df.columns]
+    exp = [h.strip().lower() for h in expected_headers]
+    if len(cols) < 2:
+        return False
+    hits = sum(h in cols for h in exp)
+    return hits >= min(2, len(exp))
+
+
+def _pick_text_column(df: pd.DataFrame, preferred: list[str]) -> str:
+    cols = {str(c).strip().lower(): c for c in df.columns}
+    for p in preferred:
+        if p.lower() in cols:
+            return cols[p.lower()]
     for c in df.columns:
-        if pd.api.types.is_string_dtype(df[c]) and df[c].notna().any():
+        if pd.api.types.is_string_dtype(df[c]) or df[c].dtype == object:
             return c
     return df.columns[0]
 
 
-def train_and_evaluate() -> float:
-    df_fake = _read_csv_robust("Fake.csv")
-    df_real = _read_csv_robust("True.csv")
+def _prepare_xy(df_fake: pd.DataFrame, df_real: pd.DataFrame) -> tuple[pd.Series, pd.Series]:
+    expected_headers = ["title", "text", "subject", "date"]
+    fake_text_col = _pick_text_column(df_fake, preferred=["text", "title"])
+    real_text_col = _pick_text_column(df_real, preferred=["text", "title"])
 
-    fake_text_col = _select_text_column(df_fake)
-    real_text_col = _select_text_column(df_real)
+    x_fake = df_fake[fake_text_col].astype(str)
+    x_real = df_real[real_text_col].astype(str)
 
-    df_fake = df_fake[[fake_text_col]].copy()
-    df_real = df_real[[real_text_col]].copy()
-    df_fake.columns = ["text"]
-    df_real.columns = ["text"]
+    y_fake = pd.Series(np.zeros(len(x_fake), dtype=np.int8), index=x_fake.index)
+    y_real = pd.Series(np.ones(len(x_real), dtype=np.int8), index=x_real.index)
 
-    df_fake["label"] = 0
-    df_real["label"] = 1
+    X = pd.concat([x_fake, x_real], axis=0, ignore_index=True)
+    y = pd.concat([y_fake, y_real], axis=0, ignore_index=True)
+    return X, y
 
-    df = pd.concat([df_fake, df_real], ignore_index=True, copy=False)
+
+def train_and_evaluate(fake_path: str = "Fake.csv", real_path: str = "True.csv") -> float:
+    _set_reproducible_seeds(SEED)
+
+    expected_headers = ["title", "text", "subject", "date"]
+    df_fake = _read_csv_robust(fake_path, expected_headers)
+    df_real = _read_csv_robust(real_path, expected_headers)
+
+    X, y = _prepare_xy(df_fake, df_real)
 
     X_train, X_test, y_train, y_test = train_test_split(
-        df["text"],
-        df["label"],
+        X,
+        y,
         test_size=0.2,
-        random_state=RANDOM_SEED,
-        stratify=df["label"],
+        random_state=SEED,
+        shuffle=True,
+        stratify=y,
     )
 
-    vectorizer = TfidfVectorizer(stop_words="english", max_df=0.7)
+    vectorizer = TfidfVectorizer(stop_words="english", max_df=0.7, dtype=np.float32)
     X_train_tfidf = vectorizer.fit_transform(X_train)
     X_test_tfidf = vectorizer.transform(X_test)
 
-    model = LogisticRegression(random_state=RANDOM_SEED, max_iter=1000, n_jobs=1)
+    model = LogisticRegression(
+        max_iter=1000,
+        solver="lbfgs",
+        n_jobs=1,
+        random_state=SEED,
+    )
     model.fit(X_train_tfidf, y_train)
 
-    accuracy = model.score(X_test_tfidf, y_test)
-    return float(accuracy)
+    accuracy = float(model.score(X_test_tfidf, y_test))
+    return accuracy
+
+
+def main() -> None:
+    accuracy = train_and_evaluate("Fake.csv", "True.csv")
+    print(f"ACCURACY={accuracy:.6f}")
 
 
 if __name__ == "__main__":
-    accuracy = train_and_evaluate()
-    print(f"ACCURACY={accuracy:.6f}")
+    main()
 
 # Optimization Summary
-# - Removed all debug prints, plotting, interactive inputs, and model artifact saving to avoid unnecessary I/O and side effects.
-# - Reduced memory footprint by selecting only the needed text column and label, and concatenating with ignore_index/copy=False.
-# - Added robust CSV parsing fallback (default read_csv, then retry with sep=';' and decimal=',') to prevent costly downstream errors.
-# - Ensured reproducibility with a fixed random seed, deterministic split, and fixed model random_state.
-# - Used a single TF-IDF fit on training data and only transform on test data to avoid redundant computation.
-# - Evaluated via model.score on sparse matrices to avoid extra predictions materialization and data movement.
-# - Limited parallelism (n_jobs=1) to reduce energy spikes and improve run-to-run stability on shared environments.
+# - Removed joblib persistence to avoid unnecessary disk I/O and energy use (no required file outputs for evaluation).
+# - Added deterministic seeding (PYTHONHASHSEED, random, numpy, and sklearn random_state) for stable, reproducible results.
+# - Implemented robust CSV parsing with a fallback delimiter/decimal strategy to reduce reruns and manual intervention.
+# - Avoided building an intermediate concatenated DataFrame with extra columns; directly concatenated text and labels to reduce memory footprint.
+# - Used TF-IDF dtype=float32 to halve feature matrix memory and reduce compute bandwidth with preserved model behavior.
+# - Transformed test data with the fitted vectorizer once and evaluated via model.score to minimize redundant computation.
+# - Forced single-threaded LogisticRegression (n_jobs=1) to reduce CPU oversubscription and energy spikes on shared systems.

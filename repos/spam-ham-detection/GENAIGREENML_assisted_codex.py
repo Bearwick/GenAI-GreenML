@@ -13,71 +13,95 @@ SEED = 1000
 random.seed(SEED)
 np.random.seed(SEED)
 
-EXPECTED_HEADERS = ["text", "spam"]
+DATASET_PATH = "emails.csv"
+DATASET_HEADERS = '"text","spam"'
+EXPECTED_HEADERS = [h.strip().strip('"').strip("'") for h in DATASET_HEADERS.split(",") if h.strip()]
 
-def parsing_seems_wrong(df, expected_headers):
-    if df is None or df.empty:
-        return True
-    cols = [str(c).strip().lower() for c in df.columns]
-    expected = [h.lower() for h in expected_headers]
-    if any(h in cols for h in expected):
-        return False
-    if len(df.columns) < len(expected_headers) or len(df.columns) == 1:
-        return True
-    return False
+def _normalize(col):
+    c = str(col).strip()
+    if (c.startswith('"') and c.endswith('"')) or (c.startswith("'") and c.endswith("'")):
+        c = c[1:-1]
+    return c.strip().lower()
 
-def read_csv_robust(path, expected_headers):
-    df = pd.read_csv(path)
-    if parsing_seems_wrong(df, expected_headers):
-        df_alt = pd.read_csv(path, sep=';', decimal=',')
-        if not df_alt.empty:
-            df = df_alt
+def _has_expected(df, expected):
+    norm_cols = [_normalize(c) for c in df.columns]
+    return all(_normalize(h) in norm_cols for h in expected)
+
+def _standardize_columns(df, expected):
+    norm_cols = [_normalize(c) for c in df.columns]
+    rename_map = {}
+    for h in expected:
+        hn = _normalize(h)
+        if hn in norm_cols:
+            idx = norm_cols.index(hn)
+            rename_map[df.columns[idx]] = h
+    if rename_map:
+        df = df.rename(columns=rename_map)
     return df
 
-def resolve_columns(df, expected_headers):
-    lower_cols = {str(c).strip().lower(): c for c in df.columns}
-    used = set()
-    resolved = {}
-    for idx, h in enumerate(expected_headers):
-        col = lower_cols.get(h.lower())
-        if col is None:
-            if idx < len(df.columns) and df.columns[idx] not in used:
-                col = df.columns[idx]
-            else:
-                col = next((c for c in df.columns if c not in used), df.columns[0])
-        resolved[h] = col
-        used.add(col)
-    return resolved
+def _read_csv(path, sep=None, decimal=None):
+    try:
+        return pd.read_csv(path, sep=sep, decimal=decimal)
+    except Exception:
+        return None
 
-df = read_csv_robust("emails.csv", EXPECTED_HEADERS)
-col_map = resolve_columns(df, EXPECTED_HEADERS)
+def read_dataset(path, expected):
+    df = _read_csv(path)
+    if df is None or not _has_expected(df, expected):
+        df_alt = _read_csv(path, sep=";", decimal=",")
+        if df_alt is not None:
+            if df is None or _has_expected(df_alt, expected):
+                df = df_alt
+    if df is None:
+        raise ValueError("Dataset could not be read")
+    df = _standardize_columns(df, expected)
+    if not _has_expected(df, expected) and df.shape[1] >= len(expected):
+        rename_map = {df.columns[i]: expected[i] for i in range(len(expected))}
+        df = df.rename(columns=rename_map)
+    return df
 
-x = df[col_map["text"]]
-y = df[col_map["spam"]]
+def _get_column(df, expected, index):
+    if index < len(expected) and expected[index] in df.columns:
+        return expected[index]
+    if index < len(expected):
+        en = _normalize(expected[index])
+        for col in df.columns:
+            if _normalize(col) == en:
+                return col
+    if df.shape[1] > index:
+        return df.columns[index]
+    return df.columns[0]
+
+df = read_dataset(DATASET_PATH, EXPECTED_HEADERS)
+
+text_col = _get_column(df, EXPECTED_HEADERS, 0)
+spam_col = _get_column(df, EXPECTED_HEADERS, 1)
 
 x_train, x_test, y_train, y_test = train_test_split(
-    x, y, test_size=0.2, random_state=SEED
+    df[text_col],
+    df[spam_col],
+    test_size=0.2,
+    random_state=SEED
 )
 
-cv = CountVectorizer()
-x_train_vec = cv.fit_transform(x_train)
+vectorizer = CountVectorizer()
+x_train_vec = vectorizer.fit_transform(x_train)
 
-model = svm.SVC(random_state=SEED)
+model = svm.SVC()
 model.fit(x_train_vec, y_train)
 
-x_test_vec = cv.transform(x_test)
+x_test_vec = vectorizer.transform(x_test)
 accuracy = model.score(x_test_vec, y_test)
 
 def predict_email(text):
-    text_feature = cv.transform([text])
-    pred = model.predict(text_feature)
-    return pred[0]
+    text_feature = vectorizer.transform([text])
+    prediction = model.predict(text_feature)
+    return prediction[0]
 
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# - Removed verbose output and redundant dataset inspections to cut I/O and CPU overhead.
-# - Added robust CSV parsing with fallback to reduce manual preprocessing and ensure correct loading.
-# - Reused a single vectorizer instance to avoid repeated feature extraction and data movement.
-# - Set deterministic seeds for reproducible results without altering model behavior.
-# - Simplified column resolution to minimize unnecessary data copies and keep memory usage low.
+# - Removed all non-essential outputs to reduce I/O overhead while preserving required accuracy reporting.
+# - Implemented robust CSV loading with a single fallback and standardized column handling to avoid redundant parsing.
+# - Selected columns directly during splitting to reduce intermediate data movement and memory usage.
+# - Fixed random seeds for deterministic results without additional computation.

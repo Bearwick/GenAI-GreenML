@@ -3,95 +3,78 @@
 # Mode: assisted
 
 import pandas as pd
-import numpy as np
-import random
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 
-DATASET_HEADERS = "Id,SepalLengthCm,SepalWidthCm,PetalLengthCm,PetalWidthCm,Species"
-DATASET_PATHS = ("C:/Users/Lalit Pathak/python2.0/Iris.csv", "Iris.csv")
+DATASET_PATH = "Iris.csv"
+DATASET_HEADERS = ["Id", "SepalLengthCm", "SepalWidthCm", "PetalLengthCm", "PetalWidthCm", "Species"]
 SEED = 42
 
-np.random.seed(SEED)
-random.seed(SEED)
-
-def parse_headers(header_str):
-    return [h.strip() for h in header_str.split(",") if h.strip()]
-
-def needs_alt_parse(df, expected_headers):
-    if df.shape[1] <= 1:
+def _parsing_suspect(df, expected_headers):
+    if df.empty:
         return True
-    lower_map = {str(c).strip().lower(): c for c in df.columns}
-    expected_lower = {str(h).strip().lower() for h in expected_headers}
-    if not expected_lower.intersection(lower_map):
+    cols = [str(c).strip() for c in df.columns]
+    if len(cols) == 1:
         return True
-    if expected_headers:
-        label_expected = str(expected_headers[-1]).strip().lower()
-        id_expected = str(expected_headers[0]).strip().lower()
-        for h in expected_headers:
-            hl = str(h).strip().lower()
-            if hl in (label_expected, id_expected):
-                continue
-            col = lower_map.get(hl)
-            if col is not None and df[col].dtype == object:
-                sample = df[col].head(5).astype(str)
-                if sample.str.contains(",", na=False).any():
-                    return True
+    lower_cols = [c.lower() for c in cols]
+    expected_lower = [h.lower() for h in expected_headers]
+    if len(set(lower_cols).intersection(expected_lower)) == 0:
+        return True
+    if any(";" in c for c in cols):
+        return True
     return False
 
-def read_csv_with_fallback(path, expected_headers):
-    df = pd.read_csv(path)
-    if needs_alt_parse(df, expected_headers):
+def load_dataset(path, expected_headers):
+    try:
+        df = pd.read_csv(path)
+    except Exception:
         df = pd.read_csv(path, sep=";", decimal=",")
+        df.columns = [str(c).strip() for c in df.columns]
+        return df
+    if _parsing_suspect(df, expected_headers):
+        try:
+            df_alt = pd.read_csv(path, sep=";", decimal=",")
+            if not df_alt.empty:
+                df = df_alt
+        except Exception:
+            pass
+    df.columns = [str(c).strip() for c in df.columns]
     return df
 
-def load_dataset(paths, expected_headers):
-    last_error = None
-    for path in paths:
-        try:
-            return read_csv_with_fallback(path, expected_headers)
-        except FileNotFoundError as e:
-            last_error = e
-    if last_error is not None:
-        raise last_error
-    raise FileNotFoundError("Dataset not found")
-
-def infer_columns(df, expected_headers):
-    lower_map = {str(c).strip().lower(): c for c in df.columns}
-    id_col = None
-    label_col = None
-    if expected_headers:
-        id_col = lower_map.get(str(expected_headers[0]).strip().lower())
-        label_col = lower_map.get(str(expected_headers[-1]).strip().lower())
-    if label_col is None:
-        label_col = df.columns[-1]
-    feature_cols = [c for c in df.columns if c != label_col and c != id_col]
-    return feature_cols, label_col
+def resolve_column(df, expected_name):
+    expected_lower = expected_name.lower()
+    for col in df.columns:
+        if str(col).lower() == expected_lower:
+            return col
+    for col in df.columns:
+        if expected_lower in str(col).lower():
+            return col
+    return None
 
 def prepare_data(df, expected_headers):
-    feature_cols, label_col = infer_columns(df, expected_headers)
-    for col in feature_cols:
-        if df[col].dtype == object:
-            series = df[col].astype(str)
-            if series.str.contains(",", na=False).any():
-                series = series.str.replace(",", ".", regex=False)
-            df[col] = pd.to_numeric(series, errors="raise")
-    X = df[feature_cols].to_numpy(copy=False)
-    y = df[label_col].to_numpy(copy=False)
+    target_col = resolve_column(df, expected_headers[-1])
+    if target_col is None:
+        raise ValueError("Target column not found")
+    id_col = resolve_column(df, expected_headers[0])
+    drop_cols = [c for c in (id_col, target_col) if c in df.columns]
+    X = df.drop(columns=drop_cols)
+    y = df[target_col]
     return X, y
 
 def main():
-    expected_headers = parse_headers(DATASET_HEADERS)
-    df = load_dataset(DATASET_PATHS, expected_headers)
-    X, y = prepare_data(df, expected_headers)
+    df = load_dataset(DATASET_PATH, DATASET_HEADERS)
+    X, y = prepare_data(df, DATASET_HEADERS)
+    y_encoded = LabelEncoder().fit_transform(y)
+    X_values = X.to_numpy(copy=False)
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=SEED, stratify=y
+        X_values, y_encoded, test_size=0.2, random_state=SEED, stratify=y_encoded
     )
     log_reg = LogisticRegression(max_iter=200, random_state=SEED)
     log_reg.fit(X_train, y_train)
     _ = log_reg.score(X_test, y_test)
-    rf_model = RandomForestClassifier(n_estimators=100, random_state=SEED, n_jobs=1)
+    rf_model = RandomForestClassifier(n_estimators=100, random_state=SEED)
     rf_model.fit(X_train, y_train)
     accuracy = rf_model.score(X_test, y_test)
     print(f"ACCURACY={accuracy:.6f}")
@@ -100,8 +83,7 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed visualization and verbose reporting to avoid unnecessary computation and rendering.
-# - Used model .score for accuracy to prevent extra prediction arrays and metric overhead.
-# - Set fixed seeds and single-thread execution for deterministic, energy-aware training.
-# - Added robust CSV parsing fallback with selective numeric conversion to limit reprocessing.
-# - Selected only required feature columns to reduce data movement and memory usage.
+# - Removed data inspection, reports, and visualization to eliminate unnecessary computation and I/O.
+# - Implemented robust CSV parsing with delimiter/decimal fallback to avoid reprocessing failures.
+# - Converted features to NumPy once and reused a single split for both models to minimize data movement.
+# - Used estimator .score for accuracy to avoid extra prediction storage and kept fixed random states for reproducibility.

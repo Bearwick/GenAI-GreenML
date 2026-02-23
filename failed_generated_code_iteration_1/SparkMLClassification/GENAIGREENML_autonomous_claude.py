@@ -6,91 +6,92 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
-from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-# --- Robust CSV loading ---
+DATASET_PATH = "diabetes.csv"
+
+# Robust CSV loading
 try:
-    df = pd.read_csv("diabetes.csv")
+    df = pd.read_csv(DATASET_PATH)
     if df.shape[1] < 2:
-        df = pd.read_csv("diabetes.csv", sep=";", decimal=",")
+        df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
 except Exception:
-    df = pd.read_csv("diabetes.csv", sep=";", decimal=",")
+    df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
 
-# --- Column name normalization ---
+# Normalize column names
 df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
-df = df[[c for c in df.columns if not c.startswith("Unnamed")]]
+df = df[[c for c in df.columns if not c.startswith('Unnamed')]]
 
-# --- Identify target and features ---
-expected_target = "Outcome"
-expected_features = ["Pregnancies", "Glucose", "BloodPressure", "SkinThickness",
-                     "Insulin", "BMI", "DiabetesPedigreeFunction", "Age"]
-
+# Identify target and features
+expected_target = 'Outcome'
 if expected_target in df.columns:
     target_col = expected_target
 else:
-    # Fallback: pick last column or first binary-looking numeric column
+    # Fallback: pick last column or a non-constant numeric column
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     target_col = numeric_cols[-1] if numeric_cols else df.columns[-1]
 
-available_features = [c for c in expected_features if c in df.columns]
-if not available_features:
-    available_features = [c for c in df.columns if c != target_col]
+feature_cols = [c for c in df.columns if c != target_col]
 
-# --- Coerce all to numeric ---
-for c in available_features + [target_col]:
-    df[c] = pd.to_numeric(df[c], errors="coerce")
+# Coerce all to numeric where possible
+for c in [target_col] + feature_cols:
+    df[c] = pd.to_numeric(df[c], errors='coerce')
 
-# --- Replace physiologically impossible zeros with NaN for specific columns ---
-zero_as_missing = ["Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI"]
-for c in zero_as_missing:
-    if c in df.columns:
-        df[c] = df[c].replace(0, np.nan)
-
-# --- Drop rows where target is NaN ---
+# Drop rows with NaN in target
 df = df.dropna(subset=[target_col])
 
-# --- Drop inf values ---
-df = df.replace([np.inf, -np.inf], np.nan)
+# Keep only numeric feature columns that exist
+feature_cols = [c for c in feature_cols if df[c].dtype.kind in ('i', 'f', 'u')]
 
-assert df.shape[0] > 0, "Dataset is empty after preprocessing"
+# Impute NaN in features with median
+for c in feature_cols:
+    median_val = df[c].median()
+    df[c] = df[c].fillna(median_val)
 
-X = df[list(available_features)].copy()
-y = df[target_col].astype(int).values
+# Replace inf
+df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=feature_cols + [target_col])
 
-# --- Check classification feasibility ---
+assert df.shape[0] > 0, "Dataset empty after preprocessing"
+
+X = df[list(feature_cols)].values
+y = df[target_col].values
+
+# Determine task type
 n_classes = len(np.unique(y))
-assert n_classes >= 2, "Target has fewer than 2 classes; cannot classify"
+is_classification = n_classes >= 2 and n_classes <= 20
 
-# --- Train/test split ---
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
+if not is_classification or n_classes < 2:
+    # Fallback: trivial baseline
+    from sklearn.dummy import DummyClassifier
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    model = DummyClassifier(strategy='most_frequent')
+    model.fit(X_train, y_train)
+    accuracy = model.score(X_test, y_test)
+else:
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
 
-assert X_train.shape[0] > 0 and X_test.shape[0] > 0, "Train or test split is empty"
+    assert X_train.shape[0] > 0 and X_test.shape[0] > 0, "Empty train or test split"
 
-# --- Build lightweight pipeline: impute median + scale + logistic regression ---
-pipeline = Pipeline([
-    ("imputer", SimpleImputer(strategy="median")),
-    ("scaler", StandardScaler()),
-    ("clf", LogisticRegression(
-        max_iter=200,
-        solver="lbfgs",
-        C=1.0,
-        random_state=42,
-        class_weight="balanced"
-    ))
-])
+    # Lightweight pipeline: StandardScaler + LogisticRegression
+    pipeline = Pipeline([
+        ('scaler', StandardScaler()),
+        ('clf', LogisticRegression(
+            max_iter=300,
+            solver='lbfgs',
+            C=1.0,
+            random_state=42
+        ))
+    ])
 
-pipeline.fit(X_train, y_train)
-y_pred = pipeline.predict(X_test)
-accuracy = accuracy_score(y_test, y_pred)
+    pipeline.fit(X_train, y_train)
+    y_pred = pipeline.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
 
 print(f"ACCURACY={accuracy:.6f}")
 
-# --- OPTIMIZATION SUMMARY ---
-# 1. Robust CSV parsing with semicolon/decimal fallback ensures schema resilience.
-# 2. Zero values in physiological columns (Glucose, Blood
+# OPTIMIZATION SUMMARY
+# 1. Model choice: LogisticRegression with lbfgs solver is one of the most energy-efficient

@@ -2,6 +2,7 @@
 # LLM: codex
 # Mode: assisted
 
+import os
 import pandas as pd
 import numpy as np
 import torch
@@ -9,133 +10,132 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 SEED = 4096
+np.random.seed(SEED)
+torch.manual_seed(SEED)
+use_cuda = torch.cuda.is_available()
+if use_cuda:
+    torch.cuda.manual_seed_all(SEED)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
-def set_seed(seed):
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
+FILE_PATH = "iris.data"
+TRAIN_RATIO = 0.6
+BATCH_SIZE = 128
+EPOCHS = 200
+HIDDEN_UNITS = 6
 
-def is_numeric(val):
-    try:
-        float(val)
-        return True
-    except (TypeError, ValueError):
-        return False
+DATASET_HEADERS = []
+env_headers = os.environ.get("DATASET_HEADERS")
+if env_headers:
+    parsed = [h.strip() for h in env_headers.split(",") if h.strip()]
+    if parsed:
+        DATASET_HEADERS = parsed
 
 def read_csv_robust(path):
     try:
         df = pd.read_csv(path)
-        sep_used = None
+        sep_used = ","
         decimal_used = "."
+        if df.shape[1] == 1:
+            df = pd.read_csv(path, sep=";", decimal=",")
+            sep_used = ";"
+            decimal_used = ","
     except Exception:
         df = pd.read_csv(path, sep=";", decimal=",")
         sep_used = ";"
         decimal_used = ","
-    else:
-        if df.shape[1] <= 1:
-            df = pd.read_csv(path, sep=";", decimal=",")
-            sep_used = ";"
-            decimal_used = ","
-    cols = list(df.columns)
-    if cols:
-        numeric_cols = sum(is_numeric(c) for c in cols)
-        if numeric_cols >= len(cols) / 2:
-            read_kwargs = {"header": None}
-            if sep_used is not None:
-                read_kwargs["sep"] = sep_used
-                read_kwargs["decimal"] = decimal_used
-            df = pd.read_csv(path, **read_kwargs)
+    if df.shape[1] > 0:
+        colnames = list(df.columns)
+        numeric_name_count = pd.to_numeric(pd.Series(colnames), errors="coerce").notna().sum()
+        if numeric_name_count >= len(colnames) - 1:
+            df = pd.read_csv(path, sep=sep_used, decimal=decimal_used, header=None)
+    if df.shape[1] == 1:
+        df = pd.read_csv(path, sep=";", decimal=",", header=None)
+    df = df.dropna(how="all")
+    if DATASET_HEADERS and len(DATASET_HEADERS) == df.shape[1]:
+        df.columns = list(DATASET_HEADERS)
     return df
 
-def preprocess(df):
-    feature_df = df.iloc[:, :-1]
-    label_series = df.iloc[:, -1]
-    feature_df = feature_df.apply(pd.to_numeric, errors="coerce")
-    valid_mask = ~feature_df.isna().any(axis=1)
-    feature_df = feature_df[valid_mask]
-    label_series = label_series[valid_mask]
-    labels = label_series.astype("category").cat.codes
-    x = feature_df.to_numpy(dtype=np.float32, copy=False)
-    y = labels.to_numpy(dtype=np.int64, copy=False)
-    if (y < 0).any():
-        mask = y >= 0
-        x = x[mask]
-        y = y[mask]
-    return x, y
-
-def shuffle_and_scale(x, y):
-    indices = np.random.permutation(len(y))
-    x = x[indices]
-    y = y[indices]
-    mu = x.mean(axis=0)
+def prepare_data(df, train_ratio):
+    label_col = df.columns[-1]
+    df[label_col] = df[label_col].astype("category").cat.codes
+    x = df.iloc[:, :-1].to_numpy(dtype=np.float32)
+    y = df.iloc[:, -1].to_numpy(dtype=np.int64)
+    n = x.shape[0]
+    perm = np.random.permutation(n)
+    x = x[perm]
+    y = y[perm]
+    mu = x.mean(axis=0, dtype=np.float32)
     span = x.max(axis=0) - x.min(axis=0)
-    span[span == 0] = 1.0
-    x -= mu
-    x /= span
-    return x, y
+    x = (x - mu) / span
+    x = x.astype(np.float32, copy=False)
+    num_train = int(n * train_ratio)
+    x_train = x[:num_train]
+    y_train = y[:num_train]
+    x_test = x[num_train:]
+    y_test = y[num_train:]
+    return x_train, y_train, x_test, y_test
 
 class IrisNN(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
         super().__init__()
         self.fn1 = nn.Linear(input_dim, hidden_dim)
         self.fn2 = nn.Linear(hidden_dim, output_dim)
-
     def forward(self, x):
-        x = F.relu(self.fn1(x))
-        return self.fn2(x)
+        return self.fn2(F.relu(self.fn1(x)))
 
-def train_model(model, x_train, y_train, epochs, optimizer, loss_fn):
-    model.train()
+def iterate_batches(x, y, batch_size):
+    n = x.shape[0]
+    for start in range(0, n, batch_size):
+        end = start + batch_size
+        yield x[start:end], y[start:end]
+
+def train_model(model, x_train, y_train, loss_fn, optimizer, epochs, batch_size):
     for _ in range(epochs):
-        optimizer.zero_grad()
-        outputs = model(x_train)
-        loss = loss_fn(outputs, y_train)
-        loss.backward()
-        optimizer.step()
+        model.train()
+        for xb, yb in iterate_batches(x_train, y_train, batch_size):
+            optimizer.zero_grad(set_to_none=True)
+            scores = model(xb)
+            loss = loss_fn(scores, yb)
+            loss.backward()
+            optimizer.step()
 
-def evaluate_model(model, x_test, y_test):
+def evaluate_model(model, x_test, y_test, batch_size):
     model.eval()
+    accuracy = 0.0
     with torch.no_grad():
-        outputs = model(x_test)
-        preds = outputs.argmax(dim=1)
-        num_correct = preds.eq(y_test).sum().item()
-        accuracy = num_correct / y_test.size(0)
+        for xb, yb in iterate_batches(x_test, y_test, batch_size):
+            scores = model(xb)
+            pred = scores.argmax(dim=1)
+            accuracy = (pred == yb).sum().item() / yb.size(0)
     return accuracy
 
 def main():
-    set_seed(SEED)
-    df = read_csv_robust("iris.data")
-    x, y = preprocess(df)
-    del df
-    x, y = shuffle_and_scale(x, y)
-    input_dim = x.shape[1]
-    output_dim = int(y.max()) + 1 if y.size > 0 else 0
-    n = len(y)
-    num_train = int(n * 0.6)
-    num_test = n - num_train
-    x_train = x[:num_train]
-    y_train = y[:num_train]
-    x_test = x[-num_test:]
-    y_test = y[-num_test:]
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    df = read_csv_robust(FILE_PATH)
+    x_train, y_train, x_test, y_test = prepare_data(df, TRAIN_RATIO)
+    device = torch.device("cuda" if use_cuda else "cpu")
+    input_dim = x_train.shape[1]
+    max_label = int(y_train.max()) if y_train.size else -1
+    if y_test.size:
+        max_label = max(max_label, int(y_test.max()))
+    num_classes = max_label + 1
+    model = IrisNN(input_dim, HIDDEN_UNITS, num_classes).to(device)
+    loss_fn = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.01)
     x_train_t = torch.from_numpy(x_train).to(device)
     y_train_t = torch.from_numpy(y_train).to(device)
     x_test_t = torch.from_numpy(x_test).to(device)
     y_test_t = torch.from_numpy(y_test).to(device)
-    model = IrisNN(input_dim, 6, output_dim).to(device)
-    loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.01)
-    train_model(model, x_train_t, y_train_t, 200, optimizer, loss_fn)
-    accuracy = evaluate_model(model, x_test_t, y_test_t)
+    train_model(model, x_train_t, y_train_t, loss_fn, optimizer, EPOCHS, BATCH_SIZE)
+    accuracy = evaluate_model(model, x_test_t, y_test_t, BATCH_SIZE)
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed Dataset/DataLoader overhead by training on full-batch tensors.
-# - Moved data to the target device once and skipped per-epoch evaluation/logging to reduce redundant work.
-# - Normalized features in-place and filtered non-numeric rows efficiently to minimize extra allocations.
+# - Replaced DataLoader/Dataset with lightweight tensor slicing to cut iteration overhead.
+# - Moved tensors to the target device once to avoid repeated transfers each epoch.
+# - Removed per-epoch evaluation and unused logging to eliminate redundant computation.
+# - Normalized features in a single pass while keeping float32 to reduce memory usage.
+# - Added robust CSV loading with delimiter fallback and header detection for reliable parsing.

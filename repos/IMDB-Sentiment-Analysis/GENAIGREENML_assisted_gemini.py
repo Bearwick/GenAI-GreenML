@@ -7,51 +7,40 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import accuracy_score
 
-def load_data(filepath):
+def load_data(path):
     try:
-        df = pd.read_csv(filepath)
-        if len(df.columns) < 2:
+        df = pd.read_csv(path)
+        if df.shape[1] < 2:
             raise ValueError
-    except Exception:
-        df = pd.read_csv(filepath, sep=';', decimal=',')
+    except:
+        df = pd.read_csv(path, sep=';', decimal=',')
     
-    cols = {c.lower(): c for c in df.columns}
-    class_col = cols.get('class', df.columns[0])
-    text_col = cols.get('text', df.columns[1])
-    
-    x = df[text_col].astype(str)
-    y = df[class_col].map({'Neg': 0, 'Pos': 1})
-    return x, y
+    df = df.iloc[:, [0, 1]]
+    df.columns = ['Class', 'text']
+    return df
 
-def run_pipeline():
-    X_train, y_train = load_data('movie_review_train.csv')
-    X_test, y_test = load_data('movie_review_test.csv')
+train_data = load_data('movie_review_train.csv')
+test_data = load_data('movie_review_test.csv')
 
-    vect = CountVectorizer(
-        stop_words='english', 
-        min_df=0.03, 
-        max_df=0.8
-    )
+train_data['label'] = train_data['Class'].map({'Neg': 0, 'Pos': 1})
+test_data['label'] = test_data['Class'].map({'Neg': 0, 'Pos': 1})
 
-    X_train_dtm = vect.fit_transform(X_train)
-    X_test_dtm = vect.transform(X_test)
+vect = CountVectorizer(stop_words='english', min_df=0.03, max_df=0.8)
+X_train = vect.fit_transform(train_data['text'])
+X_test = vect.transform(test_data['text'])
 
-    nb = MultinomialNB()
-    nb.fit(X_train_dtm, y_train)
-    
-    y_pred = nb.predict(X_test_dtm)
-    
-    accuracy = accuracy_score(y_test, y_pred)
-    print(f"ACCURACY={accuracy:.6f}")
+model = MultinomialNB()
+model.fit(X_train, train_data['label'])
+y_pred = model.predict(X_test)
 
-if __name__ == "__main__":
-    run_pipeline()
+accuracy = accuracy_score(test_data['label'], y_pred)
+print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# 1. Utilized fit_transform() instead of separate fit() and transform() calls to reduce passes over the training data.
-# 2. Eliminated redundant metric calculations (ROC AUC, precision, recall, confusion matrix) and visualizations to save CPU cycles and memory.
-# 3. Removed intermediate data structures and unused variables (e.g., neg_res, thresholds, word counts) to minimize memory footprint.
-# 4. Streamlined CSV loading with a robust fallback mechanism and targeted column extraction.
-# 5. Avoided heavy probability calculations (predict_proba) as only class predictions were required for accuracy.
-# 6. Optimized data types by ensuring text data is handled as strings and mapping labels early in the process.
-# 7. Removed all plotting and interactive logic to reduce overhead and dependencies.
+# - Used fit_transform() to combine fitting and transformation into a single pass, reducing computational overhead.
+# - Removed redundant calculations for ROC AUC, precision, recall, and F1 scores that were not required for the final output.
+# - Eliminated heavy visualization libraries like Matplotlib and all plotting code to reduce memory usage and energy consumption.
+# - Implemented a robust data loading function with fallback parsing logic to handle different CSV formats efficiently.
+# - Removed exploratory prints, value counts, and shape logging to minimize runtime and CPU cycles.
+# - Optimized memory management by avoiding unnecessary intermediate data structures and selecting only required columns.
+# - Simplified the workflow by using the more efficient predict() method instead of predict_proba() when class probabilities were not needed.

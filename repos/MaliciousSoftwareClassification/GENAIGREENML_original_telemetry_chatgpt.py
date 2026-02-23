@@ -82,12 +82,8 @@ for fold_, (trn_idx, val_idx) in enumerate(KF.split(train[features], train[ycol]
             callbacks=[lgb.early_stopping(200), lgb.log_evaluation(100)],
         )
 
-    oof_lgb[val_idx] = clf_lgb.predict(
-        train.iloc[val_idx][features], num_iteration=clf_lgb.best_iteration
-    )
-    predictions_lgb[:] += (
-        clf_lgb.predict(test[features], num_iteration=clf_lgb.best_iteration) / NFOLD
-    )
+    oof_lgb[val_idx] = clf_lgb.predict(train.iloc[val_idx][features], num_iteration=clf_lgb.best_iteration)
+    predictions_lgb[:] += clf_lgb.predict(test[features], num_iteration=clf_lgb.best_iteration) / NFOLD
 
     df_importance = pd.DataFrame(
         {

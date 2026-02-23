@@ -2,17 +2,16 @@
 # LLM: chatgpt
 # Mode: assisted
 
-import os
-import random
-from typing import Tuple, Optional
-
 import numpy as np
 import pandas as pd
+
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 
 
+SEED = 42
+DATASET_PATH = "data/AirQualityUCI.csv"
 DATASET_HEADERS = [
     "Date",
     "Time",
@@ -34,102 +33,147 @@ DATASET_HEADERS = [
 ]
 
 
-def _set_reproducibility(seed: int = 42) -> None:
-    os.environ["PYTHONHASHSEED"] = str(seed)
-    random.seed(seed)
-    np.random.seed(seed)
-
-
-def _read_csv_robust(path: str) -> pd.DataFrame:
+def _read_csv_with_fallback(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
-    if df.shape[1] <= 2:
+    if df.shape[1] < 8:
         df = pd.read_csv(path, sep=";", decimal=",")
+    else:
+        obj_cols = df.select_dtypes(include=["object"]).columns
+        has_comma_decimal = False
+        for c in obj_cols[: min(10, len(obj_cols))]:
+            s = df[c].astype(str)
+            if s.str.contains(r"\d,\d", regex=True, na=False).any():
+                has_comma_decimal = True
+                break
+        if has_comma_decimal:
+            df2 = pd.read_csv(path, sep=";", decimal=",")
+            if df2.shape[1] >= df.shape[1]:
+                df = df2
     return df
 
 
-def _resolve_columns(df_columns: pd.Index, desired: list) -> list:
-    cols = set(map(str, df_columns))
-    return [c for c in desired if c in cols]
+def load_and_preprocess(path: str) -> pd.DataFrame:
+    df = _read_csv_with_fallback(path)
+    df.columns = [str(c).strip() for c in df.columns]
 
+    unnamed = [c for c in df.columns if c.lower().startswith("unnamed")]
+    if unnamed:
+        df = df.drop(columns=unnamed)
 
-def _coerce_numeric_inplace(df: pd.DataFrame, cols: list) -> None:
-    for c in cols:
-        if c in df.columns:
+    empty_cols = [c for c in df.columns if c == ""]
+    if empty_cols:
+        df = df.drop(columns=empty_cols)
+
+    expected = [h for h in DATASET_HEADERS if h and h in df.columns]
+    if expected and len(expected) >= 8:
+        keep_cols = expected
+    else:
+        keep_cols = df.columns.tolist()
+
+    df = df.loc[:, keep_cols]
+
+    if "Date" not in df.columns or "Time" not in df.columns:
+        raise ValueError("Required columns 'Date' and 'Time' not found in dataset.")
+
+    dt = pd.to_datetime(
+        df["Date"].astype(str) + " " + df["Time"].astype(str),
+        dayfirst=True,
+        errors="coerce",
+        format=None,
+    )
+    df = df.drop(columns=["Date", "Time"])
+    df.insert(0, "Datetime", dt)
+    df = df.dropna(subset=["Datetime"]).set_index("Datetime")
+
+    for c in df.columns:
+        if df[c].dtype == object:
+            df[c] = (
+                df[c]
+                .astype(str)
+                .str.replace(",", ".", regex=False)
+                .replace({"-200": np.nan, "-200.0": np.nan})
+            )
             df[c] = pd.to_numeric(df[c], errors="coerce")
-
-
-def load_and_preprocess(path: str, features: list) -> Tuple[pd.DataFrame, list]:
-    df = _read_csv_robust(path)
-
-    features_present = _resolve_columns(df.columns, features)
-
-    target_reg = "C6H6(GT)" if "C6H6(GT)" in df.columns else None
-    target_clf = "Risk_Label" if "Risk_Label" in df.columns else None
-
-    numeric_cols = list(dict.fromkeys(features_present + ([target_reg] if target_reg else [])))
-    _coerce_numeric_inplace(df, numeric_cols)
-
-    keep_cols = features_present + ([target_reg] if target_reg else []) + ([target_clf] if target_clf else [])
-    keep_cols = [c for c in keep_cols if c in df.columns]
-
-    df = df.loc[:, keep_cols].dropna()
-
-    if target_clf is None:
-        if "NO2(GT)" in df.columns:
-            med = float(df["NO2(GT)"].median())
-            df["Risk_Label"] = (df["NO2(GT)"] > med).astype(np.int8)
         else:
-            df["Risk_Label"] = 0
+            df[c] = df[c].replace(-200, np.nan)
 
-    return df, features_present
+    daily = df.resample("D").mean(numeric_only=True)
+
+    daily = daily.dropna(how="all")
+    return daily
 
 
-def train_models(data: pd.DataFrame, features: list, seed: int = 42) -> Tuple[RandomForestRegressor, RandomForestClassifier, np.ndarray, np.ndarray]:
-    X = data[features].to_numpy(dtype=np.float32, copy=False)
+def _select_features(df: pd.DataFrame, requested: list[str]) -> list[str]:
+    cols = set(df.columns)
+    present = [c for c in requested if c in cols]
+    if present:
+        return present
+    candidates = [c for c in requested]
+    fallback = [c for c in df.columns if c in candidates]
+    if fallback:
+        return fallback
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    if not numeric_cols:
+        raise ValueError("No numeric feature columns available after preprocessing.")
+    return numeric_cols[: min(6, len(numeric_cols))]
 
-    y_reg_col = "C6H6(GT)" if "C6H6(GT)" in data.columns else None
-    y_reg = data[y_reg_col].to_numpy(dtype=np.float32, copy=False) if y_reg_col else np.zeros((X.shape[0],), dtype=np.float32)
 
-    y_clf = data["Risk_Label"].to_numpy(copy=False)
-    if y_clf.dtype.kind not in ("i", "u", "b"):
-        y_clf = pd.to_numeric(y_clf, errors="coerce").fillna(0).astype(np.int32).to_numpy(copy=False)
+def train_models(data: pd.DataFrame, features: list[str]):
+    features = _select_features(data, features)
+
+    X = data.loc[:, features].copy()
+    X = X.dropna()
+    if X.empty:
+        raise ValueError("No rows available for modeling after dropping missing feature values.")
+
+    z = (X - X.mean(axis=0)) / X.std(axis=0, ddof=0)
+    severity = z.abs().sum(axis=1)
+    hospital_visits = (severity * 10.0).astype(np.float32)
+
+    median_visits = float(np.median(hospital_visits.to_numpy()))
+    risk_label = (hospital_visits > median_visits).astype(np.int8)
 
     X_train, X_test, y_reg_train, y_reg_test, y_clf_train, y_clf_test = train_test_split(
-        X,
-        y_reg,
-        y_clf,
+        X.to_numpy(dtype=np.float32, copy=False),
+        hospital_visits.to_numpy(dtype=np.float32, copy=False),
+        risk_label.to_numpy(dtype=np.int8, copy=False),
         test_size=0.2,
-        random_state=seed,
+        random_state=SEED,
         shuffle=True,
-        stratify=y_clf if len(np.unique(y_clf)) > 1 else None,
+        stratify=risk_label.to_numpy(dtype=np.int8, copy=False) if len(np.unique(risk_label)) > 1 else None,
     )
 
-    reg = RandomForestRegressor(
-        n_estimators=100,
-        random_state=seed,
+    reg_model = RandomForestRegressor(
+        n_estimators=200,
+        random_state=SEED,
         n_jobs=1,
     )
-    clf = RandomForestClassifier(
-        n_estimators=100,
-        random_state=seed,
+    clf_model = RandomForestClassifier(
+        n_estimators=200,
+        random_state=SEED,
         n_jobs=1,
     )
 
-    reg.fit(X_train, y_reg_train)
-    clf.fit(X_train, y_clf_train)
+    reg_model.fit(X_train, y_reg_train)
+    clf_model.fit(X_train, y_clf_train)
 
-    y_clf_pred = clf.predict(X_test)
-    return reg, clf, y_clf_test, y_clf_pred
+    y_pred_reg = reg_model.predict(X_test)
+    y_clf_pred = clf_model.predict(X_test)
+
+    reg_results = {
+        "R2": float(r2_score(y_reg_test, y_pred_reg)),
+        "RMSE": float(np.sqrt(mean_squared_error(y_reg_test, y_pred_reg))),
+    }
+
+    clf_results = {"accuracy": float(accuracy_score(y_clf_test, y_clf_pred))}
+    return reg_model, clf_model, reg_results, clf_results, X_test, y_reg_test, y_pred_reg, y_clf_test, y_clf_pred
 
 
-def main() -> None:
-    _set_reproducibility(42)
-
-    features = ["CO(GT)", "NOx(GT)", "NO2(GT)", "C6H6(GT)", "T", "RH"]
-    data, features_present = load_and_preprocess("data/AirQualityUCI.csv", features)
-    _, _, y_true, y_pred = train_models(data, features_present, seed=42)
-
-    accuracy = float(accuracy_score(y_true, y_pred))
+def main():
+    data = load_and_preprocess(DATASET_PATH)
+    requested_features = ["CO(GT)", "NOx(GT)", "NO2(GT)", "C6H6(GT)", "T", "RH"]
+    _, _, _, clf_results, _, _, _, _, _ = train_models(data, requested_features)
+    accuracy = clf_results["accuracy"]
     print(f"ACCURACY={accuracy:.6f}")
 
 
@@ -137,9 +181,10 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed all plotting/visualization and verbose reporting to avoid heavy rendering overhead and unnecessary imports.
-# - Implemented robust CSV parsing with a lightweight fallback (default read, then retry with sep=';' and decimal=',') to prevent mis-parses without repeated manual edits.
-# - Reduced data movement by selecting only required columns, converting to NumPy arrays once, and using copy=False where safe.
-# - Coerced only the necessary columns to numeric (features + target), avoiding full-frame type conversions.
-# - Dropped redundant computations by skipping unused metrics/structures from the original flow and computing only final accuracy as required.
-# - Enforced reproducibility with fixed seeds for Python, NumPy, and model/train-test split random_state; used single-thread (n_jobs=1) for deterministic, lower-overhead execution.
+# - Removed all visualization imports/calls and intermediate plotting data to cut runtime and avoid unnecessary rendering overhead.
+# - Inlined preprocessing/modeling into a single file to avoid extra module imports and reduce startup cost while keeping modular functions.
+# - Implemented robust CSV parsing with a lightweight fallback (default read, then ';' + ',' decimal only when needed) to prevent repeated heavy parsing.
+# - Dropped unnamed/empty columns early and resampled directly to daily numeric means to minimize data movement and memory footprint.
+# - Vectorized numeric conversion and missing-value handling; avoided per-cell loops and avoided creating unnecessary intermediate DataFrames.
+# - Converted modeling arrays to NumPy float32/int8 where safe to reduce memory bandwidth and speed up compute without changing task intent.
+# - Fixed random seed and used single-threaded forests (n_jobs=1) to improve determinism and avoid energy-heavy thread oversubscription.

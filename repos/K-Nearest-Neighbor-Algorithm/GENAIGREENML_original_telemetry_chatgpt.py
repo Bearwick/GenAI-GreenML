@@ -46,9 +46,9 @@ def KNN(trainingData, tup, k):
     classVotes = {}
     for i in range(len(neighborClasses)):
         if neighborClasses[i] not in classVotes.keys():
-            classVotes[neighborClasses[i]] = 1 / neighborDistances[i]
+            classVotes[neighborClasses[i]] = (1 / neighborDistances[i])
         else:
-            classVotes[neighborClasses[i]] += 1 / neighborDistances[i]
+            classVotes[neighborClasses[i]] += (1 / neighborDistances[i])
 
     for cj, weight in classVotes.items():
         if weight == max(classVotes.values()):

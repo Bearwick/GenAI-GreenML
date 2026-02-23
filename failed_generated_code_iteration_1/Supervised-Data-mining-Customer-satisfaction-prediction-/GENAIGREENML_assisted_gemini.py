@@ -2,27 +2,28 @@
 # LLM: gemini
 # Mode: assisted
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
-from sklearn import metrics
+from sklearn.metrics import accuracy_score
 from imblearn.over_sampling import SMOTE
-import warnings
 
-warnings.filterwarnings('ignore')
+def load_data(path):
+    try:
+        df = pd.read_csv(path)
+        if df.shape[1] <= 1:
+            raise Exception
+    except Exception:
+        df = pd.read_csv(path, sep=';', decimal=',')
+    return df
 
-try:
-    df = pd.read_csv("EireJet.csv")
-    if df.shape[1] < 5:
-        raise ValueError
-except Exception:
-    df = pd.read_csv("EireJet.csv", sep=';', decimal=',')
+data_path = "EireJet.csv"
+df = load_data(data_path)
+df.dropna(how='any', axis=0, inplace=True)
 
-df.dropna(axis=0, how='any', inplace=True)
-
-categorical_mappings = {
+map_dict = {
     'Gender': {'Female': 1, 'Male': 0},
     'Frequent Flyer': {'Yes': 1, 'No': 0},
     'Type of Travel': {'Personal Travel': 1, 'Business travel': 0},
@@ -30,72 +31,58 @@ categorical_mappings = {
     'satisfaction': {'neutral or dissatisfied': 0, 'satisfied': 1}
 }
 
-for col, mapping in categorical_mappings.items():
+for col, mapping in map_dict.items():
     if col in df.columns:
         df[col] = df[col].map(mapping)
 
-X_df = df.drop('satisfaction', axis=1)
-Y = df['satisfaction']
+X = df.drop('satisfaction', axis=1)
+y = df['satisfaction']
 
 scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X_df)
+X_scaled = scaler.fit_transform(X).astype(np.float32)
 
-X_train, X_test, Y_train, Y_test = train_test_split(X_scaled, Y, test_size=0.3, random_state=100)
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.3, random_state=100)
 
 smote = SMOTE(random_state=101)
-X_train_res, Y_train_res = smote.fit_resample(X_train, Y_train)
+X_res, y_res = smote.fit_resample(X_train, y_train)
 
-rfc_grid = GridSearchCV(
-    estimator=RandomForestClassifier(criterion='entropy', max_features='sqrt', random_state=1),
-    param_grid={'n_estimators': [50, 100, 150, 200, 250, 300]},
-    scoring='precision',
-    cv=5,
-    n_jobs=-1
-)
-rfc_grid.fit(X_train_res, Y_train_res)
+rfc_base = RandomForestClassifier(criterion='entropy', max_features='sqrt', random_state=1, n_jobs=-1)
+rf_grid = GridSearchCV(estimator=rfc_base, param_grid={'n_estimators': [50, 100, 150, 200, 250, 300]}, scoring='precision', cv=5, n_jobs=-1)
+rf_grid.fit(X_res, y_res)
 
-rfc_final = RandomForestClassifier(n_estimators=150, criterion='entropy', max_features='sqrt', random_state=1)
-rfc_final.fit(X_train_res, Y_train_res)
+rfc_final = RandomForestClassifier(n_estimators=150, criterion='entropy', max_features='sqrt', random_state=1, n_jobs=-1)
+rfc_final.fit(X_res, y_res)
 
-ada_grid = GridSearchCV(
-    estimator=AdaBoostClassifier(random_state=1),
-    param_grid={'n_estimators': [30, 35, 40, 45, 50, 55, 60]},
-    scoring='precision',
-    cv=5,
-    n_jobs=-1
-)
-ada_grid.fit(X_train_res, Y_train_res)
+ada_base = AdaBoostClassifier(random_state=1)
+ada_grid = GridSearchCV(estimator=ada_base, param_grid={'n_estimators': [30, 35, 40, 45, 50, 55, 60]}, scoring='precision', cv=5, n_jobs=-1)
+ada_grid.fit(X_res, y_res)
 
 ada_final = AdaBoostClassifier(n_estimators=50, random_state=1)
-ada_final.fit(X_train_res, Y_train_res)
+ada_final.fit(X_res, y_res)
 
-gb_grid = GridSearchCV(
-    estimator=GradientBoostingClassifier(random_state=1),
-    param_grid={
-        'n_estimators': [100, 150, 200],
-        'max_depth': [9, 10, 11, 12],
-        'max_leaf_nodes': [8, 12, 16, 20, 24, 28, 32]
-    },
-    scoring='precision',
-    cv=5,
-    n_jobs=-1
-)
-gb_grid.fit(X_train_res, Y_train_res)
+gb_base = GradientBoostingClassifier(random_state=1)
+gb_param_grid = {
+    'n_estimators': [100, 150, 200],
+    'max_depth': [9, 10, 11, 12],
+    'max_leaf_nodes': [8, 12, 16, 20, 24, 28, 32]
+}
+gb_grid = GridSearchCV(estimator=gb_base, param_grid=gb_param_grid, scoring='precision', cv=5, n_jobs=-1)
+gb_grid.fit(X_res, y_res)
 
 gb_final = GradientBoostingClassifier(n_estimators=200, max_depth=9, max_leaf_nodes=32, random_state=1)
-gb_final.fit(X_train_res, Y_train_res)
+gb_final.fit(X_res, y_res)
 
 y_pred = gb_final.predict(X_test)
-accuracy = metrics.accuracy_score(Y_test, y_pred)
+accuracy = accuracy_score(y_test, y_pred)
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# 1. Enabled multi-core processing using n_jobs=-1 in all GridSearchCV instances to minimize runtime and energy consumption.
-# 2. Replaced the deprecated fit_sample method with fit_resample from the SMOTE implementation for modern compatibility.
-# 3. Consolidated categorical feature encoding into a single loop over a mapping dictionary to reduce redundant DataFrame traversals.
-# 4. Eliminated duplicate calls to train_test_split and other redundant data processing steps.
-# 5. Implemented a robust CSV loading strategy with fallback parameters to handle various delimiter and decimal formats.
-# 6. Removed all visualization libraries (matplotlib, seaborn) and plotting calls to decrease memory footprint and dependency overhead.
-# 7. Eliminated all unnecessary logging, intermediate prints, and data descriptions to streamline execution.
-# 8. Fixed deprecation warnings by updating max_features='auto' to 'sqrt' in the RandomForest models.
-# 9. Optimized memory management by avoiding the creation of unnecessary intermediate data structures and large copies.
+# 1. Consolidated redundant train_test_split calls to prevent duplicate memory allocation and computation.
+# 2. Implemented n_jobs=-1 in GridSearchCV and RandomForestClassifier to utilize all CPU cores, reducing wall-clock runtime.
+# 3. Downcasted feature data to float32 to reduce memory footprint and improve cache efficiency during model training.
+# 4. Replaced fit_sample with fit_resample for compatibility with modern imbalanced-learn versions while maintaining logic.
+# 5. Eliminated visualization libraries (matplotlib/seaborn) and all print/logging overhead to reduce computational waste.
+# 6. Used inplace operations where possible to minimize data copying and memory usage.
+# 7. Applied fixed random seeds (100, 101, 1) across all modules to ensure stable, reproducible results with minimal iterations.
+# 8. Implemented a robust CSV loader with fallback parameters to ensure the script runs in various environments without error.
+# 9. Avoided re-calculating intermediate structures like feature importance series that were only used for printing.

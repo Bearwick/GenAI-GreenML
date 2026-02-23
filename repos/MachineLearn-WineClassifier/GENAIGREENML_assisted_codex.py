@@ -2,13 +2,14 @@
 # LLM: codex
 # Mode: assisted
 
-import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import ExtraTreesClassifier
+import pandas as pd
 import numpy as np
+import random
 
-RANDOM_STATE = 42
-EXPECTED_HEADERS = [
+DATASET_PATH = "data/wine_dataset.csv"
+DATASET_HEADERS = [
     "fixed_acidity",
     "volatile_acidity",
     "citric_acid",
@@ -23,64 +24,68 @@ EXPECTED_HEADERS = [
     "quality",
     "style",
 ]
+SEED = 42
 
 
-def parsing_looks_wrong(df, expected_headers):
-    if df.shape[0] == 0 or df.shape[1] == 1:
-        return True
-    expected_lower = {h.lower() for h in expected_headers}
-    cols_lower = {str(c).strip().lower() for c in df.columns}
-    return len(cols_lower & expected_lower) == 0
+def _parsed_correctly(df, headers):
+    if df.shape[1] <= 1:
+        return False
+    cols = {c.strip().lower() for c in df.columns}
+    return "style" in cols
 
 
-def read_csv_with_fallback(path, expected_headers):
+def _load_dataset(path, headers):
     df = pd.read_csv(path)
-    if parsing_looks_wrong(df, expected_headers):
+    if not _parsed_correctly(df, headers):
         df = pd.read_csv(path, sep=";", decimal=",")
     return df
 
 
-def standardize_columns(df, expected_headers):
-    expected_map = {h.lower(): h for h in expected_headers}
+def _normalize_columns(df, headers):
+    header_map = {h.lower(): h for h in headers}
     rename_map = {}
     for col in df.columns:
-        key = str(col).strip().lower()
-        if key in expected_map:
-            rename_map[col] = expected_map[key]
-    return df.rename(columns=rename_map) if rename_map else df
+        key = col.strip().lower()
+        if key in header_map and col != header_map[key]:
+            rename_map[col] = header_map[key]
+    if rename_map:
+        df = df.rename(columns=rename_map)
+    return df
+
+
+def _prepare_features(df, headers):
+    df = _normalize_columns(df, headers)
+    header_map = {h.lower(): h for h in headers}
+    style_col = header_map.get("style", "style")
+    if style_col not in df.columns:
+        candidates = [c for c in df.columns if c.strip().lower() == "style"]
+        if candidates:
+            style_col = candidates[0]
+        else:
+            raise ValueError("Style column not found in dataset.")
+    style_series = df[style_col].astype(str).str.strip().str.lower()
+    mask_style = style_series.isin(["red", "white"])
+    df = df.loc[mask_style].copy()
+    df[style_col] = style_series.loc[mask_style].map({"red": 0, "white": 1}).astype("int64")
+    X = df.drop(columns=[style_col])
+    y = df[style_col]
+    for col in X.columns:
+        X[col] = pd.to_numeric(X[col], errors="coerce")
+    mask_numeric = X.notna().all(axis=1)
+    X = X.loc[mask_numeric]
+    y = y.loc[mask_numeric]
+    return X, y
 
 
 def main():
-    np.random.seed(RANDOM_STATE)
-    path = "data/wine_dataset.csv"
-    df = read_csv_with_fallback(path, EXPECTED_HEADERS)
-    df = standardize_columns(df, EXPECTED_HEADERS)
-
-    style_col = None
-    for col in df.columns:
-        if str(col).strip().lower() == "style":
-            style_col = col
-            break
-    if style_col is None:
-        raise ValueError("Style column not found")
-
-    style = df[style_col].astype(str).str.strip().str.lower()
-    mask_style = style.isin(["red", "white"])
-    y = style.loc[mask_style].map({"red": 0, "white": 1}).astype("int64")
-
-    feature_cols = [c for c in df.columns if c != style_col]
-    X = df.loc[mask_style, feature_cols]
-    X = X.apply(pd.to_numeric, errors="coerce")
-
-    mask = X.notna().all(axis=1)
-    X = X.loc[mask]
-    y = y.loc[mask]
-
+    np.random.seed(SEED)
+    random.seed(SEED)
+    df = _load_dataset(DATASET_PATH, DATASET_HEADERS)
+    X, y = _prepare_features(df, DATASET_HEADERS)
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=RANDOM_STATE, stratify=y
+        X, y, test_size=0.3, random_state=SEED, stratify=y
     )
-
-    model = ExtraTreesClassifier(n_estimators=100, random_state=RANDOM_STATE)
+    model = ExtraTreesClassifier(n_estimators=100, random_state=SEED)
     model.fit(X_train, y_train)
     accuracy = model.score(X_test, y_test)
     print(f"ACCURACY={accuracy:.6f}")
@@ -90,8 +95,8 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Added robust CSV parsing fallback to prevent costly downstream errors.
-# - Standardized column names once to avoid repeated string operations.
-# - Filtered and mapped labels without copying the full DataFrame.
-# - Removed unnecessary prediction step to cut extra computation.
-# - Centralized fixed random seed for reproducible and deterministic behavior.
+# Used a parsing validation check with a delimiter fallback to avoid unnecessary downstream corrections.
+# Normalized column names once using a header map to prevent repeated string operations.
+# Combined label cleaning, filtering, and mapping into a single vectorized flow to reduce redundant passes.
+# Performed in-place numeric conversion per column to limit full DataFrame copies.
+# Removed unused prediction computation and extraneous logging to reduce runtime and overhead.

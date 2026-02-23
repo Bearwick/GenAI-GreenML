@@ -9,99 +9,103 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from keras.layers import BatchNormalization, Dense
-from keras.models import Sequential
-from numpy.random import seed as np_seed
 from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
-from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import MinMaxScaler
-
-DATASET_HEADERS = [
-    "a_acc",
-    "a_don",
-    "b_rotN",
-    "density",
-    "logP(o/w)",
-    "logS",
-    "rings",
-    "Weight",
-    "Activity_value",
-]
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import BatchNormalization, Dense
 
 
-def set_reproducibility(seed_value: int = 1) -> None:
-    os.environ["PYTHONHASHSEED"] = str(seed_value)
-    random.seed(seed_value)
-    np.random.seed(100)
-    np_seed(0)
-    tf.random.set_seed(seed_value)
+DATASET_PATH_TRAIN = "herg_train_activity.csv"
+DATASET_PATH_TEST = "herg_test_activity.csv"
+DATASET_PATH_CAS = "cas.csv"
+
+TARGET_COL = "Activity_value"
+
+SEED_PYTHON = 0
+SEED_NUMPY = 100
+SEED_TF = 1
+SEED_SKLEARN = 0
+
+EPOCHS = 200
+BATCH_SIZE = 100
+CUTOFF = 0.5
+
+IFOREST_CONTAMINATION = 0.1
+IFOREST_ESTIMATORS = 100
+
+PCA_COMPONENTS = 2
+
+
+def set_reproducibility() -> None:
+    os.environ.setdefault("PYTHONHASHSEED", str(SEED_PYTHON))
+    os.environ.setdefault("TF_DETERMINISTIC_OPS", "1")
+    random.seed(SEED_PYTHON)
+    np.random.seed(SEED_NUMPY)
+    tf.random.set_seed(SEED_TF)
     try:
         tf.config.experimental.enable_op_determinism()
     except Exception:
         pass
 
 
-def robust_read_csv(path: str) -> pd.DataFrame:
+def _parsing_looks_wrong(df: pd.DataFrame, expected_headers: Tuple[str, ...]) -> bool:
+    if df is None or df.empty:
+        return True
+    if df.shape[1] == 1:
+        return True
+    if not set(expected_headers).issubset(set(df.columns)):
+        if any("," in str(c) for c in df.columns):
+            return True
+    return False
+
+
+def read_csv_robust(path: str, expected_headers: Tuple[str, ...]) -> pd.DataFrame:
     df = pd.read_csv(path)
-    if df.shape[1] <= 1:
+    if _parsing_looks_wrong(df, expected_headers):
         df = pd.read_csv(path, sep=";", decimal=",")
     return df
 
 
-def align_and_split_features(
-    df: pd.DataFrame, target_col: str, expected_headers: list
-) -> Tuple[np.ndarray, np.ndarray, list]:
+def get_feature_columns(df: pd.DataFrame) -> list:
     cols = list(df.columns)
-    if target_col not in cols:
-        raise ValueError(f"Target column '{target_col}' not found in data columns: {cols}")
-
-    expected_features = [c for c in expected_headers if c != target_col]
-    feature_cols = [c for c in expected_features if c in cols and c != target_col]
-    if not feature_cols:
-        feature_cols = [c for c in cols if c != target_col]
-
-    X = df.loc[:, feature_cols].to_numpy(dtype=np.float32, copy=False)
-    y = df.loc[:, [target_col]].to_numpy(dtype=np.float32, copy=False)
-    return X, y, feature_cols
+    if TARGET_COL in cols:
+        cols.remove(TARGET_COL)
+    return cols
 
 
-def scale_with_train_fit(X_train: np.ndarray, X_test: np.ndarray) -> Tuple[np.ndarray, np.ndarray, MinMaxScaler]:
-    scaler = MinMaxScaler(feature_range=(0.0, 1.0), copy=False)
-    scaler.fit(X_train)
-    X_train_s = scaler.transform(X_train)
-    X_test_s = scaler.transform(X_test)
-    return X_train_s, X_test_s, scaler
+def to_xy(df: pd.DataFrame, feature_cols: list) -> Tuple[np.ndarray, np.ndarray]:
+    x = df.loc[:, feature_cols].to_numpy(dtype=np.float32, copy=False)
+    y = df.loc[:, [TARGET_COL]].to_numpy(dtype=np.float32, copy=False)
+    return x, y
 
 
-def outlier_filter_with_pca_iforest(
-    X_train: np.ndarray,
-    y_train: np.ndarray,
-    X_test: np.ndarray,
-    y_test: np.ndarray,
-    contamination: float = 0.1,
-    random_state: int = 0,
+def scale_train_test(x_train: np.ndarray, x_test: np.ndarray) -> Tuple[np.ndarray, np.ndarray, MinMaxScaler]:
+    scaler = MinMaxScaler(feature_range=(0, 1), copy=False)
+    x_train_s = scaler.fit_transform(x_train)
+    x_test_s = scaler.transform(x_test)
+    return x_train_s, x_test_s, scaler
+
+
+def filter_outliers_with_pca_iforest(
+    x: np.ndarray, y: np.ndarray, x_test: np.ndarray, y_test: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    pca = PCA(n_components=2, random_state=random_state)
-    X_train_2d = pca.fit_transform(X_train)
-
+    pca = PCA(n_components=PCA_COMPONENTS, random_state=SEED_SKLEARN)
     iso = IsolationForest(
-        contamination=contamination,
-        n_estimators=100,
-        random_state=random_state,
+        contamination=IFOREST_CONTAMINATION,
+        n_estimators=IFOREST_ESTIMATORS,
+        random_state=SEED_SKLEARN,
         verbose=0,
+        n_jobs=1,
     )
-    train_inlier_mask = iso.fit_predict(X_train_2d) != -1
 
-    X_train_f = X_train[train_inlier_mask]
-    y_train_f = y_train[train_inlier_mask]
+    x_pca = pca.fit_transform(x)
+    train_inlier_mask = iso.fit_predict(x_pca) != -1
 
-    X_test_2d = pca.fit_transform(X_test)
-    test_inlier_mask = iso.fit_predict(X_test_2d) != -1
+    x_test_pca = pca.fit_transform(x_test)
+    test_inlier_mask = iso.fit_predict(x_test_pca) != -1
 
-    X_test_f = X_test[test_inlier_mask]
-    y_test_f = y_test[test_inlier_mask]
-    return X_train_f, y_train_f, X_test_f, y_test_f
+    return x[train_inlier_mask], y[train_inlier_mask], x_test[test_inlier_mask], y_test[test_inlier_mask]
 
 
 def build_model(input_dim: int) -> Sequential:
@@ -126,41 +130,61 @@ def build_model(input_dim: int) -> Sequential:
     return model
 
 
+def predict_classes(model: tf.keras.Model, x: np.ndarray, cutoff: float = CUTOFF) -> np.ndarray:
+    proba = model.predict(x, verbose=0)
+    return (proba > cutoff).astype(np.int8)
+
+
 def main() -> None:
-    set_reproducibility(1)
+    set_reproducibility()
 
-    train_df = robust_read_csv("herg_train_activity.csv")
-    test_df = robust_read_csv("herg_test_activity.csv")
-
-    X_train, y_train, feature_cols = align_and_split_features(
-        train_df, target_col="Activity_value", expected_headers=DATASET_HEADERS
+    expected_headers = (
+        "a_acc",
+        "a_don",
+        "b_rotN",
+        "density",
+        "logP(o/w)",
+        "logS",
+        "rings",
+        "Weight",
+        "Activity_value",
     )
 
-    X_test, y_test, _ = align_and_split_features(
-        test_df, target_col="Activity_value", expected_headers=DATASET_HEADERS
-    )
+    train_df = read_csv_robust(DATASET_PATH_TRAIN, expected_headers)
+    test_df = read_csv_robust(DATASET_PATH_TEST, expected_headers)
 
-    X_train, X_test, scaler = scale_with_train_fit(X_train, X_test)
+    feature_cols = get_feature_columns(train_df)
+    x_train, y_train = to_xy(train_df, feature_cols)
+    x_test, y_test = to_xy(test_df, feature_cols)
 
-    X_train, y_train, X_test, y_test = outlier_filter_with_pca_iforest(
-        X_train, y_train, X_test, y_test, contamination=0.1, random_state=0
-    )
+    x_train, x_test, scaler = scale_train_test(x_train, x_test)
 
-    model = build_model(input_dim=X_train.shape[1])
+    x_train, y_train, x_test, y_test = filter_outliers_with_pca_iforest(x_train, y_train, x_test, y_test)
+
+    model = build_model(input_dim=x_train.shape[1])
     model.fit(
-        X_train,
+        x_train,
         y_train,
-        epochs=200,
-        batch_size=100,
+        epochs=EPOCHS,
+        batch_size=BATCH_SIZE,
         shuffle=True,
         verbose=0,
-        validation_data=(X_test, y_test),
+        validation_data=(x_test, y_test),
     )
 
-    y_test_prob = model.predict(X_test, verbose=0)
-    y_test_pred = (y_test_prob > 0.5).astype(np.int32).ravel()
-    y_test_true = y_test.astype(np.int32).ravel()
-    accuracy = float(accuracy_score(y_test_true, y_test_pred))
+    _, test_acc = model.evaluate(x_test, y_test, verbose=0)
+
+    cas_df = read_csv_robust(
+        DATASET_PATH_CAS,
+        tuple(feature_cols),
+    )
+    if set(feature_cols).issubset(set(cas_df.columns)):
+        x_cas = cas_df.loc[:, feature_cols].to_numpy(dtype=np.float32, copy=False)
+    else:
+        x_cas = cas_df.to_numpy(dtype=np.float32, copy=False)
+    _ = predict_classes(model, scaler.transform(x_cas), cutoff=CUTOFF)
+
+    accuracy = float(test_acc)
     print(f"ACCURACY={accuracy:.6f}")
 
 
@@ -168,10 +192,9 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed unused imports and all non-essential metrics computations to cut CPU work and dependencies.
-# - Eliminated redundant scalers (fit only on training data) and avoided extra data movement by using copy=False where safe.
-# - Avoided repeated model.predict calls by computing test predictions once and deriving labels from probabilities.
-# - Removed all prints/logging/plots and file-saving side effects to reduce I/O overhead.
-# - Added robust CSV parsing fallback (default, then sep=';' and decimal=',') to prevent expensive downstream errors/retries.
-# - Enforced reproducibility via fixed seeds and best-effort deterministic TensorFlow ops to stabilize results across runs.
-# - Kept preprocessing/model intent intact (scaling, PCA+IsolationForest filtering, same NN architecture/training settings).
+# - Removed redundant scaling: avoided fitting a second MinMaxScaler on the test set and reused the train-fitted scaler (same effective behavior as original since scaler1 was unused).
+# - Eliminated duplicate predictions: replaced repeated model.predict calls on the same arrays with a single helper (predict_classes) to reduce compute.
+# - Reduced data movement: used pandas .to_numpy(copy=False) and float32 arrays to lower memory footprint and speed up TensorFlow/NumPy operations.
+# - Limited parallel overhead: set IsolationForest n_jobs=1 to avoid extra process/thread spawning energy costs for small PCA-transformed inputs.
+# - Ensured reproducibility: set Python/NumPy/TensorFlow seeds and enabled deterministic TensorFlow ops when available.
+# - Removed non-essential I/O and side effects: removed all prints/logging, loops, metrics reports, and CSV artifact saving while keeping core training/evaluation and CAS inference intent.

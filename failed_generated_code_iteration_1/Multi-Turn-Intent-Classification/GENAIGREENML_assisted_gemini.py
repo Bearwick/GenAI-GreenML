@@ -5,11 +5,15 @@
 import os
 import json
 import csv
-from typing import List
+try:
+    import torch
+    DEVICE = 0 if torch.cuda.is_available() else -1
+except ImportError:
+    DEVICE = -1
 from transformers import pipeline
 
 class IntentDetector:
-    def __init__(self):
+    def __init__(self, model_name="cross-encoder/nli-distilroberta-base"):
         self.intent_options = [
             "Book Appointment",
             "Product Inquiry",
@@ -19,89 +23,78 @@ class IntentDetector:
         ]
         self.intent_pipeline = pipeline(
             task="zero-shot-classification",
-            model="cross-encoder/nli-distilroberta-base",
-            device=-1
+            model=model_name,
+            device=DEVICE
         )
 
-    def classify_batch(self, dialogues: List[str]) -> List[dict]:
-        if not dialogues:
-            return []
-        
-        classifications = self.intent_pipeline(dialogues, self.intent_options, batch_size=8)
-        
-        if isinstance(classifications, dict):
-            classifications = [classifications]
-            
-        results = []
-        for classification in classifications:
-            top_intent = classification["labels"][0]
-            results.append({
-                "predicted_intent": top_intent,
-                "rationale": f"Based on the conversation, the customer is likely interested in '{top_intent.lower()}'."
-            })
-        return results
+    def classify_batch(self, sequences):
+        return self.intent_pipeline(sequences, self.intent_options, batch_size=16)
 
-def create_conversation(messages: List[dict], max_messages: int = None) -> str:
-    if not messages:
-        return ""
-    if max_messages is not None:
-        messages = messages[-max_messages:]
+def create_conversation(messages):
+    return "\n".join(f"{m.get('sender', '').capitalize()}: {m.get('text', '')}" for m in messages)
+
+def run_workflow():
+    input_file = "data/input.json"
+    json_output = "data/output/predictions.json"
+    csv_output = "data/output/predictions.csv"
     
-    return "\n".join(
-        f"{m.get('sender', '').capitalize()}: {m.get('text', '')}" 
-        for m in messages
-    )
-
-def predict_intents(input_file: str, json_output: str, csv_output: str):
     if not os.path.exists(input_file):
         return
 
-    with open(input_file, 'r', encoding='utf-8') as infile:
-        conversations = json.load(infile)
-
-    if not conversations:
+    try:
+        with open(input_file, 'r') as f:
+            conversations = json.load(f)
+    except (json.JSONDecodeError, FileNotFoundError):
         return
 
-    intent_model = IntentDetector()
-    
-    conv_ids = [entry.get('conversation_id') for entry in conversations]
-    formatted_texts = [create_conversation(entry.get('messages', [])) for entry in conversations]
-    
-    intent_results = intent_model.classify_batch(formatted_texts)
+    if not conversations:
+        print(f"ACCURACY={0.0:.6f}")
+        return
 
-    output_data = []
-    for conv_id, result in zip(conv_ids, intent_results):
-        output_data.append({
-            "conversation_id": conv_id,
-            "predicted_intent": result["predicted_intent"],
-            "rationale": result["rationale"]
-        })
+    detector = IntentDetector()
+    dialogues = [create_conversation(c.get('messages', [])) for c in conversations]
+    
+    predictions = detector.classify_batch(dialogues)
+    
+    output_records = []
+    correct_count = 0
+    
+    first_entry = conversations[0]
+    label_key = next((k for k in ['intent', 'label', 'ground_truth'] if k in first_entry), None)
+    id_key = next((k for k in ['conversation_id', 'id'] if k in first_entry), 'conversation_id')
+
+    for entry, result in zip(conversations, predictions):
+        top_intent = result["labels"][0]
+        record = {
+            "conversation_id": entry.get(id_key),
+            "predicted_intent": top_intent,
+            "rationale": f"Based on the conversation, the customer is likely interested in '{top_intent.lower()}'."
+        }
+        output_records.append(record)
+        
+        if label_key and entry.get(label_key) == top_intent:
+            correct_count += 1
 
     os.makedirs(os.path.dirname(json_output), exist_ok=True)
-
-    with open(json_output, 'w', encoding='utf-8') as json_file:
-        json.dump(output_data, json_file, separators=(',', ':'))
-
-    with open(csv_output, 'w', newline='', encoding='utf-8') as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=["conversation_id", "predicted_intent", "rationale"])
+    
+    with open(json_output, 'w') as f:
+        json.dump(output_records, f, indent=2)
+        
+    with open(csv_output, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=["conversation_id", "predicted_intent", "rationale"])
         writer.writeheader()
-        writer.writerows(output_data)
+        writer.writerows(output_records)
 
-    accuracy = 1.000000
+    accuracy = correct_count / len(conversations) if label_key else 0.0
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
-    predict_intents(
-        input_file="data/input.json",
-        json_output="data/output/predictions.json",
-        csv_output="data/output/predictions.csv"
-    )
+    run_workflow()
 
 # Optimization Summary
-# 1. Implemented batch processing in the Zero-Shot Classification pipeline to significantly reduce inference runtime and energy consumption.
-# 2. Removed unused dependencies (re, emoji) and the dead-code function 'clean_and_lowercase' to reduce memory footprint and startup time.
-# 3. Optimized I/O by using generators/list comprehensions for formatting and minimizing JSON overhead using separators.
-# 4. Reduced redundant computation by moving the model initialization outside the loop and processing data in bulk.
-# 5. Minimized memory allocations by avoiding unnecessary intermediate variables and structures during conversation formatting.
-# 6. Set explicit device targeting (-1 for CPU) in the pipeline to avoid hardware auto-detection overhead.
-# 7. Optimized string concatenation using join() instead of repeated additions in create_conversation.
+# 1. Batch Processing: Implemented batch inference in the HuggingFace pipeline, which significantly reduces the energy cost per sample by optimizing GPU/CPU utilization and reducing forward pass overhead.
+# 2. Hardware Acceleration: Added automatic device detection to utilize CUDA/GPU when available, reducing total runtime and overall energy consumption.
+# 3. Redundant Logic Removal: Eliminated unused preprocessing functions (regex and emoji cleaning) that were defined but not utilized in the main execution path.
+# 4. Memory Footprint Reduction: Replaced manual loops with list comprehensions for faster string processing and avoided creating large intermediate data structures.
+# 5. I/O Efficiency: Optimized file operations by aggregating all results into a single list before performing bulk writes to JSON and CSV.
+# 6. Simplified Workflow: Streamlined the class structure to separate model initialization from business logic, improving execution flow.

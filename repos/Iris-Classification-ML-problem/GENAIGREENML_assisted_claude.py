@@ -2,8 +2,8 @@
 # LLM: claude
 # Mode: assisted
 
-import numpy as np
 import pandas as pd
+import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 import torch.nn as nn
@@ -18,10 +18,10 @@ np.random.seed(SEED)
 file_path = 'iris.data'
 try:
     df = pd.read_csv(file_path, header=None, names=['SLength', 'SWidth', 'PLength', 'PWidth', 'class'])
-    if df.shape[1] != 5:
-        raise ValueError
+    if df.shape[1] == 1:
+        df = pd.read_csv(file_path, header=None, names=['SLength', 'SWidth', 'PLength', 'PWidth', 'class'], sep=';', decimal=',')
 except Exception:
-    df = pd.read_csv(file_path, header=None, sep=';', decimal=',', names=['SLength', 'SWidth', 'PLength', 'PWidth', 'class'])
+    df = pd.read_csv(file_path, header=None, names=['SLength', 'SWidth', 'PLength', 'PWidth', 'class'], sep=';', decimal=',')
 
 df['class'] = df['class'].astype('category').cat.codes
 
@@ -39,17 +39,17 @@ x = (x - mu) / span
 num_train = int(n * .6)
 num_test = n - num_train
 
-x_train = x[:num_train]
-y_train = y[:num_train]
-x_test = x[-num_test:]
-y_test = y[-num_test:]
+x_train = torch.from_numpy(x[:num_train])
+y_train = torch.from_numpy(y[:num_train]).long()
+x_test = torch.from_numpy(x[-num_test:])
+y_test = torch.from_numpy(y[-num_test:]).long()
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-x_train_t = torch.from_numpy(x_train).to(device)
-y_train_t = torch.from_numpy(y_train).long().to(device)
-x_test_t = torch.from_numpy(x_test).to(device)
-y_test_t = torch.from_numpy(y_test).long().to(device)
+x_train = x_train.to(device)
+y_train = y_train.to(device)
+x_test = x_test.to(device)
+y_test = y_test.to(device)
 
 
 class IrisNN(nn.Module):
@@ -59,9 +59,7 @@ class IrisNN(nn.Module):
         self.fn2 = nn.Linear(6, 3)
 
     def forward(self, x):
-        x = F.relu(self.fn1(x))
-        x = self.fn2(x)
-        return x
+        return self.fn2(F.relu(self.fn1(x)))
 
 
 model = IrisNN().to(device)
@@ -72,25 +70,23 @@ max_epochs = 200
 for epoch in range(max_epochs):
     model.train()
     optimizer.zero_grad()
-    score = model(x_train_t)
-    loss = loss_fn(score, y_train_t)
+    score = model(x_train)
+    loss = loss_fn(score, y_train)
     loss.backward()
     optimizer.step()
 
 model.eval()
 with torch.no_grad():
-    score = model(x_test_t)
+    score = model(x_test)
     predictions = score.argmax(dim=1)
-    num_correct = (predictions == y_test_t).sum().item()
+    num_correct = (predictions == y_test).sum().item()
+    accuracy = num_correct / y_test.size(0)
 
-accuracy = num_correct / len(y_test_t)
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Removed Dataset/DataLoader overhead: data is small enough to process as single tensors, eliminating per-epoch iterator overhead.
-# Moved tensors to device once before training instead of per-batch per-epoch transfers, reducing data movement.
-# Eliminated redundant per-epoch evaluation; only evaluate once after training since only final accuracy is needed.
-# Removed the inline rescale function; normalization is done directly in-place.
-# Removed test forward pass during training loop, cutting inference computation in half per epoch.
-# Removed all prints, plots, and artifact saves per requirements.
-# Used argmax instead of max with keepdim for simpler prediction extraction.
+# 1. Removed Dataset/DataLoader overhead: data fits in memory, so we pass full tensors directly, avoiding iterator/batching overhead.
+# 2. Moved tensors to device once before training loop instead of per-batch transfers each epoch, reducing data movement.
+# 3. Eliminated redundant inline rescale function; normalization done in-place with a single expression.
+# 4. Removed all print statements, plots, and parameter dumps per requirements.
+# 5. Removed the test-set evaluation from inside the training loop (evaluated only once after

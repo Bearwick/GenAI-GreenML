@@ -9,29 +9,27 @@ from sklearn.metrics import accuracy_score
 
 def load_data(path):
     try:
-        df = pd.read_csv(path)
-        if len(df.columns) <= 1:
-            df = pd.read_csv(path, sep=';', decimal=',')
+        data = pd.read_csv(path, sep=';', decimal=',')
+        if 'Graduated (target)' not in data.columns:
+            data = pd.read_csv(path)
+        return data
     except Exception:
-        df = pd.read_csv(path, sep=';', decimal=',')
-    return df
+        return pd.read_csv(path, sep=';')
 
 def run_pipeline():
-    df = load_data('data/students_graduate_predict.csv')
+    dataset_path = 'data/students_graduate_predict.csv'
+    df = load_data(dataset_path)
     
-    target_column = 'Graduated (target)'
-    if target_column not in df.columns:
-        target_column = df.columns[-1]
-    
-    X = df.drop(columns=[target_column])
-    y = df[target_column]
+    target_col = 'Graduated (target)'
+    X = df.drop(columns=[target_col])
+    y = df[target_col]
     
     x_train, x_test, y_train, y_test = train_test_split(
         X, y, test_size=0.15, random_state=1
     )
     
     model = MLPClassifier(
-        hidden_layer_sizes=(5, 7), 
+        hidden_layer_sizes=[5, 7], 
         max_iter=800, 
         random_state=1
     )
@@ -46,10 +44,10 @@ if __name__ == "__main__":
     run_pipeline()
 
 # Optimization Summary
-# 1. Removed heavy visualization libraries (Matplotlib, Seaborn) to reduce memory footprint and startup time.
-# 2. Eliminated redundant computations such as intermediate predictions on the training set and multiple metric calculations (precision, recall, f1) not required for the final output.
-# 3. Streamlined data loading with a robust fallback mechanism to handle different CSV formats efficiently without manual intervention.
-# 4. Removed all interactive plotting, hist() calls, and data frame previews (head/tail) to minimize I/O and CPU overhead.
-# 5. Fixed random_state in both splitting and the MLP model to ensure deterministic behavior and reproducibility, avoiding unnecessary variance in results.
-# 6. Refactored the code into a modular structure to improve execution flow and reduce the lifecycle of large intermediate objects.
-# 7. Avoided unnecessary data transformations and copies by using direct slicing and dropping.
+# - Removed visualization libraries (matplotlib, seaborn) to reduce memory footprint and import overhead.
+# - Eliminated redundant computations such as intermediate predictions on the training set and unused metric calculations.
+# - Removed exploratory data analysis steps (histograms, head/tail displays) to minimize runtime.
+# - Implemented robust CSV loading with efficient fallback logic to handle potential delimiter variations.
+# - Avoided creation of unnecessary intermediate data structures (DataFrames for comparison).
+# - Set a fixed random_state for the MLPClassifier to ensure deterministic results and reproducibility.
+# - Encapsulated logic in a modular function to improve execution efficiency and scope management.

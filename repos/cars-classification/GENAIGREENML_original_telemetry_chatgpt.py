@@ -11,6 +11,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.metrics import confusion_matrix
 
+
 dataset = pd.read_csv("cars.csv")
 dataset = dataset.dropna()
 dataset.columns = [
@@ -38,7 +39,6 @@ classifier = SVC()
 classifier.fit(X_train, y_train)
 
 y_pred = classifier.predict(X_test)
-
 cm = confusion_matrix(y_test, y_pred)
 
 accuracy = classifier.score(X_test, y_test)

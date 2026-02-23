@@ -7,9 +7,9 @@ import pandas as pd
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.model_selection import train_test_split
 
-
 SEED = 42
-DATASET_HEADERS = [
+DATASET_PATH = "data/wine_dataset.csv"
+EXPECTED_HEADERS = [
     "fixed_acidity",
     "volatile_acidity",
     "citric_acid",
@@ -26,82 +26,53 @@ DATASET_HEADERS = [
 ]
 
 
-def read_csv_robust(path: str) -> pd.DataFrame:
+def _read_csv_robust(path: str, expected_headers: list[str]) -> pd.DataFrame:
+    def looks_wrong(df: pd.DataFrame) -> bool:
+        if df is None or df.empty:
+            return True
+        cols = [c.strip() for c in df.columns.astype(str)]
+        if len(cols) == 1:
+            return True
+        expected = set(expected_headers)
+        present = sum(1 for c in cols if c in expected)
+        return present < max(1, len(expected_headers) // 2)
+
     df = pd.read_csv(path)
-    if df.shape[1] < 2:
+    if looks_wrong(df):
         df = pd.read_csv(path, sep=";", decimal=",")
-    else:
-        if len(df.columns) == 1:
-            df = pd.read_csv(path, sep=";", decimal=",")
-        else:
-            col0 = str(df.columns[0]).lower()
-            if (";" in col0) or (col0.count(",") >= 5):
-                df = pd.read_csv(path, sep=";", decimal=",")
+    df.columns = df.columns.astype(str).str.strip()
     return df
-
-
-def resolve_style_col(df: pd.DataFrame, expected_headers: list[str]) -> str:
-    if "style" in df.columns:
-        return "style"
-    lower_map = {c.lower(): c for c in df.columns}
-    if "style" in lower_map:
-        return lower_map["style"]
-    expected_lower = [h.lower() for h in expected_headers]
-    candidates = [c for c in df.columns if c.lower() in expected_lower and c.lower() == "style"]
-    if candidates:
-        return candidates[0]
-    raise KeyError("Style column not found in dataset.")
-
-
-def prepare_data(df: pd.DataFrame, expected_headers: list[str]) -> tuple[pd.DataFrame, pd.Series]:
-    style_col = resolve_style_col(df, expected_headers)
-
-    style = (
-        df[style_col]
-        .astype("string", copy=False)
-        .str.strip()
-        .str.lower()
-    )
-    keep = style.isin(("red", "white"))
-    df = df.loc[keep].copy()
-    style = style.loc[keep].map({"red": 0, "white": 1}).astype("int64")
-
-    X = df.drop(columns=[style_col])
-    numeric_cols = X.columns
-    X[numeric_cols] = X[numeric_cols].apply(pd.to_numeric, errors="coerce")
-
-    mask = X.notna().all(axis=1)
-    X = X.loc[mask]
-    y = style.loc[mask]
-
-    return X, y
-
-
-def train_and_evaluate(X: pd.DataFrame, y: pd.Series) -> float:
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=SEED, stratify=y
-    )
-
-    model = ExtraTreesClassifier(
-        n_estimators=100,
-        random_state=SEED,
-        n_jobs=-1,
-    )
-    model.fit(X_train, y_train)
-    accuracy = float(model.score(X_test, y_test))
-
-    _ = model.predict(X_test.iloc[300:600])
-
-    return accuracy
 
 
 def main() -> None:
     np.random.seed(SEED)
 
-    path = "data/wine_dataset.csv"
-    df = read_csv_robust(path)
-    X, y = prepare_data(df, DATASET_HEADERS)
-    accuracy = train_and_evaluate(X, y)
+    df = _read_csv_robust(DATASET_PATH, EXPECTED_HEADERS)
+
+    if "style" not in df.columns:
+        raise KeyError("Required target column 'style' not found in dataset.")
+
+    style = df["style"].astype("string").str.strip().str.lower()
+    is_valid_style = style.isin(("red", "white"))
+
+    feature_cols = [c for c in df.columns if c != "style"]
+    X = df.loc[is_valid_style, feature_cols].apply(pd.to_numeric, errors="coerce")
+    y = style.loc[is_valid_style].map({"red": 0, "white": 1}).astype("int64")
+
+    valid_rows = X.notna().all(axis=1)
+    X = X.loc[valid_rows]
+    y = y.loc[valid_rows]
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.3, random_state=SEED, stratify=y
+    )
+
+    model = ExtraTreesClassifier(n_estimators=100, random_state=SEED, n_jobs=-1)
+    model.fit(X_train, y_train)
+
+    accuracy = model.score(X_test, y_test)
+    _ = model.predict(X_test.iloc[300:600])
+
     print(f"ACCURACY={accuracy:.6f}")
 
 
@@ -109,9 +80,9 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Added robust CSV parsing with a lightweight fallback to handle delimiter/decimal issues without extra passes.
-# - Avoided redundant intermediate DataFrame copies by filtering once and reusing the cleaned style Series for y.
-# - Limited numeric conversion to feature columns only and performed a single NaN mask computation for both X and y.
-# - Enabled parallel training via n_jobs=-1 for ExtraTreesClassifier to reduce wall-clock runtime on multicore systems.
-# - Ensured reproducibility by fixing a single seed for train/test split and model, and setting NumPy's seed.
-# - Removed all non-required prints and kept only the final accuracy output in the mandated format.
+# - Implemented robust CSV parsing with a fallback delimiter/decimal configuration to avoid repeated manual fixes and reruns.
+# - Reduced data movement by computing the cleaned 'style' series once and using boolean masks to filter both X and y without extra DataFrame copies.
+# - Avoided .copy() and redundant intermediate DataFrames, lowering memory footprint while preserving semantics.
+# - Used vectorized pandas operations and a single NaN-validity mask to drop invalid rows efficiently.
+# - Enabled parallel tree building via n_jobs=-1 to reduce wall-clock runtime without changing model behavior or outputs.
+# - Ensured reproducibility by fixing the random seed for NumPy and scikit-learn components.

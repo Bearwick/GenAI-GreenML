@@ -4,35 +4,41 @@
 
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 import xgboost as xgb
 
-np.random.seed(42)
+RANDOM_SEED = 42
+np.random.seed(RANDOM_SEED)
 
 try:
     df = pd.read_csv('xgboost_on _binary.csv')
-    if df.shape[1] <= 1:
+    if df.shape[1] < 2:
         df = pd.read_csv('xgboost_on _binary.csv', sep=';', decimal=',')
 except Exception:
     df = pd.read_csv('xgboost_on _binary.csv', sep=';', decimal=',')
 
-le_admit = LabelEncoder()
-le_rank = LabelEncoder()
-df['admit'] = le_admit.fit_transform(df['admit'])
-df['rank'] = le_rank.fit_transform(df['rank'])
+target_col = 'admit'
+rank_col = 'rank'
 
-df_encoded = pd.get_dummies(df, columns=['admit', 'rank'], drop_first=True)
+rank_dummies = pd.get_dummies(df[rank_col], prefix=rank_col, drop_first=True).astype(np.float32)
+feature_cols = [c for c in df.columns if c not in (target_col, rank_col)]
+X = pd.concat([df[feature_cols].astype(np.float32), rank_dummies], axis=1)
+y = df[target_col].values
 
-target_col = 'admit_1'
-X = df_encoded.drop(target_col, axis=1)
-y = df_encoded[target_col]
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=RANDOM_SEED
+)
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-model = xgb.XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss', n_jobs=1)
-model.fit(X_train, y_train, verbose=False)
+model = xgb.XGBClassifier(
+    random_state=RANDOM_SEED,
+    use_label_encoder=False,
+    eval_metric='logloss',
+    verbosity=0,
+    tree_method='hist',
+    n_jobs=1,
+)
+model.fit(X_train, y_train)
 
 y_pred = model.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
@@ -40,13 +46,14 @@ accuracy = accuracy_score(y_test, y_pred)
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Removed all visualization imports (seaborn, matplotlib) and plotting calls to save energy.
-# Removed redundant EDA calls (head, info, describe, shape, crosstab, value_counts) that don't affect output.
-# Removed unused metric computations (precision, recall, f1, roc_auc, confusion_matrix, roc_curve) not needed for final output.
-# Removed all print statements except the required accuracy print.
-# Removed pd.option_context call that served no computational purpose.
-# Consolidated imports at the top to reduce overhead.
-# Set random seed for reproducibility.
-# Added robust CSV fallback parsing for reliability.
-# Set n_jobs=1 for deterministic XGBoost behavior and reduced thread overhead on small data.
-# Suppressed XGBoost warnings with explicit eval_metric and use_label_encoder settings.
+# - Removed all visualization imports (seaborn, matplotlib) and plotting calls to save energy.
+# - Removed redundant LabelEncoder step on already-integer columns; directly use get_dummies on rank.
+# - Removed redundant EDA calls (head, info, describe, shape, crosstab) that produce unused output.
+# - Removed computation of unused metrics (precision, recall, f1, roc_auc, confusion_matrix, roc_curve).
+# - Used float32 instead of float64 for features to reduce memory footprint.
+# - Used tree_method='hist' for faster, more memory-efficient XGBoost training.
+# - Set n_jobs=1 to avoid overhead of multiprocessing on small datasets.
+# - Set fixed random seed for reproducibility.
+# - Added robust CSV parsing fallback for separator/decimal variations.
+# - Removed all print/logging statements except the required accuracy output.
+# - Removed file/artifact saving side effects.

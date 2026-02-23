@@ -2,28 +2,33 @@
 # LLM: chatgpt
 # Mode: original_telemetry
 
-import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-sonar_data = pd.read_csv("Sonar Data.csv", header=None)
 
-sonar_data.describe()
-sonar_data[60].value_counts()
-sonar_data.groupby(60).mean()
+def main():
+    sonar_data = pd.read_csv("Sonar Data.csv", header=None)
 
-X = sonar_data.drop(60, axis=1)
-Y = sonar_data[60]
+    sonar_data.describe()
+    sonar_data[60].value_counts()
+    sonar_data.groupby(60).mean()
 
-X_train, X_test, Y_train, Y_test = train_test_split(
-    X, Y, test_size=0.7, stratify=Y, random_state=1
-)
+    X = sonar_data.drop(60, axis=1)
+    Y = sonar_data[60]
 
-model = LogisticRegression()
-model.fit(X_train, Y_train)
+    X_train, X_test, Y_train, Y_test = train_test_split(
+        X, Y, test_size=0.7, stratify=Y, random_state=1
+    )
 
-X_test_prediction = model.predict(X_test)
-accuracy = accuracy_score(X_test_prediction, Y_test)
-print(f"ACCURACY={accuracy:.6f}")
+    model = LogisticRegression()
+    model.fit(X_train, Y_train)
+
+    X_test_prediction = model.predict(X_test)
+    accuracy = accuracy_score(X_test_prediction, Y_test)
+    print(f"ACCURACY={accuracy:.6f}")
+
+
+if __name__ == "__main__":
+    main()

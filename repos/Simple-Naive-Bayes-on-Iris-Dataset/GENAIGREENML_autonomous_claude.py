@@ -13,80 +13,89 @@ from sklearn.metrics import accuracy_score
 # Robust CSV loading
 try:
     df = pd.read_csv("iris.csv")
-    if df.shape[1] < 3:
-        df = pd.read_csv("iris.csv", sep=';', decimal=',')
+    if df.shape[1] < 2:
+        df = pd.read_csv("iris.csv", sep=";", decimal=",")
 except Exception:
-    df = pd.read_csv("iris.csv", sep=';', decimal=',')
+    df = pd.read_csv("iris.csv", sep=";", decimal=",")
 
 # Normalize column names
-df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
-df = df.loc[:, ~df.columns.str.startswith('Unnamed')]
+df.columns = df.columns.str.strip().str.replace(r"\s+", " ", regex=True)
+df = df[[c for c in df.columns if not c.startswith("Unnamed")]]
 
-# Identify target and features
-expected_target = 'Species'
-expected_features = ['SepalLengthCm', 'SepalWidthCm', 'PetalLengthCm', 'PetalWidthCm']
+# Identify target and features based on known headers
+expected_features = ["SepalLengthCm", "SepalWidthCm", "PetalLengthCm", "PetalWidthCm"]
+expected_target = "Species"
 
-if expected_target in df.columns:
+# Check available columns
+available_cols = list(df.columns)
+
+if expected_target in available_cols:
     target_col = expected_target
 else:
-    obj_cols = df.select_dtypes(include='object').columns.tolist()
+    # Fallback: pick first object/string column as target
+    obj_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
     if obj_cols:
         target_col = obj_cols[-1]
     else:
-        target_col = df.columns[-1]
+        # Pick last column
+        target_col = available_cols[-1]
 
-available_features = [c for c in expected_features if c in df.columns]
-if not available_features:
-    available_features = [c for c in df.columns if c != target_col and c.lower() != 'id']
+feature_cols = [c for c in expected_features if c in available_cols]
+if len(feature_cols) == 0:
+    # Fallback: use all numeric columns except target and Id-like columns
+    feature_cols = [c for c in available_cols if c != target_col and c.lower() != "id"]
 
 # Drop Id column if present
-id_cols = [c for c in df.columns if c.lower() == 'id']
-available_features = [c for c in available_features if c not in id_cols]
+if "Id" in feature_cols:
+    feature_cols.remove("Id")
 
-# Coerce numeric features
-for col in available_features:
-    df[col] = pd.to_numeric(df[col], errors='coerce')
+# Prepare features
+X = df[list(feature_cols)].copy()
+for col in X.columns:
+    X[col] = pd.to_numeric(X[col], errors="coerce")
+
+y = df[target_col].copy()
 
 # Drop rows with NaN in features or target
-df = df.dropna(subset=available_features + [target_col])
+valid_mask = X.notna().all(axis=1) & y.notna()
+X = X.loc[valid_mask].reset_index(drop=True)
+y = y.loc[valid_mask].reset_index(drop=True)
+
+# Replace any remaining inf
+X = X.replace([np.inf, -np.inf], np.nan)
+X = X.fillna(X.median())
+
+assert X.shape[0] > 0, "Dataset is empty after preprocessing"
 
 # Encode target if categorical
 le = LabelEncoder()
-if df[target_col].dtype == object or df[target_col].dtype.name == 'category':
-    df[target_col] = le.fit_transform(df[target_col].astype(str))
+if y.dtype == object or y.dtype.name == "category":
+    y_encoded = le.fit_transform(y)
 else:
-    df[target_col] = le.fit_transform(df[target_col])
+    y_encoded = y.values
 
-assert df.shape[0] > 0, "Dataset is empty after preprocessing"
-assert len(df[target_col].unique()) >= 2, "Target has fewer than 2 classes"
+n_classes = len(np.unique(y_encoded))
+assert n_classes >= 2, "Need at least 2 classes for classification"
 
-X = df[list(available_features)].values
-y = df[target_col].values
-
+# Train/test split with fixed random state
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
+    X, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
 )
 
-assert X_train.shape[0] > 0 and X_test.shape[0] > 0, "Train/test split produced empty set"
+assert len(X_train) > 0 and len(X_test) > 0, "Train or test split is empty"
 
-# Lightweight pipeline: StandardScaler + GaussianNB
-pipe = Pipeline([
-    ('scaler', StandardScaler()),
-    ('clf', GaussianNB()),
+# Build lightweight pipeline: StandardScaler + GaussianNB
+# GaussianNB is the most appropriate for continuous iris features and is extremely efficient
+pipeline = Pipeline([
+    ("scaler", StandardScaler()),
+    ("gnb", GaussianNB()),
 ])
 
-pipe.fit(X_train, y_train)
-y_pred = pipe.predict(X_test)
-accuracy = accuracy_score(y_test, y_pred)
+pipeline.fit(X_train, y_train)
+y_pred = pipeline.predict(X_test)
 
+accuracy = accuracy_score(y_test, y_pred)
 print(f"ACCURACY={accuracy:.6f}")
 
 # OPTIMIZATION SUMMARY
-# - GaussianNB chosen: O(n·d) training, minimal memory, ideal for small numeric datasets.
-# - StandardScaler added for numerical stability; negligible overhead.
-# - LabelEncoder for categorical target encoding.
-# - Robust CSV parsing with semicolon/decimal fallback.
-# - Column name normalization and defensive checks throughout.
-# - No heavy ensembles or deep learning; CPU-friendly and energy-efficient.
-# - Stratified split ensures representative class distribution in test set.
-# - Id column explicitly excluded from features.
+# 1. Model choice: Gauss

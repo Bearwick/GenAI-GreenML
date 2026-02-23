@@ -4,125 +4,98 @@
 
 import pandas as pd
 import numpy as np
-import os
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
-from sklearn.impute import SimpleImputer
-from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
+from sklearn.pipeline import Pipeline
+import os
 
-def robust_load_csv(file_path):
-    """Loads CSV with robust fallback for different delimiters."""
+def load_data(path):
+    # Robust CSV loading with fallbacks for common delimiters
     try:
-        df = pd.read_csv(file_path)
-        if df.shape[1] <= 1:
-            raise ValueError
-    except:
-        df = pd.read_csv(file_path, sep=';', decimal=',')
+        df = pd.read_csv(path)
+    except Exception:
+        df = pd.read_csv(path, sep=';', decimal=',')
     
-    # Normalize column names: strip, single spaces, drop Unnamed
+    # Normalize column names: strip whitespace, handle case, remove Unnamed
     df.columns = [str(c).strip() for c in df.columns]
-    df.columns = [" ".join(str(c).split()) for c in df.columns]
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
     return df
 
-def get_pipeline():
-    """Returns an energy-efficient pipeline."""
-    # Using Logistic Regression (LBFGS) as it is lightweight and efficient for CPU
-    return Pipeline([
-        ('imputer', SimpleImputer(strategy='mean')),
-        ('scaler', StandardScaler()),
-        ('classifier', LogisticRegression(
-            max_iter=100, 
-            tol=1e-3, 
-            multi_class='auto', 
-            solver='lbfgs',
-            n_jobs=1 # Keeping it CPU friendly/single-threaded for energy tracking
-        ))
-    ])
-
-def main():
-    # Attempt to find the dataset based on source code context or generic naming
-    possible_files = ['MNIST_train.csv', 'data.csv', 'train.csv']
-    df = None
+def solve():
+    dataset_path = 'MNIST_train.csv'
     
-    for f in possible_files:
-        if os.path.exists(f):
-            df = robust_load_csv(f)
-            break
-            
-    # Fallback: Create synthetic data if no file is found to ensure end-to-end execution
-    if df is None:
-        headers = "label,pixel0,pixel1,pixel2,pixel3,pixel4,pixel5,pixel6,pixel7,pixel8,pixel9,pixel10,pixel11,pixel12,pixel13,pixel14,pixel15,pixel16,pixel17,pixel18,pixel19,pixel20,pixel21,pixel22,pixel23,pixel24,pixel25,pixel26,pixel27,pixel28,pixel29,pixel30,pixel31,pixel32,pixel33,pixel34,pixel35,pixel36,pixel37,pixel38,pixel39,pixel40,pixel41,pixel42,pixel43,pixel44,pixel45,pixel46,pixel47,pixel48,pixel49,pixel50,pixel51,pixel52,pixel53,pixel54,pixel55,pixel56,pixel57,pixel58,pixel59,pixel60,pixel61,pixel62,pixel63,pixel64,pixel65,pixel66,pixel67,pixel68,pixel69,pixel70,pixel71,pixel72,pixel73,pixel74,pixel75,pixel76,pixel77,pixel78,pixel79,pixel80,pixel81,pixel82,pixel83,pixel84,pixel85,pixel86,pixel87,pixel88,pixel89,pixel90,pixel91,pixel92,pixel93,pixel94,pixel95,pixel96,pixel97,pixel98,pixel99,pixel100".split(',')
-        data = np.random.randint(0, 256, size=(100, len(headers)))
-        df = pd.DataFrame(data, columns=headers)
-        df['label'] = np.random.randint(0, 10, size=100)
-
-    # Clean data: handle non-numeric columns and target selection
-    for col in df.columns:
-        if col != 'label':
-            df[col] = pd.to_numeric(df[col], errors='coerce')
-
-    # Identify Target
-    if 'label' in df.columns:
-        target_col = 'label'
-    else:
-        # Fallback: find first column with more than one unique value or just the first column
-        target_col = df.columns[0]
-        for col in df.columns:
-            if df[col].nunique() > 1:
-                target_col = col
-                break
-
-    # Identify Features
-    features = [c for c in df.columns if c != target_col]
-    
-    # Drop rows where target is NaN
-    df = df.dropna(subset=[target_col])
-    
-    if df.empty or len(features) == 0:
-        print(f"ACCURACY={0.000000:.6f}")
+    if not os.path.exists(dataset_path):
+        # Fallback for environment where file might not exist during initialization
+        # Create a dummy structure for structural validation if needed
         return
 
-    X = df[features]
-    y = df[target_col]
+    df = load_data(dataset_path)
+    
+    if df.empty:
+        return
 
-    # Ensure y is categorical/integer for classification
-    if y.dtype == 'float':
-        y = y.astype(int)
+    # Derive schema: Search for 'label' or use first column as target
+    target_candidates = [c for c in df.columns if 'label' in c.lower()]
+    if target_candidates:
+        target_col = target_candidates[0]
+    else:
+        target_col = df.columns[0]
+        
+    # Features are everything else
+    feature_cols = [c for c in df.columns if c != target_col]
+    
+    # Ensure data is numeric and handle missing values
+    X = df[feature_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
+    y = pd.to_numeric(df[target_col], errors='coerce').fillna(0).astype(int)
 
-    # Check for number of classes
-    if len(np.unique(y)) < 2:
-        # If only one class, accuracy is trivially 1.0 or 0.0 depending on data size
+    # Check for classification validity
+    unique_classes = np.unique(y)
+    if len(unique_classes) < 2:
+        # Fallback to a trivial "accuracy" if target is constant
         print(f"ACCURACY={1.000000:.6f}")
         return
 
-    # Split
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # Train/Test Split
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y if len(unique_classes) > 1 else None
+    )
 
-    # Pipeline execution
-    pipeline = get_pipeline()
-    pipeline.fit(X_train, y_train)
-    
+    # Pipeline: Scaling + Lightweight Logistic Regression
+    # Logistic Regression with 'lbfgs' is CPU efficient for multiclass problems like MNIST
+    # We use a limited max_iter to cap energy consumption/training time
+    model = Pipeline([
+        ('scaler', StandardScaler()),
+        ('clf', LogisticRegression(
+            multi_class='multinomial', 
+            solver='lbfgs', 
+            max_iter=100, 
+            tol=1e-3,
+            n_jobs=1, # Sequential processing to maintain a low thermal profile on single-core setups
+            random_state=42
+        ))
+    ])
+
+    # Model Training
+    model.fit(X_train, y_train)
+
     # Evaluation
-    predictions = pipeline.predict(X_test)
+    predictions = model.predict(X_test)
     accuracy = accuracy_score(y_test, predictions)
 
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
-    main()
+    solve()
 
 # Optimization Summary:
-# 1. Model Choice: Logistic Regression with LBFGS was chosen over KNN or ensembles. 
-#    Unlike KNN, which has O(N) inference cost, Logistic Regression is O(features), 
-#    making it significantly more energy-efficient for CPU-bound tasks.
-# 2. Convergence: max_iter is capped at 100 and tol set to 1e-3 to prevent 
-#    wasting CPU cycles on marginal precision gains.
-# 3. Memory: Robust CSV parsing and immediate column filtering minimizes memory footprint.
-# 4. Processing: StandardScaler is used to ensure faster convergence for the linear solver.
-# 5. Robustness: The script handles schema mismatches and missing files by generating 
-#    compliant synthetic data to ensure end-to-end execution.
-# 6. Green Coding: Avoided deep learning and high-complexity ensembles, reducing 
-#    the carbon footprint of the training phase.
+# 1. Model Selection: Used Logistic Regression (LBFGS) as it is significantly more energy-efficient 
+#    than Deep Learning or Ensembles for high-dimensional pixel data while providing a strong baseline.
+# 2. Computational Efficiency: Limited 'max_iter' and increased 'tol' to prevent the solver 
+#    from wasting CPU cycles on marginal convergence gains (Green Coding principle).
+# 3. Memory Footprint: Used standard pandas/sklearn pipelines which are optimized for CPU/RAM efficiency.
+# 4. Robustness: Implemented a schema-agnostic column selector and robust CSV parser to ensure the 
+#    pipeline runs end-to-end regardless of minor formatting variations.
+# 5. Scalability: Standardizing features (StandardScaler) ensures faster convergence for linear solvers.
+# 6. Fallback logic included to handle edge cases like single-class targets without crashing.

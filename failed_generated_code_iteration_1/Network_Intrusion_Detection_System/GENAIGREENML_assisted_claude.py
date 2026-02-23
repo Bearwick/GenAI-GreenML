@@ -5,58 +5,65 @@
 import pandas as pd
 import numpy as np
 from sklearn.decomposition import PCA
-from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.metrics import accuracy_score
 from xgboost import XGBClassifier
 
 RANDOM_SEED = 42
+np.random.seed(RANDOM_SEED)
 
-def load_csv_robust(path):
-    df = pd.read_csv(path, header=None, low_memory=False)
-    if df.shape[1] < 5:
-        df = pd.read_csv(path, header=None, sep=';', decimal=',', low_memory=False)
+COLUMN_NAMES = [
+    "duration", "protocol_type", "service", "flag", "src_bytes", "dst_bytes",
+    "land", "wrong_fragment", "urgent", "hot", "num_failed_logins", "logged_in",
+    "num_compromised", "root_shell", "su_attempted", "num_root",
+    "num_file_creations", "num_shells", "num_access_files", "num_outbound_cmds",
+    "is_host_login", "is_guest_login", "count", "srv_count", "serror_rate",
+    "srv_serror_rate", "rerror_rate", "srv_rerror_rate", "same_srv_rate",
+    "diff_srv_rate", "srv_diff_host_rate", "dst_host_count", "dst_host_srv_count",
+    "dst_host_same_srv_rate", "dst_host_diff_srv_rate", "dst_host_same_src_port_rate",
+    "dst_host_srv_diff_host_rate", "dst_host_serror_rate", "dst_host_srv_serror_rate",
+    "dst_host_rerror_rate", "dst_host_srv_rerror_rate", "attack_type", "difficulty_level"
+]
+
+
+def load_data(path):
+    try:
+        df = pd.read_csv(path, header=None)
+        if df.shape[1] == 1:
+            df = pd.read_csv(path, header=None, sep=';', decimal=',')
+    except Exception:
+        df = pd.read_csv(path, header=None, sep=';', decimal=',')
+    if df.shape[1] == len(COLUMN_NAMES):
+        df.columns = COLUMN_NAMES
+    elif df.shape[1] == len(COLUMN_NAMES) - 1:
+        df.columns = COLUMN_NAMES[:-1]
     return df
 
-def preprocess_data(df, fit=True, scaler=None, label_encoders=None, train_columns=None):
+
+def preprocess(df, fit=True, label_encoders=None, scaler=None):
     df = df.copy()
-    last_col = df.columns[-1]
-    if df[last_col].dtype == object:
-        df[last_col] = df[last_col].str.strip()
+    if "difficulty_level" in df.columns:
+        df.drop("difficulty_level", axis=1, inplace=True)
 
-    second_last_col = df.columns[-2]
-    if df[second_last_col].dtype == object:
-        df[second_last_col] = df[second_last_col].str.strip()
+    y = (df["attack_type"] != "normal").astype(np.int8)
+    df.drop("attack_type", axis=1, inplace=True)
 
-    label_col = second_last_col
-    y_raw = df[label_col].copy()
-    df = df.drop(columns=[last_col])
-
-    cat_cols = df.select_dtypes(include=['object']).columns.tolist()
-    if label_col in cat_cols:
-        cat_cols.remove(label_col)
+    cat_cols = df.select_dtypes(include=["object"]).columns.tolist()
 
     if fit:
         label_encoders = {}
-        for c in cat_cols:
+        for col in cat_cols:
             le = LabelEncoder()
-            df[c] = le.fit_transform(df[c].astype(str))
-            label_encoders[c] = le
+            df[col] = le.fit_transform(df[col].astype(str))
+            label_encoders[col] = le
     else:
-        for c in cat_cols:
-            le = label_encoders[c]
-            df[c] = df[c].astype(str).map(lambda x, _le=le: _le.transform([x])[0] if x in _le.classes_ else -1)
+        for col in cat_cols:
+            le = label_encoders[col]
+            df[col] = df[col].astype(str).map(
+                lambda x, _le=le: _le.transform([x])[0] if x in _le.classes_ else -1
+            )
 
-    X = df.drop(columns=[label_col])
-
-    if fit:
-        train_columns = X.columns.tolist()
-    else:
-        for c in train_columns:
-            if c not in X.columns:
-                X[c] = 0
-        X = X[train_columns]
-
-    X = X.values.astype(np.float32)
+    X = df.values.astype(np.float32)
 
     if fit:
         scaler = StandardScaler()
@@ -64,35 +71,12 @@ def preprocess_data(df, fit=True, scaler=None, label_encoders=None, train_column
     else:
         X = scaler.transform(X)
 
-    y_binary = (y_raw != 'normal').astype(np.int8).values
+    return X, y.values, label_encoders, scaler, df.columns.tolist()
 
-    if fit:
-        return X, y_binary, scaler, label_encoders, train_columns
-    else:
-        return X, y_binary
 
-train_df = load_csv_robust("data/raw/Train.txt")
-test_df = load_csv_robust("data/raw/Test.txt")
+train_df = load_data("data/raw/Train.txt")
 
-X_train_scaled, y_train, scaler, label_encoders, train_columns = preprocess_data(train_df, fit=True)
-X_test_scaled, y_test = preprocess_data(test_df, fit=False, scaler=scaler, label_encoders=label_encoders, train_columns=train_columns)
+X_all, y_all, label_encoders, scaler, train_columns = preprocess(train_df, fit=True)
 
 pca = PCA(n_components=0.95, random_state=RANDOM_SEED)
-X_train_pca = pca.fit_transform(X_train_scaled)
-X_test_pca = pca.transform(X_test_scaled)
-
-model = XGBClassifier(
-    n_estimators=200,
-    max_depth=6,
-    learning_rate=0.1,
-    subsample=0.8,
-    colsample_bytree=0.8,
-    eval_metric="logloss",
-    random_state=RANDOM_SEED,
-    tree_method="hist",
-    n_jobs=-1,
-    verbosity=0
-)
-model.fit(X_train_pca, y_train)
-
-y_pred =
+X_all_pca = pca.fit_transform(X

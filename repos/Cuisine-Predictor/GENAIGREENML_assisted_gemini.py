@@ -3,99 +3,101 @@
 # Mode: assisted
 
 import json
+import os
 import math
+from collections import Counter, defaultdict
 from unidecode import unidecode
 
-def run_pipeline():
-    try:
-        with open("train.json", "r") as f:
-            data = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
+def load_json(path):
+    if not os.path.exists(path):
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def preprocess_ingredients(ingredients):
+    return [unidecode(ing.lower()) for ing in ingredients]
+
+def train_model(data):
+    cuisine_dcount = Counter()
+    cuisine_tcount = Counter()
+    cuisine_ing_counts = defaultdict(Counter)
+    vocab = set()
+    
+    for doc in data:
+        cuisine = doc['cuisine']
+        cuisine_dcount[cuisine] += 1
+        processed_ings = preprocess_ingredients(doc['ingredients'])
+        doc['ingredients'] = processed_ings
+        
+        cuisine_tcount[cuisine] += len(processed_ings)
+        for ing in processed_ings:
+            cuisine_ing_counts[cuisine][ing] += 1
+            vocab.add(ing)
+            
+    vocab_size = len(vocab)
+    classes = list(cuisine_dcount.keys())
+    total_docs = len(data)
+    
+    log_priors = {c: math.log(cuisine_dcount[c] / total_docs) for c in classes}
+    log_denominators = {c: math.log(cuisine_tcount[c] + vocab_size) for c in classes}
+    
+    ing_logs = {
+        c: {ing: math.log(count + 1) for ing, count in cuisine_ing_counts[c].items()}
+        for c in classes
+    }
+    
+    return classes, log_priors, log_denominators, ing_logs
+
+def predict(doc_ingredients, classes, log_priors, log_denominators, ing_logs):
+    best_class = None
+    max_score = -float('inf')
+    
+    ing_count = len(doc_ingredients)
+    
+    for c in classes:
+        score = log_priors[c] - (ing_count * log_denominators[c])
+        current_ing_logs = ing_logs[c]
+        for ing in doc_ingredients:
+            score += current_ing_logs.get(ing, 0)
+            
+        if score > max_score:
+            max_score = score
+            best_class = c
+            
+    return best_class
+
+def main():
+    train_data = load_json("train.json")
+    if not train_data:
         return
 
-    cuisine_key = 'cuisine'
-    ings_key = 'ingredients'
-    id_key = 'id'
+    classes, log_priors, log_denominators, ing_logs = train_model(train_data)
     
-    if data:
-        sample = data[0]
-        if cuisine_key not in sample:
-            for k, v in sample.items():
-                if isinstance(v, str) and k != id_key:
-                    cuisine_key = k
-                    break
-        if ings_key not in sample:
-            for k, v in sample.items():
-                if isinstance(v, list):
-                    ings_key = k
-                    break
-
-    class_dcount = {}
-    class_tcount = {}
-    corpus = {}
-    vocab_set = set()
-    total_docs = len(data)
-
-    for doc in data:
-        c = doc[cuisine_key]
-        ings = doc[ings_key]
-        class_dcount[c] = class_dcount.get(c, 0) + 1
-        class_tcount[c] = class_tcount.get(c, 0) + len(ings)
-        for ing in ings:
-            ing_norm = unidecode(ing.lower())
-            vocab_set.add(ing_norm)
-            if ing_norm not in corpus:
-                corpus[ing_norm] = {}
-            corpus[ing_norm][c] = corpus[ing_norm].get(c, 0) + 1
-
-    vocab_size = len(vocab_set)
-    cuisines = list(class_dcount.keys())
-    
-    log_priors = {c: math.log(class_dcount[c] / total_docs) for c in cuisines}
-    log_denoms = {c: math.log(vocab_size + class_tcount[c]) for c in cuisines}
-
-    def predict(dataset):
-        preds = {}
-        for doc in dataset:
-            doc_id = doc[id_key]
-            ings = doc[ings_key]
-            best_c = None
-            max_p = -float('inf')
+    test_data = load_json("test.json")
+    if test_data:
+        for doc in test_data:
+            processed_ings = preprocess_ingredients(doc['ingredients'])
+            predict(processed_ings, classes, log_priors, log_denominators, ing_logs)
             
-            for c in cuisines:
-                p = log_priors[c]
-                d = log_denoms[c]
-                for ing in ings:
-                    count = corpus.get(ing, {}).get(c, 0)
-                    p += math.log(count + 1) - d
-                
-                if p > max_p:
-                    max_p = p
-                    best_c = c
-            preds[doc_id] = best_c
-        return preds
-
-    train_preds = predict(data)
-    correct = sum(1 for doc in data if doc[cuisine_key] == train_preds[doc[id_key]])
-    accuracy = correct / total_docs
-
-    try:
-        with open('test.json', 'r') as f:
-            test_data = json.load(f)
-        _ = predict(test_data)
-    except:
-        pass
-
+    correctly_classified = 0
+    for doc in train_data:
+        prediction = predict(doc['ingredients'], classes, log_priors, log_denominators, ing_logs)
+        if prediction == doc['cuisine']:
+            correctly_classified += 1
+            
+    accuracy = correctly_classified / len(train_data)
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
-    run_pipeline()
+    main()
 
 # Optimization Summary
-# 1. Implemented log-space arithmetic to replace expensive floating-point multiplications with additions, preventing numerical underflow and increasing speed.
-# 2. Replaced the memory-heavy list-of-IDs corpus with a compact integer-frequency dictionary, significantly reducing the memory footprint.
-# 3. Consolidated multiple data passes into a single linear-time loop for statistics gathering (O(N) instead of multiple iterations).
-# 4. Pre-calculated log-priors and log-denominators to eliminate redundant calculations inside the nested inference loops.
-# 5. Removed unused external dependencies like pandas to reduce energy overhead during module loading and execution.
-# 6. Optimized data access patterns by using local variable lookups and avoiding redundant dictionary key searches.
-# 7. Eliminated unnecessary intermediate data structures and side-effect file writing to minimize I/O energy consumption.
+# 1. Switched from probability multiplication to log-probability summation to improve runtime performance and numerical stability.
+# 2. Replaced redundant nested dictionary lookups with pre-calculated log-probability tables (ing_logs).
+# 3. Optimized the Naive Bayes score formula to move the denominator calculation (log_denominators) outside the ingredient loop.
+# 4. Reduced memory footprint by storing integer counts in collections.Counter instead of lists of document IDs.
+# 5. Pre-processed ingredients (unidecode/lower) once during training and stored the results, avoiding repeated string operations during evaluation.
+# 6. Eliminated redundant loops by merging vocabulary building and frequency counting into a single pass over the dataset.
+# 7. Implemented efficient lookups using sets and dictionaries instead of list searches.
+# 8. Removed file I/O operations (Excel saving) that were not part of the required execution flow, reducing disk overhead.
+# 9. Used standard math.log for scalar operations which is faster and more lightweight than importing large libraries like NumPy for this specific task.

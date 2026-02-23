@@ -32,6 +32,6 @@ predicted_classes = np.argmin(distance)
 distances = cdist(features, centroids, metric="euclidean")
 y_pred = np.argmin(distances, axis=1)
 y_true = labels.astype(int)
-
 accuracy = np.mean(y_pred == y_true)
+
 print(f"ACCURACY={accuracy:.6f}")

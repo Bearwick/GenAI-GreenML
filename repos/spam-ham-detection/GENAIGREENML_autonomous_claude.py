@@ -5,33 +5,40 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
 
 # Robust CSV loading
+DATASET_PATH = "emails.csv"
+
 try:
-    df = pd.read_csv('emails.csv')
+    df = pd.read_csv(DATASET_PATH)
     if df.shape[1] < 2:
-        df = pd.read_csv('emails.csv', sep=';', decimal=',')
+        raise ValueError("Too few columns")
 except Exception:
-    df = pd.read_csv('emails.csv', sep=';', decimal=',')
+    try:
+        df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
+    except Exception:
+        df = pd.read_csv(DATASET_PATH, encoding='latin-1')
 
 # Normalize column names
-df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
-df = df.loc[:, ~df.columns.str.startswith('Unnamed')]
+df.columns = [c.strip().replace('"', '').strip() for c in df.columns]
+df.columns = [' '.join(c.split()) for c in df.columns]
+df = df[[c for c in df.columns if not c.startswith('Unnamed')]]
 
 # Identify text and target columns
 text_col = None
 target_col = None
 
-if 'text' in df.columns:
-    text_col = 'text'
-if 'spam' in df.columns:
-    target_col = 'spam'
+for c in df.columns:
+    if c.lower() == 'text':
+        text_col = c
+    elif c.lower() == 'spam':
+        target_col = c
 
-# Fallback: find a string column for text and a numeric/binary column for target
+# Fallback: if exact names not found, guess
 if text_col is None:
     for c in df.columns:
         if df[c].dtype == object:
@@ -40,48 +47,51 @@ if text_col is None:
 
 if target_col is None:
     for c in df.columns:
-        if c != text_col and df[c].nunique() >= 2:
-            target_col = c
-            break
+        if c != text_col:
+            try:
+                vals = pd.to_numeric(df[c], errors='coerce').dropna().unique()
+                if len(vals) >= 2:
+                    target_col = c
+                    break
+            except Exception:
+                continue
 
 assert text_col is not None, "No text column found"
 assert target_col is not None, "No target column found"
 
-# Drop rows with missing text or target
-df = df.dropna(subset=[text_col, target_col]).reset_index(drop=True)
-df[text_col] = df[text_col].astype(str)
-
-# Coerce target to numeric if possible
+# Clean data
+df = df[[text_col, target_col]].copy()
+df[text_col] = df[text_col].astype(str).fillna('')
 df[target_col] = pd.to_numeric(df[target_col], errors='coerce')
-df = df.dropna(subset=[target_col]).reset_index(drop=True)
+df = df.dropna(subset=[target_col])
 df[target_col] = df[target_col].astype(int)
 
-assert len(df) > 0, "Dataset empty after preprocessing"
+assert len(df) > 0, "Dataset empty after cleaning"
 assert df[target_col].nunique() >= 2, "Target has fewer than 2 classes"
 
 X = df[text_col]
 y = df[target_col]
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=1000, stratify=y
+    X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-assert len(X_train) > 0 and len(X_test) > 0, "Train/test split produced empty set"
+assert len(X_train) > 0 and len(X_test) > 0, "Empty split"
 
-# Energy-efficient pipeline: TfidfVectorizer (sparse, lightweight) + LogisticRegression
-# Using TfidfVectorizer with sublinear_tf and max_features cap to limit memory/CPU
-# LogisticRegression with saga solver is efficient for sparse data
+# Build energy-efficient pipeline:
+# CountVectorizer (lightweight BoW) + LogisticRegression (CPU-friendly, fast convergence)
+# Using max_features to limit vocabulary size for efficiency
 pipeline = Pipeline([
-    ('tfidf', TfidfVectorizer(
+    ('vectorizer', CountVectorizer(
         max_features=10000,
-        sublinear_tf=True,
         stop_words='english',
-        ngram_range=(1, 1),
+        lowercase=True,
+        strip_accents='unicode',
         dtype=np.float32
     )),
-    ('clf', LogisticRegression(
-        max_iter=1000,
-        solver='saga',
+    ('classifier', LogisticRegression(
+        solver='liblinear',
+        max_iter=200,
         random_state=42,
         C=1.0
     ))
@@ -95,7 +105,6 @@ accuracy = accuracy_score(y_test, y_pred)
 print(f"ACCURACY={accuracy:.6f}")
 
 # OPTIMIZATION SUMMARY
-# 1. Replaced SVM (SVC with RBF kernel) with LogisticRegression — much faster on sparse text data,
-#    linear complexity in number of features, and typically competitive accuracy for spam detection.
-# 2. Replaced CountVectorizer with TfidfVectorizer (sublinear_tf=True) — provides better feature
-#    weighting
+# 1. CountVectorizer with max_features=10000: limits vocabulary to most frequent 10k terms,
+#    reducing memory and compute while retaining most discriminative tokens for spam detection.
+# 2. LogisticRegression with liblinear solver: extremely lightweight, CPU

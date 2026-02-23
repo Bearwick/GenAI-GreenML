@@ -7,7 +7,6 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score
 
 SEED = 42
 np.random.seed(SEED)
@@ -16,22 +15,17 @@ try:
     data = pd.read_csv("diabetes.csv")
     if data.shape[1] < 2:
         raise ValueError("Too few columns")
-except Exception:
+except (ValueError, pd.errors.ParserError):
     data = pd.read_csv("diabetes.csv", sep=';', decimal=',')
 
-cols_replace_zero = ['Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI']
-existing_cols = [c for c in cols_replace_zero if c in data.columns]
+zero_fill_cols = ['Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI']
+existing_cols = [c for c in zero_fill_cols if c in data.columns]
 
 data[existing_cols] = data[existing_cols].replace(0, np.nan)
 
-fill_mean = ['Glucose']
-fill_median = ['BloodPressure', 'SkinThickness', 'Insulin', 'BMI']
-
-for col in fill_mean:
-    if col in data.columns:
-        data[col] = data[col].fillna(data[col].mean())
-
-for col in fill_median:
+if 'Glucose' in data.columns:
+    data['Glucose'] = data['Glucose'].fillna(data['Glucose'].mean())
+for col in ['BloodPressure', 'SkinThickness', 'Insulin', 'BMI']:
     if col in data.columns:
         data[col] = data[col].fillna(data[col].median())
 
@@ -39,9 +33,7 @@ target_col = 'Outcome'
 x = data.drop(target_col, axis=1).values
 y = data[target_col].values
 
-x_train, x_test, y_train, y_test = train_test_split(
-    x, y, test_size=0.2, random_state=SEED
-)
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=SEED)
 
 scaler = StandardScaler()
 x_train_scaled = scaler.fit_transform(x_train)
@@ -54,27 +46,24 @@ param_dist = {
 
 knn = KNeighborsClassifier()
 random_search = RandomizedSearchCV(
-    knn, param_dist, n_iter=10, cv=5, random_state=SEED, n_jobs=-1
+    knn, param_dist, n_iter=10, cv=5, random_state=SEED, n_jobs=1
 )
 random_search.fit(x_train_scaled, y_train)
 
 best_knn = random_search.best_estimator_
-y_pred = best_knn.predict(x_test_scaled)
-accuracy = accuracy_score(y_test, y_pred)
+accuracy = best_knn.score(x_test_scaled, y_test)
 
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# - Removed unused imports (matplotlib, seaborn) to reduce load time and memory.
-# - Eliminated all plotting/visualization code (histograms, boxplots, heatmaps).
-# - Removed redundant data.copy(); imputation is done in-place on the original dataframe.
-# - Combined scaler fit and transform into fit_transform for training data (one pass).
-# - Removed the loop over k=1..15 that trained 15 separate KNN models and computed metrics,
-#   since RandomizedSearchCV already searches over k values and selects the best.
-# - Removed the cross_val_score loop (15 iterations × 5-fold) as RandomizedSearchCV covers this.
-# - Used n_jobs=-1 in RandomizedSearchCV to parallelize cross-validation.
-# - Used best_estimator_ from RandomizedSearchCV for final prediction, avoiding redundant retraining.
-# - Removed all print/logging statements except the final accuracy output.
-# - Added robust CSV parsing fallback (default then sep=';' with decimal=',').
-# - Set fixed random seeds for reproducibility.
-# - Removed intermediate lists (test_f1, test_pre, etc.) that stored unused results.
+# 1. Removed all plots, visualizations, and print/logging statements to eliminate unnecessary I/O.
+# 2. Eliminated redundant data copy (data_copy); modifications done in-place on original dataframe.
+# 3. Removed the manual loop over k=1..15 computing metrics and storing in lists, since the
+#    RandomizedSearchCV already performs hyperparameter selection more efficiently.
+# 4. Removed the separate cross_val_score loop (k=1..15) as it duplicated the search done by RandomizedSearchCV.
+# 5. Removed the initial standalone KNN(k=5) fit since the best model is selected via RandomizedSearchCV.
+# 6. Used fit_transform instead of separate fit + transform calls for the training scaler step.
+# 7. Used scaled data consistently for RandomizedSearchCV (original code used unscaled x_train).
+# 8. Set fixed random seeds for reproducibility throughout.
+# 9. Robust CSV parsing with fallback to semicolon separator and comma decimal.
+# 10. Column names derived dynamically from actual dataframe columns rather than hardcoded assumptions.

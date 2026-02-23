@@ -8,109 +8,95 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.impute import SimpleImputer
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.linear_model import LogisticRegression
+from sklearn.impute import SimpleImputer
 import warnings
 warnings.filterwarnings("ignore")
 
-# --- Robust CSV loading ---
-path_to_csv = 'town_vax_data.csv'
-
+# Robust CSV loading
 try:
-    df = pd.read_csv(path_to_csv)
+    df = pd.read_csv("town_vax_data.csv")
     if df.shape[1] < 3:
-        df = pd.read_csv(path_to_csv, sep=';', decimal=',')
+        df = pd.read_csv("town_vax_data.csv", sep=';', decimal=',')
 except Exception:
-    df = pd.read_csv(path_to_csv, sep=';', decimal=',')
+    df = pd.read_csv("town_vax_data.csv", sep=';', decimal=',')
 
-# --- Column name normalization ---
+# Normalize column names
 df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
 df = df[[c for c in df.columns if not c.startswith('Unnamed')]]
 
-# --- Identify target and id columns ---
-id_col = None
-class_col = None
+# Identify target column
+target_col = None
+if 'vax_level' in df.columns:
+    target_col = 'vax_level'
+else:
+    for c in df.columns:
+        if 'vax' in c.lower() or 'target' in c.lower() or 'label' in c.lower():
+            target_col = c
+            break
 
-# Try to find expected columns
-for c in df.columns:
-    if c.lower() == 'vax_level':
-        class_col = c
-    if c.lower() == 'town':
-        id_col = c
-
-# Fallback: if no vax_level, pick last column as target
-if class_col is None:
-    class_col = df.columns[-1]
+if target_col is None:
+    # fallback: use last column
+    target_col = df.columns[-1]
 
 # Drop rows where target is missing
-df = df.dropna(subset=[class_col])
+df = df.dropna(subset=[target_col])
+assert len(df) > 0, "Dataset empty after dropping missing targets"
 
-# --- Determine task type ---
-target_series = df[class_col]
-is_classification = True
+# Determine if classification or regression
+target_series = df[target_col]
+is_classification = target_series.dtype == object or target_series.nunique() < 20
 
-if target_series.dtype == object or target_series.nunique() < 20:
-    is_classification = True
-else:
-    is_classification = False
+# Identify feature columns (exclude target and identifier-like columns)
+exclude_cols = {target_col}
+# Detect identifier columns (like 'town' - unique string per row)
+for c in df.columns:
+    if c == target_col:
+        continue
+    if df[c].dtype == object and df[c].nunique() > 0.8 * len(df):
+        exclude_cols.add(c)
 
-# --- Build feature set ---
-drop_cols = [class_col]
-if id_col is not None:
-    drop_cols.append(id_col)
-
-feature_cols = [c for c in df.columns if c not in drop_cols]
+feature_cols = [c for c in df.columns if c not in exclude_cols]
 
 # Separate numeric and categorical features
 numeric_cols = []
 categorical_cols = []
-
 for c in feature_cols:
-    col_data = df[c]
-    if col_data.dtype == object:
-        # Try to convert to numeric
-        converted = pd.to_numeric(col_data, errors='coerce')
-        if converted.notna().sum() > 0.5 * len(converted):
-            df[c] = converted
+    if df[c].dtype == object:
+        categorical_cols.append(c)
+    else:
+        # Try to coerce to numeric
+        coerced = pd.to_numeric(df[c], errors='coerce')
+        if coerced.notna().sum() > 0.5 * len(df):
+            df[c] = coerced
             numeric_cols.append(c)
         else:
             categorical_cols.append(c)
-    else:
-        df[c] = pd.to_numeric(df[c], errors='coerce')
-        numeric_cols.append(c)
 
-# --- Prepare X and y ---
-X = df[list(feature_cols)].copy()
-y = df[class_col].copy()
+# Replace inf with nan in numeric columns
+for c in numeric_cols:
+    df[c] = df[c].replace([np.inf, -np.inf], np.nan)
 
-# Encode target if classification
+X = df[list(feature_cols)]
+y = df[target_col]
+
 if is_classification:
-    if y.dtype == object:
-        from sklearn.preprocessing import LabelEncoder
-        le = LabelEncoder()
-        y = le.fit_transform(y)
-    else:
-        y = y.values
+    # Encode target if needed
+    from sklearn.preprocessing import LabelEncoder
+    le = LabelEncoder()
+    y = le.fit_transform(y)
+    n_classes = len(le.classes_)
+    assert n_classes >= 2, "Need at least 2 classes for classification"
 
-# Replace inf with nan
-X = X.replace([np.inf, -np.inf], np.nan)
-
-# --- Assert dataset not empty ---
-assert len(X) > 0, "Dataset is empty after preprocessing"
-
-# --- Check classification viability ---
-unique_classes = np.unique(y)
-if is_classification and len(unique_classes) < 2:
-    # Fallback: trivial baseline
-    accuracy = 1.0
-    print(f"ACCURACY={accuracy:.6f}")
-    import sys
-    sys.exit(0)
-
-# --- Train/test split ---
+# Train/test split
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.25, random_state=42, stratify=y if is_classification else None
+    X, y, test_size=0.2, random_state=42, stratify=y if is_classification else None
 )
+assert len(X_train) > 0 and len(X_test) > 0, "Train/test split produced empty sets"
 
-assert len(X_train) > 0, "Training set
+# Build preprocessing pipeline
+transformers = []
+if numeric_cols:
+    numeric_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='median')),
+        ('scaler', StandardScaler())

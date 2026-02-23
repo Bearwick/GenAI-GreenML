@@ -2,272 +2,219 @@
 # LLM: codex
 # Mode: autonomous
 
-import os
-import glob
-import re
-import numpy as np
 import pandas as pd
+import numpy as np
+import re
 from sklearn.model_selection import train_test_split
-from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler, FunctionTransformer
-from sklearn.impute import SimpleImputer
+from sklearn.compose import ColumnTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, r2_score
+from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression, Ridge
-from sklearn.linear_model import SGDRegressor
-from sklearn.dummy import DummyClassifier
-from sklearn.metrics import accuracy_score, r2_score, mean_absolute_error
+from sklearn.dummy import DummyClassifier, DummyRegressor
 
-DATASET_HEADERS = ["sender", "subject", "body", "urls", "filename", "label", "text"]
+path = "email_analysis.csv"
+try:
+    df = pd.read_csv(path)
+    if df.shape[1] == 1:
+        df_alt = pd.read_csv(path, sep=';', decimal=',')
+        if df_alt.shape[1] > 1:
+            df = df_alt
+except Exception:
+    df = pd.read_csv(path, sep=';', decimal=',')
 
-def find_csv_file():
-    files = glob.glob("*.csv")
-    if not files:
-        files = glob.glob("**/*.csv", recursive=True)
-    if not files:
-        raise FileNotFoundError("No CSV file found.")
-    best_file = files[0]
-    best_score = -1
-    header_set = set([h.lower() for h in DATASET_HEADERS])
-    for f in files:
-        try:
-            head = pd.read_csv(f, nrows=0)
-        except Exception:
-            try:
-                head = pd.read_csv(f, nrows=0, sep=';', decimal=',')
-            except Exception:
-                continue
-        cols = [re.sub(r'\s+', ' ', str(c).strip()) for c in head.columns]
-        score = len(set([c.lower() for c in cols]) & header_set)
-        if score > best_score:
-            best_score = score
-            best_file = f
-    return best_file
-
-def read_csv_robust(path):
-    try:
-        df = pd.read_csv(path)
-    except Exception:
-        df = pd.read_csv(path, sep=';', decimal=',')
-        return df
-    if df.shape[1] <= 1:
-        try:
-            df2 = pd.read_csv(path, sep=';', decimal=',')
-            if df2.shape[1] > df.shape[1]:
-                df = df2
-        except Exception:
-            pass
-    return df
-
-def normalize_columns(df):
-    cols = [re.sub(r'\s+', ' ', str(c).strip()) for c in df.columns]
-    # Deduplicate columns if needed
-    seen = {}
-    new_cols = []
-    for c in cols:
-        if c in seen:
-            seen[c] += 1
-            new_cols.append(f"{c}_{seen[c]}")
-        else:
-            seen[c] = 0
-            new_cols.append(c)
-    df.columns = new_cols
-    df = df.loc[:, ~df.columns.str.contains(r'^Unnamed', case=False, na=False)]
-    return df
-
-def choose_target(df):
-    candidates = ['label', 'target', 'class', 'y', 'spam', 'output']
-    lower_cols = {col.lower(): col for col in df.columns}
-    for cand in candidates:
-        if cand in lower_cols:
-            return lower_cols[cand]
-    numeric_like = []
-    for col in df.columns:
-        series = pd.to_numeric(df[col], errors='coerce')
-        if series.notna().mean() > 0.6:
-            numeric_like.append(col)
-    for col in numeric_like:
-        if df[col].nunique(dropna=True) > 1:
-            return col
-    for col in df.columns:
-        if df[col].nunique(dropna=True) > 1:
-            return col
-    return df.columns[0]
-
-def detect_numeric_columns(df, cols):
-    numeric_cols = []
-    for col in cols:
-        series = pd.to_numeric(df[col], errors='coerce')
-        if series.notna().mean() > 0.6:
-            numeric_cols.append(col)
-            df[col] = series
-    return numeric_cols
-
-def combine_text(X):
-    if isinstance(X, pd.Series):
-        return X.fillna('').astype(str)
-    return X.fillna('').astype(str).agg(' '.join, axis=1)
-
-# Load dataset
-file_path = find_csv_file()
-df = read_csv_robust(file_path)
-df = normalize_columns(df)
-df = df.dropna(axis=1, how='all')
+df.columns = [re.sub(r'\s+', ' ', str(c)).strip() for c in df.columns]
+df = df.loc[:, ~df.columns.str.match(r'^Unnamed', case=False, na=False)]
+df = df.loc[:, df.columns != '']
+df.replace([np.inf, -np.inf], np.nan, inplace=True)
 assert df.shape[0] > 0 and df.shape[1] > 0
 
-# Determine target and features
-target_col = choose_target(df)
-if target_col not in df.columns:
-    target_col = df.columns[-1]
-
-features = [col for col in df.columns if col != target_col]
-if not features:
-    df['__const__'] = 1
-    features = ['__const__']
-
-df = df.replace([np.inf, -np.inf], np.nan)
-
-# Detect numeric and text/categorical columns
-numeric_cols = detect_numeric_columns(df, features)
-obj_cols = [col for col in features if col not in numeric_cols]
-
-text_keywords = {
-    'text', 'body', 'subject', 'message', 'content', 'email',
-    'comment', 'description', 'review', 'tweet', 'article',
-    'url', 'link', 'title'
-}
-text_cols = []
-cat_cols = []
-for col in obj_cols:
-    col_lower = col.lower()
-    series = df[col].fillna('').astype(str)
-    avg_len = series.str.len().mean()
-    if pd.isna(avg_len):
-        avg_len = 0
-    if any(k in col_lower for k in text_keywords) or avg_len > 30:
-        text_cols.append(col)
+candidates = ['label', 'target', 'y', 'class', 'spam', 'is_spam', 'category']
+target_col = None
+lower_cols = {col.lower(): col for col in df.columns}
+for cand in candidates:
+    if cand in lower_cols:
+        target_col = lower_cols[cand]
+        break
+if target_col is None:
+    for col in df.columns:
+        low = col.lower()
+        if any(cand in low for cand in candidates):
+            target_col = col
+            break
+if target_col is None:
+    numeric_candidate = None
+    for col in df.columns:
+        conv = pd.to_numeric(df[col], errors='coerce')
+        if conv.notna().sum() == 0:
+            continue
+        unique = conv.nunique(dropna=True)
+        if unique > 1:
+            numeric_candidate = col
+            break
+        if numeric_candidate is None:
+            numeric_candidate = col
+    if numeric_candidate is not None:
+        target_col = numeric_candidate
     else:
-        cat_cols.append(col)
+        target_col = df.columns[-1]
 
-# Determine task type
 y_raw = df[target_col]
+X_raw = df.drop(columns=[target_col])
+
 y_numeric = pd.to_numeric(y_raw, errors='coerce')
-n_samples = len(df)
-unique_num = y_numeric.nunique(dropna=True)
 numeric_ratio = y_numeric.notna().mean()
-threshold = max(20, int(np.sqrt(max(n_samples, 1))))
-if ((y_raw.dtype != 'object' and unique_num > threshold) or (numeric_ratio > 0.9 and unique_num > threshold)):
-    task = 'regression'
-    y = y_numeric
+if np.isnan(numeric_ratio):
+    numeric_ratio = 0.0
+if numeric_ratio > 0.9:
+    y_clean = y_numeric
+    y_is_numeric = True
+else:
+    y_clean = y_raw.astype(str)
+    y_is_numeric = False
+
+if y_is_numeric:
+    unique_count = y_clean.nunique(dropna=True)
+    threshold = max(2, min(20, len(y_clean) // 2 if len(y_clean) > 0 else 2))
+    if unique_count <= threshold:
+        task = 'classification'
+    else:
+        task = 'regression'
 else:
     task = 'classification'
-    y = y_raw
 
-# Drop rows with missing target
-mask = y.notna()
-df = df.loc[mask]
-y = y.loc[mask]
-assert df.shape[0] > 0
-
-# Ensure constant feature exists if needed
-if not features:
-    df['__const__'] = 1
-    features = ['__const__']
-    numeric_cols = ['__const__']
-    text_cols = []
-    cat_cols = []
-
-# Build preprocessing pipeline
-transformers = []
-if text_cols:
-    text_pipeline = Pipeline([
-        ('combine', FunctionTransformer(combine_text, validate=False)),
-        ('tfidf', TfidfVectorizer(stop_words='english', max_features=5000))
-    ])
-    transformers.append(('text', text_pipeline, text_cols))
-if cat_cols:
-    cat_pipeline = Pipeline([
-        ('imputer', SimpleImputer(strategy='most_frequent')),
-        ('onehot', OneHotEncoder(handle_unknown='ignore'))
-    ])
-    transformers.append(('cat', cat_pipeline, cat_cols))
-if numeric_cols:
-    num_pipeline = Pipeline([
-        ('imputer', SimpleImputer(strategy='median')),
-        ('scaler', StandardScaler(with_mean=False))
-    ])
-    transformers.append(('num', num_pipeline, numeric_cols))
-
-if not transformers:
-    df['__const__'] = 1
-    features = ['__const__']
-    numeric_cols = ['__const__']
-    num_pipeline = Pipeline([
-        ('imputer', SimpleImputer(strategy='median')),
-        ('scaler', StandardScaler(with_mean=False))
-    ])
-    transformers = [('num', num_pipeline, numeric_cols)]
-
-preprocess = ColumnTransformer(transformers, remainder='drop', sparse_threshold=0.3)
-
-# Train/test split
-X = df[features]
-n_samples = len(df)
-if n_samples >= 2:
-    test_size = 0.2 if n_samples >= 5 else 0.5
-    if task == 'classification':
-        class_counts = y.value_counts()
-        stratify = y if class_counts.min() >= 2 and class_counts.shape[0] >= 2 and n_samples > 2 else None
-    else:
-        stratify = None
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=42, stratify=stratify
-    )
-else:
-    X_train = X_test = X
-    y_train = y_test = y
-
-assert len(X_train) > 0 and len(X_test) > 0
-
-# Model selection and training
 if task == 'classification':
-    n_classes = y_train.nunique(dropna=True)
+    if y_is_numeric:
+        if y_clean.isna().any():
+            mode = y_clean.dropna().mode()
+            fill_val = mode.iloc[0] if not mode.empty else 0
+            y_clean = y_clean.fillna(fill_val)
+    else:
+        y_clean = y_clean.fillna('missing').astype(str)
+else:
+    if y_clean.isna().any():
+        med = y_clean.dropna().median() if y_clean.notna().sum() > 0 else 0.0
+        y_clean = y_clean.fillna(med)
+
+X_processed = X_raw.copy()
+X_processed.replace([np.inf, -np.inf], np.nan, inplace=True)
+numeric_cols = []
+text_cols = []
+for col in X_processed.columns:
+    series = X_processed[col]
+    if series.dtype.kind in 'biufc':
+        X_processed[col] = pd.to_numeric(series, errors='coerce')
+        numeric_cols.append(col)
+    else:
+        converted = pd.to_numeric(series, errors='coerce')
+        non_na_ratio = converted.notna().mean()
+        if np.isnan(non_na_ratio):
+            non_na_ratio = 0.0
+        if non_na_ratio > 0.9:
+            X_processed[col] = converted
+            numeric_cols.append(col)
+        else:
+            text_cols.append(col)
+
+numeric_cols_filtered = []
+for col in numeric_cols:
+    if X_processed[col].notna().any():
+        numeric_cols_filtered.append(col)
+    else:
+        X_processed = X_processed.drop(columns=[col])
+numeric_cols = numeric_cols_filtered
+
+text_col_name = None
+has_text = False
+if len(text_cols) > 0:
+    text_data = X_processed[text_cols].fillna('').astype(str)
+    combined_text = text_data.agg(' '.join, axis=1)
+    text_col_name = '__combined_text__'
+    while text_col_name in X_processed.columns:
+        text_col_name = text_col_name + '_'
+    X_processed[text_col_name] = combined_text
+    X_processed = X_processed.drop(columns=text_cols)
+    if X_processed[text_col_name].astype(str).str.strip().replace('', np.nan).notna().any():
+        has_text = True
+    else:
+        X_processed = X_processed.drop(columns=[text_col_name])
+        text_col_name = None
+        has_text = False
+
+numeric_cols = [col for col in X_processed.columns if col != text_col_name]
+
+if X_processed.shape[1] == 0:
+    const_name = '__constant__'
+    while const_name in X_processed.columns:
+        const_name = const_name + '_'
+    X_processed[const_name] = 1.0
+    numeric_cols = [const_name]
+
+use_text = text_col_name is not None and has_text
+
+if task == 'classification':
+    n_classes = y_clean.nunique(dropna=False)
+    if use_text:
+        preprocess = ColumnTransformer([('text', TfidfVectorizer(max_features=2000, dtype=np.float32), text_col_name)], remainder='drop')
+        model = MultinomialNB()
+        X_final = X_processed[[text_col_name]]
+    else:
+        numeric_transformer = Pipeline([('imputer', SimpleImputer(strategy='median')), ('scaler', StandardScaler())])
+        preprocess = ColumnTransformer([('num', numeric_transformer, numeric_cols)], remainder='drop')
+        model = LogisticRegression(max_iter=200, solver='liblinear', random_state=42)
+        X_final = X_processed[numeric_cols]
     if n_classes < 2:
         model = DummyClassifier(strategy='most_frequent')
+else:
+    if use_text:
+        preprocess = ColumnTransformer([('text', TfidfVectorizer(max_features=2000, dtype=np.float32), text_col_name)], remainder='drop')
+        model = Ridge(alpha=1.0, random_state=42)
+        X_final = X_processed[[text_col_name]]
     else:
-        model = LogisticRegression(max_iter=200, solver='liblinear', random_state=42)
-    pipe = Pipeline([('preprocess', preprocess), ('model', model)])
-    pipe.fit(X_train, y_train)
-    y_pred = pipe.predict(X_test)
+        numeric_transformer = Pipeline([('imputer', SimpleImputer(strategy='median')), ('scaler', StandardScaler())])
+        preprocess = ColumnTransformer([('num', numeric_transformer, numeric_cols)], remainder='drop')
+        model = Ridge(alpha=1.0, random_state=42)
+        X_final = X_processed[numeric_cols]
+    if y_clean.nunique(dropna=True) <= 1:
+        model = DummyRegressor(strategy='mean')
+
+n_samples = len(y_clean)
+if n_samples < 2:
+    X_train, X_test, y_train, y_test = X_final, X_final, y_clean, y_clean
+else:
+    stratify = None
+    if task == 'classification' and y_clean.nunique() > 1:
+        value_counts = y_clean.value_counts()
+        if value_counts.min() >= 2:
+            stratify = y_clean
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_final, y_clean, test_size=0.2, random_state=42, stratify=stratify
+    )
+assert len(X_train) > 0 and len(X_test) > 0
+
+pipeline = Pipeline([('preprocess', preprocess), ('model', model)])
+pipeline.fit(X_train, y_train)
+y_pred = pipeline.predict(X_test)
+
+if task == 'classification':
     accuracy = accuracy_score(y_test, y_pred)
 else:
-    y_train_num = pd.to_numeric(y_train, errors='coerce')
-    y_test_num = pd.to_numeric(y_test, errors='coerce')
-    fill_value = y_train_num.median() if np.isfinite(y_train_num.median()) else 0.0
-    y_train_num = y_train_num.fillna(fill_value)
-    y_test_num = y_test_num.fillna(fill_value)
-    if text_cols or cat_cols:
-        model = SGDRegressor(max_iter=500, tol=1e-3, random_state=42)
-    else:
-        model = Ridge(alpha=1.0)
-    pipe = Pipeline([('preprocess', preprocess), ('model', model)])
-    pipe.fit(X_train, y_train_num)
-    y_pred = pipe.predict(X_test)
-    if len(y_test_num) > 1 and y_test_num.nunique() > 1:
-        r2 = r2_score(y_test_num, y_pred)
-        if not np.isfinite(r2):
-            r2 = 0.0
-        accuracy = max(0.0, min(1.0, (r2 + 1.0) / 2.0))
-    else:
-        mae = mean_absolute_error(y_test_num, y_pred)
-        denom = np.abs(y_test_num).mean()
-        if not np.isfinite(denom) or denom == 0:
-            denom = 1.0
-        accuracy = 1.0 / (1.0 + mae / denom)
+    try:
+        r2 = r2_score(y_test, y_pred)
+    except Exception:
+        r2 = 0.0
+    if np.isnan(r2):
+        r2 = 0.0
+    accuracy = max(0.0, min(1.0, 0.5 * (r2 + 1.0)))
 
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# - Selected lightweight linear models with capped TF-IDF features to reduce CPU and memory usage.
-# - Used a minimal, reproducible preprocessing pipeline with imputation, scaling, and optional one-hot/text handling.
-# - Regression accuracy is a bounded proxy derived from R^2 (mapped to [0,1]) or MAE when targets are constant.
+# - Used lightweight models (MultinomialNB for text, Logistic/Ridge for numeric) to stay CPU-friendly and energy-efficient.
+# - Limited TF-IDF vocabulary size and combined text fields to reduce feature dimensionality and processing overhead.
+# - Applied simple imputation/scaling in a single pipeline for reproducible, low-overhead preprocessing.
+# - Added robust fallbacks (Dummy models/constant features) to keep the pipeline running under schema uncertainty.
+# - Regression accuracy is a clipped linear transform of R2 into [0,1] for a stable accuracy-like proxy.

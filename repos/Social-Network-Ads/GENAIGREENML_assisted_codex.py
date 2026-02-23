@@ -2,106 +2,124 @@
 # LLM: codex
 # Mode: assisted
 
+import os
+import random
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import confusion_matrix
-from sklearn.pipeline import make_pipeline
 
-RANDOM_STATE = 42
-DATASET_HEADERS = ["User ID", "Gender", "Age", "EstimatedSalary", "Purchased"]
+DATASET_PATH = "Social_Network_Ads.csv"
+DATASET_HEADERS = "User ID,Gender,Age,EstimatedSalary,Purchased"
 
+def set_seed(seed=42):
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    random.seed(seed)
+    np.random.seed(seed)
 
-def clean_name(name):
-    return "".join(ch.lower() for ch in str(name) if ch.isalnum())
+def normalize_column(name):
+    return "".join(ch for ch in str(name) if ch.isalnum()).lower()
 
+def valid_parse(df, expected_headers):
+    if df.shape[1] < 2:
+        return False
+    norm_cols = {normalize_column(c) for c in df.columns}
+    norm_expected = {normalize_column(h) for h in expected_headers}
+    return len(norm_cols & norm_expected) >= 2
 
-def is_parsing_valid(df, headers):
-    cleaned_cols = {clean_name(c) for c in df.columns}
-    cleaned_headers = {clean_name(h) for h in headers}
-    return len(cleaned_cols & cleaned_headers) >= max(2, len(headers) // 2)
-
-
-def read_csv_robust(path, headers):
+def read_dataset(path, expected_headers):
     df = pd.read_csv(path)
-    if not is_parsing_valid(df, headers):
+    if not valid_parse(df, expected_headers):
         df = pd.read_csv(path, sep=";", decimal=",")
     return df
 
+def map_columns(df, expected_headers):
+    norm_cols = {normalize_column(c): c for c in df.columns}
+    mapping = {}
+    for header in expected_headers:
+        key = normalize_column(header)
+        if key in norm_cols:
+            mapping[header] = norm_cols[key]
+        else:
+            match = None
+            for norm, col in norm_cols.items():
+                if key == norm or key in norm or norm in key:
+                    match = col
+                    break
+            if match is None:
+                raise ValueError(f"Missing column: {header}")
+            mapping[header] = match
+    return mapping
 
-def resolve_column(df, header, headers):
-    cleaned_header = clean_name(header)
-    cleaned_map = {clean_name(c): c for c in df.columns}
-    if cleaned_header in cleaned_map:
-        return cleaned_map[cleaned_header]
-    for cleaned, original in cleaned_map.items():
-        if cleaned_header in cleaned or cleaned in cleaned_header:
-            return original
-    if header in headers:
-        idx = headers.index(header)
-        if idx < len(df.columns):
-            return df.columns[idx]
-    raise KeyError(header)
+def find_header(expected_headers, target):
+    key = normalize_column(target)
+    for header in expected_headers:
+        if normalize_column(header) == key:
+            return header
+    raise ValueError(f"Header not found: {target}")
 
-
-def compute_metrics(cm):
-    if cm.size == 4:
+def compute_metrics(y_true, y_pred, labels):
+    cm = confusion_matrix(y_true, y_pred, labels=labels)
+    total = cm.sum()
+    accuracy = cm.trace() / total if total else 0.0
+    if cm.shape == (2, 2):
         tn, fp, fn, tp = cm.ravel()
     else:
-        tn = cm[0, 0] if cm.size else 0
-        fp = fn = tp = 0
-    total = tn + fp + fn + tp
-    accuracy = (tp + tn) / total if total else 0.0
+        tn = fp = fn = tp = 0
+        if labels.size:
+            pos_idx = np.where(labels == 1)[0]
+            if pos_idx.size:
+                idx = pos_idx[0]
+                tp = cm[idx, idx]
+                fp = cm[:, idx].sum() - tp
+                fn = cm[idx, :].sum() - tp
+                tn = total - tp - fp - fn
+            else:
+                tn = cm.trace()
     error_rate = 1.0 - accuracy
     precision = tp / (tp + fp) if (tp + fp) else 0.0
     recall = tp / (tp + fn) if (tp + fn) else 0.0
-    return {
-        "TP": tp,
-        "FP": fp,
-        "TN": tn,
-        "FN": fn,
-        "accuracy": accuracy,
-        "error_rate": error_rate,
-        "precision": precision,
-        "recall": recall,
-    }
-
+    metrics = {"TP": int(tp), "FP": int(fp), "TN": int(tn), "FN": int(fn)}
+    return cm, metrics, accuracy, error_rate, precision, recall
 
 def main():
-    np.random.seed(RANDOM_STATE)
-    df = read_csv_robust("Social_Network_Ads.csv", DATASET_HEADERS)
-    age_header = DATASET_HEADERS[2] if len(DATASET_HEADERS) > 2 else "Age"
-    salary_header = DATASET_HEADERS[3] if len(DATASET_HEADERS) > 3 else "EstimatedSalary"
-    target_header = DATASET_HEADERS[-1]
-    age_col = resolve_column(df, age_header, DATASET_HEADERS)
-    salary_col = resolve_column(df, salary_header, DATASET_HEADERS)
-    target_col = resolve_column(df, target_header, DATASET_HEADERS)
-
-    X = df[[age_col, salary_col]].to_numpy(copy=False)
-    y = df[target_col].to_numpy(copy=False)
+    set_seed(42)
+    expected_headers = [h.strip() for h in DATASET_HEADERS.split(",")]
+    df = read_dataset(DATASET_PATH, expected_headers)
+    column_map = map_columns(df, expected_headers)
+    age_header = find_header(expected_headers, "Age")
+    salary_header = find_header(expected_headers, "EstimatedSalary")
+    target_header = find_header(expected_headers, "Purchased")
+    age_col = column_map[age_header]
+    salary_col = column_map[salary_header]
+    target_col = column_map[target_header]
+    X = df[[age_col, salary_col]].to_numpy()
+    y = df[target_col].to_numpy()
     del df
-
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.25, random_state=RANDOM_STATE
+        X, y, test_size=0.25, random_state=42
     )
-    model = make_pipeline(StandardScaler(), LogisticRegression(random_state=RANDOM_STATE))
+    scaler = StandardScaler(copy=False)
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+    model = LogisticRegression(random_state=42)
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
-
-    cm = confusion_matrix(y_test, y_pred)
-    metrics = compute_metrics(cm)
-    accuracy = metrics["accuracy"]
+    labels = np.sort(np.unique(y))
+    if labels.size == 0:
+        accuracy = 0.0
+    else:
+        _, _, accuracy, _, _, _ = compute_metrics(y_test, y_pred, labels)
     print(f"ACCURACY={accuracy:.6f}")
-
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Combined preprocessing and model fitting in a pipeline to avoid storing scaled copies of data.
-# - Derived all metrics from a single confusion matrix to eliminate redundant metric computations.
-# - Selected only required columns and converted them directly to NumPy arrays with copy avoidance to reduce memory use.
-# - Implemented a robust CSV loading strategy with a fallback delimiter/decimal to prevent unnecessary reprocessing.
-# - Fixed random seeds for deterministic splits and model training.
+# - Removed unused visualization and logging to reduce runtime and imports.
+# - Implemented robust CSV parsing with delimiter/decimal fallback and normalized headers.
+# - Reused arrays with in-place scaling (copy=False) to cut memory usage.
+# - Derived all metrics from a single confusion matrix computation to avoid redundancy.
+# - Set fixed seeds and explicit random_state for deterministic, reproducible results.

@@ -6,55 +6,55 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-def load_data(filepath):
+def load_data(path):
     try:
-        data = pd.read_csv(filepath)
-        if data.shape[1] <= 1:
-            raise ValueError
-    except Exception:
-        data = pd.read_csv(filepath, sep=';', decimal=',')
-    return data
+        df = pd.read_csv(path)
+    except (pd.errors.ParserError, pd.errors.EmptyDataError):
+        df = pd.read_csv(path, sep=';', decimal=',')
+    
+    df.fillna(0, inplace=True)
+    return df
 
 def sigmoid(z):
     return 1 / (1 + np.exp(-np.clip(z, -250, 250)))
 
-df = load_data("data.csv")
-df.fillna(0, inplace=True)
-
-y = pd.factorize(df.iloc[:, 1])[0]
-X = df.iloc[:, 2:32].values
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=2
-)
-
-X_train_b = np.column_stack((np.ones(X_train.shape[0]), X_train))
-X_test_b = np.column_stack((np.ones(X_test.shape[0]), X_test))
-
-def train_logistic_regression(X, y, alpha=0.01, iters=1000):
+def train_logistic_regression(X, y, alpha=0.01, iterations=1000):
     m, n = X.shape
     theta = np.zeros(n)
-    for _ in range(iters):
-        h = sigmoid(X.dot(theta))
-        gradient = X.T.dot(h - y) / m
+    for _ in range(iterations):
+        h = sigmoid(X @ theta)
+        gradient = (X.T @ (h - y)) / m
         theta -= alpha * gradient
     return theta
 
-theta = train_logistic_regression(X_train_b, y_train, alpha=0.01, iters=1000)
+def predict(X, theta):
+    return (sigmoid(X @ theta) >= 0.5).astype(int)
 
-test_preds = (sigmoid(X_test_b.dot(theta)) >= 0.5).astype(int)
+df = load_data("data.csv")
+
+y = (df.iloc[:, 1] == 'M').astype(int).values
+X_raw = df.iloc[:, 2:32].values
+
+X_train_raw, X_test_raw, y_train, y_test = train_test_split(
+    X_raw, y, test_size=0.2, random_state=2
+)
+
+X_train = np.column_stack((np.ones(X_train_raw.shape[0]), X_train_raw))
+X_test = np.column_stack((np.ones(X_test_raw.shape[0]), X_test_raw))
+
+theta = train_logistic_regression(X_train, y_train, alpha=0.01, iterations=1000)
+
+test_preds = predict(X_test, theta)
 accuracy = np.mean(test_preds == y_test)
 
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# 1. Removed redundant 'compute_cost' calls inside the training loop, saving O(iters * m * n) operations.
-# 2. Replaced LabelEncoder with pd.factorize for faster, lightweight categorical encoding.
-# 3. Utilized np.column_stack instead of np.hstack for more efficient memory layout during bias addition.
-# 4. Added np.clip to the sigmoid function to prevent numerical overflow and stabilize computation.
-# 5. Removed unnecessary list structures that were used to store historical cost values.
-# 6. Optimized data loading with a robust fallback mechanism and minimal dataframe copies.
-# 7. Removed all plotting, logging, and interactive overhead to minimize runtime and energy footprint.
-# 8. Simplified prediction logic by using vectorized boolean comparison instead of np.round.
-# 9. Reduced external library dependencies by avoiding the import of visualization tools.
-# 10. Minimized data movement by performing operations in-place where possible.
+# 1. Removed redundant compute_cost calls inside the gradient descent loop, saving O(iterations * n * m) operations.
+# 2. Replaced LabelEncoder with a direct boolean-to-integer mapping for faster processing and lower memory overhead.
+# 3. Vectorized the bias addition using np.column_stack outside the loop to prevent repeated memory reallocation.
+# 4. Used NumPy's @ operator for matrix multiplication, which is optimized for modern hardware.
+# 5. Implemented numerically stable sigmoid with np.clip to prevent overflow errors and ensure stable convergence.
+# 6. Eliminated unnecessary data copies and intermediate lists (like the costs list) to reduce memory footprint.
+# 7. Optimized CSV loading with a robust fallback mechanism and minimal column processing.
+# 8. Removed all visualization libraries (seaborn, matplotlib) to decrease startup time and memory usage.

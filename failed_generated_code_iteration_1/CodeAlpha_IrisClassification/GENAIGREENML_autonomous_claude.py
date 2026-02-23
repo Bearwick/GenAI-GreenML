@@ -5,100 +5,98 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
 
-# 1. Load Dataset with robust CSV parsing
-data = None
-for sep, decimal in [(',', '.'), (';', ',')]:
-    try:
-        data = pd.read_csv("Iris.csv", sep=sep, decimal=decimal)
-        if data.shape[1] > 1:
-            break
-    except Exception:
-        continue
+DATASET_PATH = "Iris.csv"
 
-if data is None or data.shape[1] <= 1:
-    try:
-        data = pd.read_csv("Iris.csv", sep=';', decimal=',')
-    except Exception:
-        data = pd.read_csv("Iris.csv")
+# Robust CSV loading
+try:
+    df = pd.read_csv(DATASET_PATH)
+    if df.shape[1] < 3:
+        df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
+except Exception:
+    df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
 
-# 2. Normalize column names
-data.columns = data.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
-data = data.loc[:, ~data.columns.str.startswith('Unnamed')]
+# Normalize column names
+df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
+df = df.loc[:, ~df.columns.str.startswith('Unnamed')]
 
-# 3. Drop Id column if present
-for col in list(data.columns):
-    if col.lower() == 'id':
-        data.drop(columns=[col], inplace=True)
+# Identify target and features
+expected_target = 'Species'
+expected_features = ['SepalLengthCm', 'SepalWidthCm', 'PetalLengthCm', 'PetalWidthCm']
+expected_id = 'Id'
 
-# 4. Identify target and features
-target_col = None
-for col in data.columns:
-    if col.lower() == 'species':
-        target_col = col
-        break
+# Drop Id column if present
+if expected_id in df.columns:
+    df = df.drop(columns=[expected_id])
 
-if target_col is None:
-    # Fallback: use last column if it's non-numeric or has few unique values
-    if data[data.columns[-1]].dtype == object or data[data.columns[-1]].nunique() < 20:
-        target_col = data.columns[-1]
+# Determine target
+if expected_target in df.columns:
+    target_col = expected_target
+else:
+    # Fallback: pick the last non-numeric column, or last column
+    object_cols = df.select_dtypes(include='object').columns.tolist()
+    if object_cols:
+        target_col = object_cols[-1]
     else:
-        # Pick first non-constant numeric column as target (regression fallback)
-        for col in data.columns:
-            if data[col].nunique() > 1:
-                target_col = col
-                break
+        target_col = df.columns[-1]
 
-assert target_col is not None, "No suitable target column found"
+# Determine feature columns
+available_features = [c for c in expected_features if c in df.columns]
+if len(available_features) == 0:
+    available_features = [c for c in df.columns if c != target_col]
 
-y_raw = data[target_col]
-feature_cols = [c for c in data.columns if c != target_col]
+# Coerce feature columns to numeric
+for col in available_features:
+    df[col] = pd.to_numeric(df[col], errors='coerce')
 
-# 5. Prepare features: coerce numerics, drop all-NaN columns
-X = data[list(feature_cols)].copy()
-for col in X.columns:
-    if X[col].dtype == object:
-        try:
-            X[col] = pd.to_numeric(X[col], errors='coerce')
-        except Exception:
-            X.drop(columns=[col], inplace=True)
+# Drop rows with NaN in features or target
+df = df.dropna(subset=available_features + [target_col])
+df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=available_features)
 
-X = X.apply(pd.to_numeric, errors='coerce')
-X.replace([np.inf, -np.inf], np.nan, inplace=True)
-X.dropna(axis=1, how='all', inplace=True)
+assert df.shape[0] > 0, "Dataset empty after preprocessing"
 
-# Drop rows where all features are NaN
-valid_mask = X.notna().any(axis=1)
-X = X.loc[valid_mask]
-y_raw = y_raw.loc[valid_mask]
+X = df[list(available_features)].values
+y_raw = df[target_col]
 
-# Impute remaining NaN with column median
-X = X.fillna(X.median())
-
-assert X.shape[0] > 0, "No samples remaining after preprocessing"
-assert X.shape[1] > 0, "No features remaining after preprocessing"
-
-# 6. Encode target
-is_classification = True
-le = LabelEncoder()
-if y_raw.dtype == object or y_raw.nunique() < 20:
-    y = le.fit_transform(y_raw.astype(str))
+# Encode target if categorical
+if y_raw.dtype == object or y_raw.dtype.name == 'category':
+    le = LabelEncoder()
+    y = le.fit_transform(y_raw)
 else:
     y = y_raw.values
-    is_classification = False
 
 n_classes = len(np.unique(y))
-if n_classes < 2:
-    # Trivial baseline: predict the single class
-    accuracy = 1.0
-    print(f"ACCURACY={accuracy:.6f}")
-    import sys
-    sys.exit(0)
+assert n_classes >= 2, "Need at least 2 classes for classification"
 
-# 7. Train-Test Split
+# Train/test split
 X_train, X_test, y_train, y_test = train_test_split(
-    X.values, y, test_size=0
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+assert X_train.shape[0] > 0 and X_test.shape[0] > 0, "Empty train or test split"
+
+# Lightweight pipeline: StandardScaler + LogisticRegression
+pipe = Pipeline([
+    ('scaler', StandardScaler()),
+    ('clf', LogisticRegression(
+        max_iter=200,
+        solver='lbfgs',
+        multi_class='multinomial',
+        random_state=42
+    ))
+])
+
+pipe.fit(X_train, y_train)
+y_pred = pipe.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+
+print(f"ACCURACY={accuracy:.6f}")
+
+# OPTIMIZATION SUMMARY
+# 1. Logistic Regression chosen as the primary model: it is lightweight, energy-efficient,
+#    and well-suited for the small Iris dataset (150 samples, 4 features, 3 classes).
+# 2.

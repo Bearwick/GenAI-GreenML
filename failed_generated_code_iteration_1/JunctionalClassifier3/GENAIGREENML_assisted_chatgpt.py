@@ -4,95 +4,91 @@
 
 import os
 import pickle
+import random
+from typing import Optional, Tuple
+
 import numpy as np
 import pandas as pd
+from sklearn import metrics
 from sklearn import svm
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
 
 
-SEED = 42
+SEED = 0
 
 
-def _read_csv_robust(path: str, dataset_headers=None) -> pd.DataFrame:
-    def _try_read(**kwargs):
-        return pd.read_csv(path, **kwargs)
+def _set_reproducible(seed: int = SEED) -> None:
+    os.environ.setdefault("PYTHONHASHSEED", str(seed))
+    random.seed(seed)
+    np.random.seed(seed)
 
-    df = _try_read()
+
+def _read_csv_robust(path: str) -> pd.DataFrame:
+    df = pd.read_csv(path)
     if df.shape[1] <= 1:
-        df = _try_read(sep=";", decimal=",")
-
-    if dataset_headers:
-        if df.shape[1] != len(dataset_headers) and df.shape[0] > 0:
-            df2 = _try_read(header=None)
-            if df2.shape[1] <= 1:
-                df2 = _try_read(header=None, sep=";", decimal=",")
-            if df2.shape[1] == len(dataset_headers):
-                df = df2
-                df.columns = list(dataset_headers)
-
-    if df.shape[1] == 1:
-        s = df.iloc[:, 0].astype(str)
-        if s.str.contains(",").mean() > 0.8:
-            tmp = s.str.split(",", expand=True)
-            df = tmp
-            df = df.replace("", np.nan).dropna(axis=1, how="all")
-
+        df = pd.read_csv(path, sep=";", decimal=",")
     return df
 
 
-def _split_features_labels(df: pd.DataFrame):
-    df = df.dropna(how="all")
-    if df.empty:
-        raise ValueError("Empty dataset after parsing.")
-
-    df = df.copy()
-    y_col = df.columns[-1]
-    X_df = df.drop(columns=[y_col])
-
-    X = X_df.apply(pd.to_numeric, errors="coerce").to_numpy(dtype=np.float64, copy=False)
-    y_raw = pd.to_numeric(df[y_col], errors="coerce").to_numpy(dtype=np.float64, copy=False)
-
-    y = np.where(y_raw > 0, 1, np.where(y_raw < 0, -1, 0)).astype(np.int64, copy=False)
-    return X, y
+def _coerce_numeric_matrix(df: pd.DataFrame) -> np.ndarray:
+    arr = df.to_numpy(dtype=np.float64, copy=False)
+    return np.ascontiguousarray(arr, dtype=np.float64)
 
 
-def _extract_features_only(df: pd.DataFrame) -> np.ndarray:
-    df = df.dropna(how="all")
-    if df.empty:
-        return np.empty((0, 0), dtype=np.float64)
-    X = df.apply(pd.to_numeric, errors="coerce").to_numpy(dtype=np.float64, copy=False)
-    return X
+def _load_model(path: str = "dict.pickle") -> svm.SVC:
+    with open(path, "rb") as f:
+        model = pickle.load(f)
+    return model
 
 
-def train_and_evaluate(train_csv: str = "14k.csv") -> float:
-    df = _read_csv_robust(train_csv)
-    X, y = _split_features_labels(df)
+def _load_input_features(path: str = "input.csv") -> np.ndarray:
+    df = _read_csv_robust(path)
+    x = _coerce_numeric_matrix(df)
+    if x.ndim == 1:
+        x = x.reshape(1, -1)
+    return x
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=SEED, shuffle=True
-    )
+
+def _load_supervised_xy(path: str) -> Tuple[np.ndarray, np.ndarray]:
+    df = _read_csv_robust(path)
+    x = _coerce_numeric_matrix(df.iloc[:, :-1])
+    y_raw = df.iloc[:, -1].to_numpy(dtype=np.float64, copy=False)
+    y = np.sign(y_raw)
+    y[y > 0] = 1
+    y[y < 0] = -1
+    y = y.astype(np.float64, copy=False)
+    return x, y
+
+
+def _train_test_accuracy(csv_path: str = "14k.csv") -> float:
+    x, y = _load_supervised_xy(csv_path)
+    n = x.shape[0]
+    rng = np.random.RandomState(SEED)
+    idx = np.arange(n)
+    rng.shuffle(idx)
+
+    test_size = int(round(n * 0.3))
+    test_idx = idx[:test_size]
+    train_idx = idx[test_size:]
+
+    x_train = x[train_idx]
+    y_train = y[train_idx]
+    x_test = x[test_idx]
+    y_test = y[test_idx]
 
     clf = svm.SVC(kernel="linear")
-    clf.fit(X_train, y_train)
-    pred = clf.predict(X_test)
-    return float(accuracy_score(y_test, pred))
+    clf.fit(x_train, y_train)
+    pred = clf.predict(x_test)
+    return float(metrics.accuracy_score(y_test, pred))
 
 
-def _load_model(path: str = "dict.pickle"):
-    with open(path, "rb") as f:
-        return pickle.load(f)
+def main() -> None:
+    _set_reproducible(SEED)
 
+    clf = _load_model("dict.pickle")
+    x_pred = _load_input_features("input.csv")
+    _ = clf.predict(x_pred)
 
-def predict_from_input(model_path: str = "dict.pickle", input_csv: str = "input.csv"):
-    clf = _load_model(model_path)
-    df = _read_csv_robust(input_csv)
-    X = _extract_features_only(df)
-    return clf.predict(X)
-
-
-def main():
-    accuracy = train_and_evaluate("14k.csv")
+    accuracy = _train_test_accuracy("14k.csv")
     print(f"ACCURACY={accuracy:.6f}")
 
 
@@ -100,9 +96,10 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Replaced per-row csv parsing and repeated list appends with vectorized pandas/numpy parsing to reduce Python-loop overhead.
-# - Removed model save/load and prediction side effects from the main execution path to avoid unnecessary disk I/O and compute.
-# - Eliminated redundant global mutable state (features/labels/pFeatures) to reduce memory footprint and data movement.
-# - Added robust CSV parsing with fallback separators/decimal and simple single-column comma-split recovery to reduce failure retries.
-# - Ensured reproducibility by fixing the train/test split random_state.
-# - Used numpy arrays directly for sklearn fitting/prediction to avoid intermediate Python lists and extra conversions.
+# - Replaced manual csv.reader loops with pandas parsing to reduce Python-level iteration overhead and speed up I/O.
+# - Implemented robust CSV parsing fallback (default, then sep=';' and decimal=',') to avoid repeated failed reads.
+# - Converted data to contiguous NumPy float64 arrays once to minimize repeated conversions and data movement.
+# - Vectorized label processing using np.sign and boolean indexing to avoid per-row branching.
+# - Removed global mutable lists and side-effect-heavy functions to reduce memory footprint and improve locality.
+# - Ensured reproducibility via fixed seeds and deterministic shuffling for the train/test split.
+# - Avoided unnecessary model saving and all non-required prints/plots; kept only final accuracy print as required.

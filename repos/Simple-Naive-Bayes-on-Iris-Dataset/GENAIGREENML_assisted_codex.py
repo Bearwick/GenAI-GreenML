@@ -4,95 +4,105 @@
 
 import pandas as pd
 import numpy as np
-import random
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
+from sklearn.metrics import confusion_matrix
+from sklearn.preprocessing import LabelEncoder
 
-DATASET_HEADERS = [
-    "Id",
-    "SepalLengthCm",
-    "SepalWidthCm",
-    "PetalLengthCm",
-    "PetalWidthCm",
-    "Species",
-]
+RANDOM_STATE = 42
+DATASET_PATH = "iris.csv"
+DATASET_HEADERS = ["Id", "SepalLengthCm", "SepalWidthCm", "PetalLengthCm", "PetalWidthCm", "Species"]
 
-def load_dataset(path):
-    expected_lower = {h.lower() for h in DATASET_HEADERS}
+np.random.seed(RANDOM_STATE)
 
-    def looks_wrong(df):
-        if df.shape[1] <= 1:
-            return True
-        cols_lower = {c.lower() for c in df.columns}
-        if len(expected_lower.intersection(cols_lower)) == 0:
-            return True
-        obj_cols = df.select_dtypes(include=["object"]).columns
-        for col in obj_cols:
-            if df[col].astype(str).str.contains(",").any():
-                return True
+def _looks_valid(df, expected_headers):
+    if df is None or df.empty:
         return False
+    if df.shape[1] == 1:
+        return False
+    expected_lower = {h.lower() for h in expected_headers}
+    cols_lower = {str(c).strip().lower() for c in df.columns}
+    if len(cols_lower.intersection(expected_lower)) >= max(1, len(expected_headers) // 2):
+        return True
+    return df.shape[1] == len(expected_headers)
 
-    df = pd.read_csv(path)
-    if looks_wrong(df):
-        try:
-            alt = pd.read_csv(path, sep=";", decimal=",")
-            if not looks_wrong(alt) or alt.shape[1] > df.shape[1]:
-                df = alt
-        except Exception:
-            pass
+def align_columns(df, expected_headers):
+    cols = [str(c).strip() for c in df.columns]
+    expected_map = {h.lower(): h for h in expected_headers}
+    mapping = {c: expected_map[c.lower()] for c in cols if c.lower() in expected_map}
+    if mapping:
+        df = df.rename(columns=mapping)
+    if df.shape[1] == len(expected_headers):
+        current_lower = {c.lower() for c in df.columns}
+        if current_lower != set(expected_map.keys()):
+            df = df.copy()
+            df.columns = expected_headers
     return df
 
-def prepare_data(df):
-    cols = list(df.columns)
-    lower_map = {c.lower(): c for c in cols}
-    target_col = lower_map.get("species")
-    if target_col is None:
-        target_col = cols[-1]
+def read_csv_robust(path, expected_headers):
+    df_default = pd.read_csv(path)
+    if _looks_valid(df_default, expected_headers):
+        df = df_default
+    else:
+        df_alt = pd.read_csv(path, sep=";", decimal=",")
+        df = df_alt if _looks_valid(df_alt, expected_headers) else df_default
+    df.columns = [str(c).strip() for c in df.columns]
+    return align_columns(df, expected_headers)
 
-    y = df[target_col]
-    if not pd.api.types.is_numeric_dtype(y):
-        y = pd.factorize(y)[0]
-
+def split_features_target(df, expected_headers):
+    cols_lower = [c.lower() for c in df.columns]
+    target_lower = expected_headers[-1].lower()
+    if target_lower in cols_lower:
+        target_col = df.columns[cols_lower.index(target_lower)]
+    else:
+        target_col = df.columns[-1]
     X = df.drop(columns=[target_col])
-    if X.select_dtypes(include=["object"]).shape[1] > 0:
-        X = X.replace(",", ".", regex=True)
-        X = X.apply(pd.to_numeric, errors="coerce")
-
-    X = X.to_numpy()
-    y = np.asarray(y)
+    y = df[target_col]
     return X, y
 
-def evaluate_models(X_train, X_test, y_train, y_test):
-    models = (GaussianNB(), MultinomialNB(), BernoulliNB())
-    accuracy = None
-    for idx, model in enumerate(models):
-        model.fit(X_train, y_train)
-        preds = model.predict(X_test)
-        acc = float((preds == y_test).mean())
-        if idx == 0:
-            accuracy = acc
-    return accuracy
+def evaluate_model(model, X_train, X_test, y_train, y_test):
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    cm = confusion_matrix(y_test, y_pred)
+    total = cm.sum()
+    accuracy = np.trace(cm) / total if total else 0.0
+    error_rate = 1.0 - accuracy
+    tp = np.diag(cm).astype(float)
+    precision_den = cm.sum(axis=0)
+    recall_den = cm.sum(axis=1)
+    precision = np.divide(tp, precision_den, out=np.zeros_like(tp, dtype=float), where=precision_den != 0).mean()
+    recall = np.divide(tp, recall_den, out=np.zeros_like(tp, dtype=float), where=recall_den != 0).mean()
+    return {
+        "confusion_matrix": cm,
+        "accuracy": float(accuracy),
+        "error_rate": float(error_rate),
+        "precision": float(precision),
+        "recall": float(recall),
+    }
 
 def main():
-    seed = 42
-    random.seed(seed)
-    np.random.seed(seed)
-
-    df = load_dataset("iris.csv")
-    X, y = prepare_data(df)
+    df = read_csv_robust(DATASET_PATH, DATASET_HEADERS)
+    X_df, y_series = split_features_target(df, DATASET_HEADERS)
+    label_encoder = LabelEncoder()
+    y = label_encoder.fit_transform(y_series.astype(str))
+    X = X_df.to_numpy(copy=False)
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=seed
+        X, y, test_size=0.2, random_state=RANDOM_STATE
     )
-    accuracy = evaluate_models(X_train, X_test, y_train, y_test)
+    models = (GaussianNB(), MultinomialNB(), BernoulliNB())
+    accuracy = 0.0
+    for idx, model in enumerate(models):
+        metrics = evaluate_model(model, X_train, X_test, y_train, y_test)
+        if idx == 0:
+            accuracy = metrics["accuracy"]
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed plotting and verbose metric computation to cut unnecessary processing and I/O.
-# - Evaluated models in a loop with a single train/test split to avoid redundant data handling.
-# - Converted features to NumPy once to prevent repeated DataFrame-to-array conversions.
-# - Added robust CSV parsing with delimiter/decimal fallback to avoid mis-parsing and rework.
-# - Applied lightweight label encoding only when needed using pandas.factorize.
-# - Fixed random seeds for deterministic, reproducible results.
+# - Removed plotting and verbose outputs to eliminate unnecessary I/O and rendering.
+# - Derived all metrics from a single confusion matrix to avoid redundant computations.
+# - Used numpy arrays and avoided storing intermediate results to reduce memory usage.
+# - Added robust CSV parsing with minimal retries and aligned columns once for stable preprocessing.
+# - Fixed random seeds and reused a single train/test split for deterministic behavior.

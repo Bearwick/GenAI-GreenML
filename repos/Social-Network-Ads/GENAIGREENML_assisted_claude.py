@@ -9,28 +9,24 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-try:
-    df = pd.read_csv("Social_Network_Ads.csv")
-    if df.shape[1] < 2:
-        df = pd.read_csv("Social_Network_Ads.csv", sep=";", decimal=",")
-except Exception:
-    df = pd.read_csv("Social_Network_Ads.csv", sep=";", decimal=",")
+RANDOM_STATE = 42
 
-cols = df.columns.tolist()
-age_col = [c for c in cols if "age" in c.lower()][0]
-salary_col = [c for c in cols if "salary" in c.lower()][0]
-target_col = [c for c in cols if "purchased" in c.lower()][0]
+df = pd.read_csv("Social_Network_Ads.csv")
+if df.shape[1] <= 2:
+    df = pd.read_csv("Social_Network_Ads.csv", sep=';', decimal=',')
 
-X = df[[age_col, salary_col]].values
-y = df[target_col].values
+X = df[['Age', 'EstimatedSalary']].values
+y = df['Purchased'].values
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, random_state=RANDOM_STATE
+)
 
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-model = LogisticRegression(random_state=42, solver="lbfgs", max_iter=100)
+model = LogisticRegression(random_state=RANDOM_STATE, solver='lbfgs', max_iter=100)
 model.fit(X_train_scaled, y_train)
 
 y_pred = model.predict(X_test_scaled)
@@ -40,13 +36,13 @@ accuracy = accuracy_score(y_test, y_pred)
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Removed unused imports (seaborn, matplotlib, confusion_matrix, precision_score, recall_score) to reduce import overhead.
-# Removed visualization (heatmap and plt.show) to eliminate rendering cost.
-# Removed all original print statements and replaced with single accuracy output.
-# Used .values to extract numpy arrays directly, avoiding pandas overhead during model fitting.
-# Derived column names dynamically from actual headers for robustness.
-# Added robust CSV fallback parsing (default then sep=';' with decimal=',').
-# Set random_state on LogisticRegression for reproducibility.
-# Removed compute_metrics function and redundant confusion_matrix calls since only accuracy is needed for output.
-# Eliminated redundant metric computations (precision, recall, error_rate, TP/FP/TN/FN) that are no longer printed.
-# Specified solver explicitly to avoid future deprecation overhead and ensure deterministic behavior.
+# - Removed unused imports (matplotlib, seaborn, numpy heavy usage, confusion_matrix detail computation).
+# - Removed visualization (heatmap and plt.show).
+# - Removed all original print/logging statements.
+# - Removed the compute_metrics function since its results are no longer printed.
+# - Removed redundant confusion_matrix calls (was computed multiple times in original).
+# - Converted DataFrame slices to numpy arrays early via .values to avoid pandas overhead.
+# - Added CSV parsing fallback with sep=';' and decimal=','.
+# - Set explicit random_state on LogisticRegression for reproducibility.
+# - Specified solver='lbfgs' explicitly to avoid default solver warning overhead.
+# - Reduced memory footprint by not storing intermediate metric variables that are unused.

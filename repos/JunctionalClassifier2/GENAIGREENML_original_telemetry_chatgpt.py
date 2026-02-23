@@ -2,15 +2,12 @@
 # LLM: chatgpt
 # Mode: original_telemetry
 
-from sklearn import svm
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 import pickle
 import numpy as np
 import csv
-import copy
 import unittest
-
 from sklearn.neighbors import KNeighborsClassifier
 
 classifier = KNeighborsClassifier(n_neighbors=4)
@@ -78,6 +75,7 @@ def predict():
     loadModel()
     takeInput()
     classifier.predict(pFeatures)
+    saveModel()
 
 
 def takeInput():

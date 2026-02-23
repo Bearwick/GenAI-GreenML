@@ -4,7 +4,6 @@
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
@@ -35,6 +34,7 @@ def train_model(X_train, y_train):
 def evaluate_model(model, X_test, y_test):
     y_pred = model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
+    print(f"ACCURACY={accuracy:.6f}")
     return y_pred, accuracy
 
 
@@ -45,45 +45,6 @@ def save_model(model, scaler, file_path="model.pkl"):
 def load_model(file_path="model.pkl"):
     data = joblib.load(file_path)
     return data["model"], data["scaler"]
-
-
-def plot_classified_graphs(X, y_true, y_pred, output_image="classified_graphs.png"):
-    plt.figure(figsize=(12, 8))
-
-    colors = {
-        "true_correct": "green",
-        "true_incorrect": "red",
-        "pred_correct": "blue",
-        "pred_incorrect": "orange",
-    }
-
-    for i in range(len(y_true)):
-        true_color = colors["true_correct"] if y_true[i] == 1 else colors["true_incorrect"]
-        pred_color = colors["pred_correct"] if y_pred[i] == 1 else colors["pred_incorrect"]
-
-        plt.plot(X[i], color=true_color, alpha=0.5)
-        plt.plot(X[i], color=pred_color, linestyle="--", alpha=0.5)
-
-    plt.title("Graphs with Predictions")
-    plt.xlabel("Time")
-    plt.ylabel("Value")
-
-    from matplotlib.lines import Line2D
-
-    custom_lines = [
-        Line2D([0], [0], color=colors["true_correct"], lw=2),
-        Line2D([0], [0], color=colors["true_incorrect"], lw=2),
-        Line2D([0], [0], color=colors["pred_correct"], lw=2, linestyle="--"),
-        Line2D([0], [0], color=colors["pred_incorrect"], lw=2, linestyle="--"),
-    ]
-
-    plt.legend(
-        custom_lines,
-        ["True Correct", "True Incorrect", "Predicted Correct", "Predicted Incorrect"],
-    )
-
-    plt.savefig(output_image)
-    plt.show()
 
 
 def cross_validate_model(X, y):
@@ -97,7 +58,7 @@ if __name__ == "__main__":
     X, y = load_data(file_path)
     X_scaled, scaler = preprocess_data(X)
 
-    _scores = cross_validate_model(X_scaled, y)
+    cross_validate_model(X_scaled, y)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X_scaled, y, test_size=0.2, random_state=42
@@ -106,6 +67,12 @@ if __name__ == "__main__":
     model = train_model(X_train, y_train)
 
     y_pred, accuracy = evaluate_model(model, X_test, y_test)
-    print(f"ACCURACY={accuracy:.6f}")
 
     save_model(model, scaler)
+
+    correct_graph = X_test[y_test == 1][0].reshape(1, -1)
+    prediction = model.predict(correct_graph)
+
+    feature_importance = model.feature_importances_
+    for i, importance in enumerate(feature_importance):
+        _ = (i, importance)

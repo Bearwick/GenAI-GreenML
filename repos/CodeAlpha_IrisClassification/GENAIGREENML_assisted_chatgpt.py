@@ -3,7 +3,7 @@
 # Mode: assisted
 
 import os
-import random
+import sys
 import numpy as np
 import pandas as pd
 
@@ -14,97 +14,102 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
 
-SEED = 42
+RANDOM_SEED = 42
+DATASET_PATH = "Iris.csv"
+DATASET_HEADERS = ["Id", "SepalLengthCm", "SepalWidthCm", "PetalLengthCm", "PetalWidthCm", "Species"]
 
 
-def _set_reproducible_seed(seed: int = SEED) -> None:
-    random.seed(seed)
-    np.random.seed(seed)
+def _read_csv_with_fallback(path: str) -> pd.DataFrame:
+    try:
+        df = pd.read_csv(path)
+    except FileNotFoundError:
+        raise
 
+    def looks_wrong(d: pd.DataFrame) -> bool:
+        if d is None or d.empty:
+            return True
+        if d.shape[1] == 1:
+            return True
+        if "Species" not in d.columns and "Species" in DATASET_HEADERS:
+            return True
+        if any(col not in d.columns for col in DATASET_HEADERS if col in ("Species", "Id")):
+            return True
+        return False
 
-def _read_csv_robust(path: str) -> pd.DataFrame:
-    df = pd.read_csv(path)
-
-    looks_like_single_column = df.shape[1] == 1
-    header_mismatch = True
-    expected = ["Id", "SepalLengthCm", "SepalWidthCm", "PetalLengthCm", "PetalWidthCm", "Species"]
-    cols = [str(c).strip() for c in df.columns]
-    if len(cols) == len(expected):
-        header_mismatch = any(c not in expected for c in cols)
-
-    if looks_like_single_column or header_mismatch:
+    if looks_wrong(df):
         df2 = pd.read_csv(path, sep=";", decimal=",")
-        if df2.shape[1] > df.shape[1]:
-            df = df2
-
+        if not looks_wrong(df2):
+            return df2
     return df
 
 
-def _resolve_dataset_path() -> str:
-    candidates = (
-        os.environ.get("DATASET_PATH"),
-        os.environ.get("IRIS_CSV_PATH"),
-        "Iris.csv",
-        os.path.join(os.getcwd(), "Iris.csv"),
-        "C:/Users/Lalit Pathak/python2.0/Iris.csv",
-    )
-    for p in candidates:
-        if p and os.path.exists(p):
-            return p
-    raise FileNotFoundError("Dataset not found in known locations.")
+def _prepare_features_and_labels(df: pd.DataFrame):
+    cols = list(df.columns)
 
+    species_col = "Species" if "Species" in cols else next((c for c in cols if c.strip().lower() == "species"), None)
+    if species_col is None:
+        raise ValueError("Species column not found.")
 
-def _prepare_features_and_labels(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
-    df = df.copy()
+    id_col = "Id" if "Id" in cols else next((c for c in cols if c.strip().lower() == "id"), None)
 
-    if "Id" in df.columns:
-        df = df.drop(columns=["Id"])
+    y = df[species_col]
+    feature_cols = [c for c in cols if c != species_col and c != id_col]
 
-    if "Species" not in df.columns:
-        raise KeyError("'Species' column not found in dataset.")
+    X = df[feature_cols]
+    X = X.apply(pd.to_numeric, errors="coerce")
 
-    y = df["Species"].to_numpy()
-    X = df.drop(columns=["Species"]).to_numpy(dtype=np.float64, copy=False)
+    valid_mask = X.notna().all(axis=1) & y.notna()
+    X = X.loc[valid_mask].astype(np.float32, copy=False)
+    y = y.loc[valid_mask]
 
     le = LabelEncoder()
     y_encoded = le.fit_transform(y)
+
     return X, y_encoded
 
 
-def main() -> None:
-    _set_reproducible_seed(SEED)
+def main():
+    np.random.seed(RANDOM_SEED)
 
-    dataset_path = _resolve_dataset_path()
-    data = _read_csv_robust(dataset_path)
+    df = _read_csv_with_fallback(DATASET_PATH)
 
-    X, y_encoded = _prepare_features_and_labels(data)
+    X, y_encoded = _prepare_features_and_labels(df)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X,
         y_encoded,
         test_size=0.2,
-        random_state=SEED,
+        random_state=RANDOM_SEED,
         stratify=y_encoded,
     )
 
-    log_reg = LogisticRegression(max_iter=200, random_state=SEED)
+    log_reg = LogisticRegression(max_iter=200, n_jobs=1, random_state=RANDOM_SEED)
     log_reg.fit(X_train, y_train)
 
-    rf_model = RandomForestClassifier(n_estimators=100, random_state=SEED, n_jobs=-1)
+    rf_model = RandomForestClassifier(
+        n_estimators=100,
+        random_state=RANDOM_SEED,
+        n_jobs=1,
+    )
     rf_model.fit(X_train, y_train)
 
     y_pred_rf = rf_model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred_rf)
+
     print(f"ACCURACY={accuracy:.6f}")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except FileNotFoundError:
+        sys.exit(1)
 
 # Optimization Summary
-# - Removed exploratory prints, classification reports, confusion matrix computation, and all plotting to cut unnecessary CPU/GPU work and data movement while preserving the ML task and final evaluation intent.
-# - Converted feature/label handling to NumPy arrays early to reduce pandas overhead and intermediate DataFrame copies during training and splitting.
-# - Dropped unused imports (matplotlib, seaborn, extra metrics) to reduce startup overhead and memory footprint.
-# - Added robust CSV parsing fallback (default read_csv, then retry with sep=';' and decimal=',') to avoid repeated manual fixes and ensure reliable ingestion.
-# - Ensured reproducibility via fixed seeds for Python and NumPy and passing random_state into estimators and train/test split.
-# - Enabled RandomForest parallelism with n_jobs=-1 to reduce wall-clock runtime for the same model configuration and predictions.
+# - Removed all non-essential outputs (head/info/reports/confusion matrix plots) to reduce I/O and rendering overhead.
+# - Implemented robust CSV parsing with a lightweight heuristic and a single fallback read (sep=';', decimal=',') to avoid repeated work.
+# - Dropped unused columns (Id) and inferred target/feature columns from df.columns to prevent schema assumptions and extra processing.
+# - Converted features to float32 to reduce memory footprint and data movement while preserving model behavior for this dataset.
+# - Filtered invalid rows once with a boolean mask to avoid repeated NaN handling and ensure consistent downstream computations.
+# - Set fixed random seeds and constrained n_jobs=1 for reproducibility and to avoid energy spikes from uncontrolled parallelism.
+# - Kept both original models trained to preserve evaluation intent, but computed/printed only the required final accuracy line to minimize overhead.

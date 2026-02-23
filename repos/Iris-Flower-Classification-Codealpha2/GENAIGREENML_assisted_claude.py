@@ -3,26 +3,31 @@
 # Mode: assisted
 
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 
+np.random.seed(42)
+
 try:
     df = pd.read_csv("Iris.csv")
     if df.shape[1] < 3:
-        df = pd.read_csv("Iris.csv", sep=";", decimal=",")
-except Exception:
+        raise ValueError("Too few columns")
+except (ValueError, pd.errors.ParserError):
     df = pd.read_csv("Iris.csv", sep=";", decimal=",")
 
-if "Id" in df.columns:
-    df.drop(columns=["Id"], inplace=True)
+id_cols = [c for c in df.columns if c.lower() == "id"]
+if id_cols:
+    df.drop(columns=id_cols, inplace=True)
+
+target_col = [c for c in df.columns if c.lower() == "species"][0]
+feature_cols = [c for c in df.columns if c != target_col]
 
 le = LabelEncoder()
-df["Species"] = le.fit_transform(df["Species"])
-
-X = df.drop("Species", axis=1).values
-y = df["Species"].values
+y = le.fit_transform(df[target_col].values)
+X = df[feature_cols].values.astype(np.float64)
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
@@ -40,11 +45,11 @@ accuracy = accuracy_score(y_test, y_pred)
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Removed unused imports (matplotlib, seaborn, cross_val_score, Pipeline, classification_report, confusion_matrix).
-# Removed visualization (heatmap, confusion matrix plot) to save energy and avoid rendering overhead.
-# Removed cross-validation step that refit the model 5 extra times, as it was only informational.
-# Replaced Pipeline with direct scaler + model calls to avoid Pipeline overhead for a simple two-step flow.
-# Converted DataFrame to NumPy arrays early (.values) to reduce pandas indexing overhead during fit/predict.
-# Added robust CSV parsing fallback (sep=';', decimal=',') per requirements.
-# Set random_state on SVC for reproducibility.
-# Removed all original prints/logging; added only the required accuracy print.
+# Removed unused imports (matplotlib, seaborn) to reduce import overhead.
+# Removed cross_val_score since it retrains 5 additional times and is not needed for final accuracy.
+# Removed Pipeline wrapper; applied StandardScaler directly to avoid pipeline dispatch overhead.
+# Used numpy arrays directly instead of pandas DataFrames for features to reduce memory and overhead.
+# Removed all plots, prints, classification_report, and confusion_matrix computation.
+# Derived column names dynamically from actual data for robustness.
+# Added robust CSV fallback parsing with sep=';' and decimal=','.
+# Set fixed random seeds for reproducibility.

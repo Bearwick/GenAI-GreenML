@@ -11,8 +11,8 @@ from sklearn.metrics import accuracy_score
 try:
     df = pd.read_csv("Iris.csv")
     if df.shape[1] < 3:
-        df = pd.read_csv("Iris.csv", sep=";", decimal=",")
-except Exception:
+        raise ValueError("Too few columns")
+except (ValueError, pd.errors.ParserError):
     df = pd.read_csv("Iris.csv", sep=";", decimal=",")
 
 if "Id" in df.columns:
@@ -21,26 +21,26 @@ if "Id" in df.columns:
 label_encoder = LabelEncoder()
 df["Species"] = label_encoder.fit_transform(df["Species"])
 
-X = df.drop("Species", axis=1)
-y = df["Species"]
+X = df.drop("Species", axis=1).values
+y = df["Species"].values
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=1)
 model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
 
 accuracy = accuracy_score(y_test, y_pred)
-
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Removed unused imports: matplotlib, seaborn, cross_val_score, classification_report, confusion_matrix.
-# Removed all plotting and visualization code to eliminate unnecessary computation and display overhead.
-# Removed cross-validation call that was only used for printing, saving redundant model fitting cycles.
-# Removed classification_report and confusion_matrix computations that were only used for printing.
-# Added n_jobs=-1 to RandomForestClassifier to leverage parallel CPU cores for faster training.
-# Added robust CSV parsing fallback (try default, then sep=';' with decimal=',').
-# Preserved dataset, task, model, random_state, test split, and accuracy computation exactly as original.
+# Removed unused imports (matplotlib, seaborn, numpy, cross_val_score, classification_report, confusion_matrix).
+# Removed visualization (heatmap, plt.show) to save computation and energy.
+# Removed cross-validation call that was only used for printing, not affecting final accuracy.
+# Removed all intermediate print/logging statements.
+# Converted DataFrame X, y to numpy arrays (.values) before train_test_split to avoid repeated DataFrame overhead.
+# Added robust CSV fallback parsing with sep=';' and decimal=','.
+# Set n_jobs=1 for deterministic, reproducible behavior.
+# Fixed random_state=42 for reproducibility.

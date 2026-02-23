@@ -2,28 +2,16 @@
 # LLM: chatgpt
 # Mode: assisted
 
-import os
-import random
-from typing import List, Tuple
-
-import numpy as np
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
 
-SEED = 42
-
-
-def set_reproducibility(seed: int = SEED) -> None:
-    os.environ["PYTHONHASHSEED"] = str(seed)
-    random.seed(seed)
-    np.random.seed(seed)
-
-
-DATASET_HEADERS: List[str] = [
+RANDOM_SEED = 42
+DATASET_PATH = "Cancer_Data.csv"
+DATASET_HEADERS = [
     "id",
     "diagnosis",
     "radius_mean",
@@ -58,93 +46,60 @@ DATASET_HEADERS: List[str] = [
     "fractal_dimension_worst",
 ]
 
+FEATURE_NAMES = [
+    "texture_worst",
+    "radius_se",
+    "symmetry_worst",
+    "concave points_mean",
+    "area_se",
+    "area_worst",
+    "radius_worst",
+    "concave points_worst",
+    "concavity_mean",
+    "fractal_dimension_se",
+]
 
-def _looks_misparsed(df: pd.DataFrame) -> bool:
-    if df.empty or df.shape[1] <= 2:
-        return True
-    if df.shape[1] == 1:
-        return True
-    cols = [str(c) for c in df.columns]
-    if len(cols) == 1 and ("," in cols[0] or ";" in cols[0]):
-        return True
-    return False
 
-
-def load_csv_with_fallback(path: str) -> pd.DataFrame:
+def _read_csv_with_fallback(path: str, expected_headers: list[str]) -> pd.DataFrame:
     df = pd.read_csv(path)
-    if _looks_misparsed(df):
+    looks_wrong = df.shape[1] <= 2 or (expected_headers and expected_headers[0] not in df.columns)
+    if looks_wrong:
         df = pd.read_csv(path, sep=";", decimal=",")
     return df
 
 
-def resolve_columns(df: pd.DataFrame, dataset_headers: List[str]) -> Tuple[str, List[str]]:
-    header_set = set(dataset_headers)
-    cols_present = [c for c in df.columns if c in header_set]
-
-    diagnosis_candidates = [c for c in cols_present if c.lower() == "diagnosis"]
-    if not diagnosis_candidates:
-        diagnosis_candidates = [c for c in df.columns if str(c).strip().lower() == "diagnosis"]
-    if not diagnosis_candidates:
-        raise ValueError("Target column 'diagnosis' not found in dataset.")
-    target_col = diagnosis_candidates[0]
-
-    requested_features = [
-        "texture_worst",
-        "radius_se",
-        "symmetry_worst",
-        "concave points_mean",
-        "area_se",
-        "area_worst",
-        "radius_worst",
-        "concave points_worst",
-        "concavity_mean",
-        "fractal_dimension_se",
-    ]
-    features = [f for f in requested_features if f in df.columns]
-    missing = [f for f in requested_features if f not in df.columns]
+def _resolve_columns(df: pd.DataFrame, requested: list[str]) -> list[str]:
+    colset = set(df.columns)
+    missing = [c for c in requested if c not in colset]
     if missing:
-        raise ValueError(f"Missing required feature columns: {missing}")
-    return target_col, features
-
-
-def prepare_xy(df: pd.DataFrame, target_col: str, feature_cols: List[str]) -> Tuple[pd.DataFrame, pd.Series]:
-    y = df[target_col]
-    if y.dtype == object or str(y.dtype).startswith("string"):
-        y = y.map({"M": 1, "B": 0})
-    y = pd.to_numeric(y, errors="coerce")
-
-    X = df.loc[:, feature_cols]
-    X = X.apply(pd.to_numeric, errors="coerce")
-
-    valid_mask = y.notna()
-    for col in feature_cols:
-        valid_mask &= X[col].notna()
-
-    X = X.loc[valid_mask]
-    y = y.loc[valid_mask].astype(int)
-    return X, y
-
-
-def train_and_evaluate(X: pd.DataFrame, y: pd.Series, seed: int = SEED) -> float:
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=seed
-    )
-
-    model = make_pipeline(
-        StandardScaler(with_mean=True, with_std=True),
-        LogisticRegression(solver="liblinear", random_state=seed),
-    )
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
-    return float(accuracy_score(y_test, y_pred))
+        raise KeyError(f"Missing required columns: {missing}")
+    return requested
 
 
 def main() -> None:
-    set_reproducibility(SEED)
-    df = load_csv_with_fallback("Cancer_Data.csv")
-    target_col, feature_cols = resolve_columns(df, DATASET_HEADERS)
-    X, y = prepare_xy(df, target_col, feature_cols)
-    accuracy = train_and_evaluate(X, y, SEED)
+    df = _read_csv_with_fallback(DATASET_PATH, DATASET_HEADERS)
+
+    diag_col = "diagnosis"
+    if diag_col not in df.columns:
+        raise KeyError("Missing target column 'diagnosis'")
+
+    feature_cols = _resolve_columns(df, FEATURE_NAMES)
+
+    y = df[diag_col].map({"M": 1, "B": 0})
+    X = df.loc[:, feature_cols]
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.3, random_state=RANDOM_SEED
+    )
+
+    model = make_pipeline(
+        StandardScaler(),
+        LogisticRegression(solver="liblinear", random_state=RANDOM_SEED),
+    )
+    model.fit(X_train, y_train)
+
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
     print(f"ACCURACY={accuracy:.6f}")
 
 
@@ -152,8 +107,9 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed plotting, report generation, and model/scaler serialization to eliminate unnecessary compute and I/O energy use.
-# - Used a single Pipeline (StandardScaler + LogisticRegression) to avoid extra intermediate arrays and reduce data movement.
-# - Avoided redundant DataFrame copies by selecting only required columns once and filtering invalid rows via a single boolean mask.
-# - Implemented robust CSV parsing fallback to prevent repeated manual reruns and wasted computation due to mis-parsed inputs.
-# - Ensured reproducibility with fixed seeds, stabilizing results and avoiding energy spent on repeated experimentation.
+# - Removed unused imports, reports, plots, and file-saving to cut runtime, I/O, and dependency overhead while keeping the same training/evaluation intent.
+# - Used a single scikit-learn Pipeline (StandardScaler + LogisticRegression) to avoid storing separate scaled arrays and reduce memory footprint/data movement.
+# - Loaded only needed columns via a single DataFrame slice (df.loc[:, feature_cols]) and avoided extra intermediate structures.
+# - Implemented robust CSV parsing fallback (default read_csv, then retry with sep=';' and decimal=',') to prevent costly downstream failures/retries.
+# - Centralized fixed RANDOM_SEED for deterministic split/model behavior and reproducible results without extra computation.
+# - Added explicit column resolution against df.columns to avoid assumptions about schema and prevent hidden errors that waste compute.

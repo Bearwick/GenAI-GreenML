@@ -3,94 +3,99 @@
 # Mode: assisted
 
 import json
-import math
-import os
-import random
-from collections import Counter, defaultdict
+from collections import defaultdict, Counter
+from pathlib import Path
+
+import numpy as np
+from unidecode import unidecode
 
 
 SEED = 42
-random.seed(SEED)
-os.environ.setdefault("PYTHONHASHSEED", str(SEED))
 
 
-def load_json(path):
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+def _load_json(path: str):
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def _normalize_ingredient(s: str) -> str:
+    return unidecode(s.lower())
 
 
 def build_model(train_data):
-    class_dcount = Counter()
-    class_tcount = Counter()
+    class_doc_count = Counter()
+    class_token_count = Counter()
     ingredient_class_df = defaultdict(Counter)
-    vocab_set = set()
 
     for doc in train_data:
         c = doc["cuisine"]
-        ingredients = [ing.lower() for ing in doc["ingredients"]]
-        class_dcount[c] += 1
-        class_tcount[c] += len(ingredients)
-        for ing in ingredients:
-            vocab_set.add(ing)
-            ingredient_class_df[ing][c] += 1
+        class_doc_count[c] += 1
+        ing_list = doc["ingredients"]
+        class_token_count[c] += len(ing_list)
+        doc_id = doc["id"]
+        for ing in ing_list:
+            ingredient_class_df[_normalize_ingredient(ing)][c] += 1
 
-    total_docs = len(train_data)
-    classes = sorted(class_dcount.keys())
-    vocab_size = len(vocab_set)
-
-    log_prior = {c: math.log(class_dcount[c] / total_docs) for c in classes}
-    log_denom = {c: math.log(vocab_size + class_tcount[c]) for c in classes}
+    classes = list(class_token_count.keys())
+    vocab_size = len(ingredient_class_df)
+    n_docs = len(train_data)
+    prior_prob = {c: class_doc_count[c] / n_docs for c in classes}
 
     return {
         "classes": classes,
         "vocab_size": vocab_size,
-        "log_prior": log_prior,
-        "log_denom": log_denom,
+        "prior_prob": prior_prob,
+        "class_token_count": dict(class_token_count),
         "ingredient_class_df": ingredient_class_df,
     }
 
 
-def predict(model, queryset):
+def naive_based(queryset, model):
     classes = model["classes"]
-    log_prior = model["log_prior"]
-    log_denom = model["log_denom"]
+    vocab_size = model["vocab_size"]
+    prior_prob = model["prior_prob"]
+    class_token_count = model["class_token_count"]
     ingredient_class_df = model["ingredient_class_df"]
 
-    predictions = {}
+    qdoc_class = {}
     for doc in queryset:
-        ingredients = [ing.lower() for ing in doc["ingredients"]]
         best_c = None
-        best_score = None
+        best_p = None
 
+        ingredients = doc["ingredients"]
         for c in classes:
-            score = log_prior[c] - (len(ingredients) * log_denom[c])
+            denom = vocab_size + class_token_count[c]
+            p_ingredient = 1.0
             for ing in ingredients:
-                score += math.log(1 + ingredient_class_df.get(ing, {}).get(c, 0))
-            if best_score is None or score > best_score:
-                best_score = score
+                norm_ing = _normalize_ingredient(ing)
+                length = ingredient_class_df.get(norm_ing, {}).get(c, 0)
+                p_ingredient *= (1.0 + length) / denom
+
+            p = p_ingredient * prior_prob[c]
+            if best_p is None or p > best_p:
+                best_p = p
                 best_c = c
 
-        predictions[doc["id"]] = best_c
-    return predictions
+        qdoc_class[doc["id"]] = best_c
+
+    return qdoc_class
 
 
-def accuracy_on_train(model, train_data):
-    preds = predict(model, train_data)
+def empirical_accuracy(train_data, model):
+    empirical_dict = naive_based(train_data, model)
     correct = 0
     for doc in train_data:
-        if preds.get(doc["id"]) == doc["cuisine"]:
+        if doc["cuisine"] == empirical_dict[doc["id"]]:
             correct += 1
     return correct / len(train_data) if train_data else 0.0
 
 
 def main():
-    train_data = load_json("train.json")
+    np.random.seed(SEED)
+
+    train_data = _load_json("train.json")
     model = build_model(train_data)
 
-    test_data = load_json("test.json")
-    _ = predict(model, test_data)
-
-    accuracy = accuracy_on_train(model, train_data)
+    accuracy = empirical_accuracy(train_data, model)
     print(f"ACCURACY={accuracy:.6f}")
 
 
@@ -98,10 +103,9 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed redundant passes over training data by building class counts, token counts, and ingredient-class document frequencies in a single loop.
-# - Replaced storing full document-id lists per ingredient/class with integer document-frequency counts to cut memory and data movement while preserving probability math.
-# - Switched to log-probabilities to avoid expensive/unstable repeated multiplications and reduce underflow; argmax remains identical.
-# - Precomputed per-class constant terms (log priors and denominators) to avoid recomputation inside inner loops.
-# - Avoided constructing an explicit vocabulary list; used a set for uniqueness and only kept its size, minimizing allocations.
-# - Ensured reproducibility by fixing the seed and PYTHONHASHSEED without affecting model logic.
-# - Removed file outputs, interactive behavior, prints, and plots; kept only the required final accuracy print.
+# - Replaced per-ingredient storage of doc-id lists with per-class document-frequency counts (Counter), preserving len(list) behavior while cutting memory and list-append overhead.
+# - Collapsed multiple passes over training data into a single pass to reduce redundant computation and data movement.
+# - Avoided building an explicit vocab list; used vocab_size from the ingredient dictionary size to prevent extra allocations.
+# - Removed unused imports and all non-required side effects (no test.json inference, no file writes, no extra prints).
+# - Used local variable bindings inside the classifier loop to reduce repeated global/dict lookups.
+# - Set a fixed seed (numpy) to improve reproducibility even though the pipeline is deterministic.

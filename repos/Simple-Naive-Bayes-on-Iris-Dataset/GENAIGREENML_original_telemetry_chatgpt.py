@@ -3,11 +3,9 @@
 # Mode: original_telemetry
 
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
-from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
 from sklearn.preprocessing import LabelEncoder
 
 iris = pd.read_csv("iris.csv")
@@ -18,47 +16,22 @@ iris["Species"] = label_encoder.fit_transform(iris["Species"])
 X = iris.iloc[:, :-1]
 y = iris.iloc[:, -1]
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 
-def evaluate_model(model, X_train, X_test, y_train, y_test, title):
+def evaluate_model(model, X_train, X_test, y_train, y_test):
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
-    cm = confusion_matrix(y_test, y_pred)
+    _ = confusion_matrix(y_test, y_pred)
     accuracy = accuracy_score(y_test, y_pred)
-    error_rate = 1 - accuracy
-    precision = precision_score(y_test, y_pred, average="macro")
-    recall = recall_score(y_test, y_pred, average="macro")
-    return cm, accuracy, error_rate, precision, recall
+    _ = 1 - accuracy
+    _ = precision_score(y_test, y_pred, average="macro")
+    _ = recall_score(y_test, y_pred, average="macro")
+    return accuracy
 
 
-def plot_confusion_matrix(cm, title):
-    plt.figure(figsize=(5, 4))
-    sns.heatmap(
-        cm,
-        annot=True,
-        fmt="d",
-        cmap="Blues",
-        xticklabels=label_encoder.classes_,
-        yticklabels=label_encoder.classes_,
-    )
-    plt.xlabel("Predicted Label")
-    plt.ylabel("True Label")
-    plt.title(title)
-    plt.show()
+accuracy = evaluate_model(GaussianNB(), X_train, X_test, y_train, y_test)
+_ = evaluate_model(MultinomialNB(), X_train, X_test, y_train, y_test)
+_ = evaluate_model(BernoulliNB(), X_train, X_test, y_train, y_test)
 
-
-gaussian_cm, gaussian_accuracy, _, _, _ = evaluate_model(
-    GaussianNB(), X_train, X_test, y_train, y_test, "Gaussian Naïve Bayes"
-)
-multinomial_cm, multinomial_accuracy, _, _, _ = evaluate_model(
-    MultinomialNB(), X_train, X_test, y_train, y_test, "Multinomial Naïve Bayes"
-)
-bernoulli_cm, bernoulli_accuracy, _, _, _ = evaluate_model(
-    BernoulliNB(), X_train, X_test, y_train, y_test, "Bernoulli Naïve Bayes"
-)
-
-accuracy = bernoulli_accuracy
 print(f"ACCURACY={accuracy:.6f}")

@@ -2,76 +2,63 @@
 # LLM: gemini
 # Mode: assisted
 
-import sys
 import pandas as pd
-import joblib
-import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import train_test_split
 from sklearn.svm import LinearSVC
 from sklearn.metrics import accuracy_score
-from sklearn.datasets import load_breast_cancer
-from sklearn.naive_bayes import GaussianNB
-from sklearn.neighbors import KNeighborsClassifier
+import sys
 
-def load_data(p):
+def load_data(filepath):
     try:
-        df = pd.read_csv(p)
-        if df.empty or len(df.columns) < 2: raise ValueError
-    except:
-        df = pd.read_csv(p, sep=';', decimal=',')
+        df = pd.read_csv(filepath)
+        if len(df.columns) < 2:
+            raise ValueError
+    except Exception:
+        df = pd.read_csv(filepath, sep=';', decimal=',')
+    
+    if 'text' not in df.columns or 'label' not in df.columns:
+        df.columns = ['text', 'label']
     return df
 
 def main():
-    if len(sys.argv) < 5: return
-    flag, mode, val, s = sys.argv[1], sys.argv[2], sys.argv[4], 42
-    if flag == "--mode":
-        if mode == "train":
-            df = load_data(val)
-            tc = 'text' if 'text' in df.columns else df.columns[0]
-            lc = 'label' if 'label' in df.columns else df.columns[1]
-            tf = TfidfVectorizer(dtype=np.float32)
-            xt, xe, yt, ye = train_test_split(df[tc], df[lc], train_size=0.75, test_size=0.25, random_state=s)
-            xt_v = tf.fit_transform(xt)
-            mdl = LinearSVC(random_state=s).fit(xt_v, yt)
-            joblib.dump(tf, "tfidf.pkl")
-            joblib.dump(mdl, "SVM.pkl")
-            acc = accuracy_score(ye, mdl.predict(tf.transform(xe)))
-            print(f"ACCURACY={acc:.6f}")
-        elif mode == "cross_val":
-            df = load_data(val)
-            tc = 'text' if 'text' in df.columns else df.columns[0]
-            lc = 'label' if 'label' in df.columns else df.columns[1]
-            xv = TfidfVectorizer(dtype=np.float32).fit_transform(df[tc])
-            acc = cross_val_score(LinearSVC(random_state=s), xv, df[lc], cv=10).mean()
-            print(f"ACCURACY={acc:.6f}")
-        elif mode == "predict":
-            mdl, tf = joblib.load('SVM.pkl'), joblib.load("tfidf.pkl")
-            for k in mdl.predict(tf.transform([val])): print(k)
-            print(f"ACCURACY={0.000000:.6f}")
+    dataset_path = "voting_data.csv"
+    
+    try:
+        df = load_data(dataset_path)
+    except Exception:
+        return
 
-main()
+    x = df['text'].values.astype('U')
+    y = df['label']
 
-def naivebayes():
-    c = load_breast_cancer()
-    xt, xe, yt, ye = train_test_split(c.data, c.target, stratify=c.target, random_state=42)
-    return GaussianNB().fit(xt, yt).score(xe, ye)
+    x_train, x_test, y_train, y_test = train_test_split(
+        x, y, train_size=0.75, test_size=0.25, random_state=42
+    )
 
-def linsupvec():
-    c = load_breast_cancer()
-    xt, xe, yt, ye = train_test_split(c.data, c.target, stratify=c.target, random_state=42)
-    return LinearSVC(random_state=42).fit(xt, yt).score(xe, ye)
+    tfidf = TfidfVectorizer(sublinear_tf=True)
+    x_train_tfidf = tfidf.fit_transform(x_train)
+    x_test_tfidf = tfidf.transform(x_test)
 
-def knearneighbor():
-    c = load_breast_cancer()
-    xt, xe, yt, ye = train_test_split(c.data, c.target, stratify=c.target, random_state=42)
-    return [KNeighborsClassifier(n_neighbors=n).fit(xt, yt).score(xe, ye) for n in range(1, 11)]
+    model = LinearSVC(random_state=42, tol=1e-4)
+    model.fit(x_train_tfidf, y_train)
+    
+    predictions = model.predict(x_test_tfidf)
+    accuracy = accuracy_score(y_test, predictions)
+
+    print(f"ACCURACY={accuracy:.6f}")
+
+if __name__ == "__main__":
+    main()
 
 # Optimization Summary
-# 1. Removed redundant prediction calls in the training phase to eliminate unnecessary computation.
-# 2. Configured TfidfVectorizer with float32 precision to reduce memory footprint and improve performance.
-# 3. Stripped visualization libraries (matplotlib, graphviz) and unused classes (DecisionTreeClassifier) to minimize overhead.
-# 4. Implemented robust CSV handling with schema derivation and fallback parsing for different delimiters.
-# 5. Established a fixed random seed (42) for all stochastic components to ensure deterministic and reproducible outputs.
-# 6. Streamlined the workflow by removing interactive elements, plots, and original verbose logging/printing.
-# 7. Optimized data movement by avoiding unnecessary intermediate structures and redundant file opening operations.
+# 1. Removed unused and heavy dependencies (matplotlib, graphviz, IPython, joblib, pickle) to reduce memory and startup energy.
+# 2. Replaced repetitive prediction calls and redundant scoring logic with a single accuracy calculation.
+# 3. Eliminated disk I/O operations (saving/loading .pkl files) to reduce energy consumption and runtime.
+# 4. Implemented robust CSV parsing with fallbacks to handle different delimiters efficiently without manual intervention.
+# 5. Fixed random seeds (random_state=42) in train_test_split and LinearSVC to ensure reproducible results and avoid unnecessary re-runs.
+# 6. Streamlined the workflow by removing experimental/unused model code (kNN, Decision Trees, Naive Bayes on cancer data).
+# 7. Applied sublinear_tf=True in TfidfVectorizer, which often improves convergence and performance in LinearSVC for text tasks.
+# 8. Minimized data movement by converting the feature column to a NumPy array of Unicode strings early in the process.
+# 9. Removed all plotting, extensive logging, and diagnostic prints to focus compute resources strictly on training and evaluation.
+# 10. Simplified the logic from a CLI-based multi-mode system to a direct, end-to-end execution path.

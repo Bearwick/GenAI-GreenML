@@ -5,12 +5,12 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-# Robust CSV loading
+# --- Robust CSV loading ---
 try:
     df = pd.read_csv("Iris.csv")
     if df.shape[1] < 3:
@@ -18,80 +18,80 @@ try:
 except Exception:
     df = pd.read_csv("Iris.csv", sep=";", decimal=",")
 
-# Normalize column names
+# --- Column name normalization ---
 df.columns = df.columns.str.strip().str.replace(r"\s+", " ", regex=True)
-df = df[[c for c in df.columns if not c.startswith("Unnamed")]]
+df = df.loc[:, ~df.columns.str.startswith("Unnamed")]
 
-# Drop Id column if present
-id_cols = [c for c in df.columns if c.lower() == "id"]
-if id_cols:
-    df.drop(columns=id_cols, inplace=True)
-
-# Identify target and features
+# --- Identify target and features ---
 target_col = None
-expected_target_names = ["species", "class", "target", "label"]
-for col in df.columns:
-    if col.lower() in expected_target_names:
-        target_col = col
+expected_target_names = ["Species", "species", "class", "target"]
+for name in expected_target_names:
+    matches = [c for c in df.columns if c.lower() == name.lower()]
+    if matches:
+        target_col = matches[0]
         break
 
+# If no known target found, pick last non-numeric column or last column
 if target_col is None:
-    # Fallback: use last column if it's object/string type, else last column
-    if df.dtypes.iloc[-1] == object:
-        target_col = df.columns[-1]
+    obj_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
+    if obj_cols:
+        target_col = obj_cols[-1]
     else:
-        # Pick first object column
-        obj_cols = df.select_dtypes(include=["object"]).columns
-        if len(obj_cols) > 0:
-            target_col = obj_cols[0]
-        else:
-            target_col = df.columns[-1]
+        target_col = df.columns[-1]
 
-# Encode target if categorical
-le = LabelEncoder()
-if df[target_col].dtype == object:
-    df[target_col] = le.fit_transform(df[target_col].astype(str))
-else:
-    df[target_col] = pd.to_numeric(df[target_col], errors="coerce")
+# Drop ID-like columns (e.g., "Id")
+id_cols = [c for c in df.columns if c.lower() in ("id", "index", "row")]
+df = df.drop(columns=id_cols, errors="ignore")
 
-# Feature columns
+# Feature columns: everything except target
 feature_cols = [c for c in df.columns if c != target_col]
 
-# Coerce features to numeric
+# --- Coerce features to numeric ---
 for col in feature_cols:
     df[col] = pd.to_numeric(df[col], errors="coerce")
 
-# Drop rows with NaN/inf
-df.replace([np.inf, -np.inf], np.nan, inplace=True)
-df.dropna(subset=feature_cols + [target_col], inplace=True)
+# Drop rows with NaN/inf in features or missing target
+df = df.replace([np.inf, -np.inf], np.nan)
+df = df.dropna(subset=feature_cols + [target_col])
 
 assert df.shape[0] > 0, "Dataset is empty after preprocessing"
 
-X = df[list(feature_cols)]
-y = df[target_col].astype(int)
+# --- Encode target ---
+le = LabelEncoder()
+y = le.fit_transform(df[target_col].astype(str))
+X = df[list(feature_cols)].values
 
-n_classes = y.nunique()
+n_classes = len(np.unique(y))
 assert n_classes >= 2, "Need at least 2 classes for classification"
 
+# --- Train/test split ---
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-assert X_train.shape[0] > 0 and X_test.shape[0] > 0, "Train/test split produced empty set"
+assert X_train.shape[0] > 0 and X_test.shape[0] > 0, "Empty train or test split"
 
-# Energy-efficient pipeline: StandardScaler + LogisticRegression
-pipe = Pipeline([
+# --- Lightweight pipeline: StandardScaler + LogisticRegression ---
+pipeline = Pipeline([
     ("scaler", StandardScaler()),
-    ("clf", LogisticRegression(max_iter=200, solver="lbfgs", multi_class="auto", random_state=42))
+    ("clf", LogisticRegression(
+        max_iter=200,
+        solver="lbfgs",
+        multi_class="multinomial",
+        random_state=42,
+        C=1.0
+    ))
 ])
 
-pipe.fit(X_train, y_train)
-y_pred = pipe.predict(X_test)
-
+pipeline.fit(X_train, y_train)
+y_pred = pipeline.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
+
 print(f"ACCURACY={accuracy:.6f}")
 
-# OPTIMIZATION SUMMARY
-# 1. Replaced RandomForestClassifier (100 trees) with LogisticRegression — orders of magnitude
-#    more energy-efficient on CPU; Iris is linearly separable so accuracy remains near-perfect.
-# 2. Used StandardScaler for feature norm
+# --- OPTIMIZATION SUMMARY ---
+# 1. Logistic Regression chosen as the primary model: energy-efficient, fast on CPU,
+#    well-suited for the small Iris dataset (150 samples, 4 features, 3 classes).
+# 2. StandardScaler used to normalize features, which improves logistic regression
+#    convergence without heavy computational cost.
+# 3. No ensemble methods or deep learning used — unnecessary for this small

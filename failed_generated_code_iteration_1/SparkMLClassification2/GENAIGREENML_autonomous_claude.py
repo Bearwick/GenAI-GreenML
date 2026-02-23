@@ -2,101 +2,101 @@
 # LLM: claude
 # Mode: autonomous
 
-import numpy as np
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
 
-# --- Robust CSV loading ---
-def load_csv(path):
+# --- Robust CSV Loading ---
+DATASET_PATH = "heart.csv"
+
+try:
+    df = pd.read_csv(DATASET_PATH)
+except Exception:
+    df = pd.DataFrame()
+
+# Check if parsing produced reasonable shape; retry with sep=';' and decimal=','
+if df.shape[1] < 2:
     try:
-        df = pd.read_csv(path)
-        if df.shape[1] < 2:
-            raise ValueError("Too few columns with default sep")
-        return df
+        df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
     except Exception:
         pass
+
+# If still only 1 column, try whitespace separator (headers hint uses spaces)
+if df.shape[1] < 2:
     try:
-        df = pd.read_csv(path, sep=';', decimal=',')
-        if df.shape[1] < 2:
-            raise ValueError("Too few columns with sep=;")
-        return df
+        df = pd.read_csv(DATASET_PATH, sep=r'\s+')
     except Exception:
         pass
-    # Try space-delimited (matches the source code's approach)
+
+# --- Column Name Normalization ---
+df.columns = df.columns.astype(str).str.strip()
+df.columns = [' '.join(c.split()) for c in df.columns]
+# Drop unnamed columns
+df = df.loc[:, ~df.columns.str.lower().str.startswith('unnamed')]
+
+# --- Detect if header row is actually data (all numeric column names) ---
+# The DATASET_HEADERS hint shows numeric-looking headers like "70.0 1.0 4.0 ..."
+# This likely means the CSV has no header row. Check if all column names look numeric.
+all_numeric_headers = True
+for c in df.columns:
     try:
-        df = pd.read_csv(path, delim_whitespace=True, header=None)
-        return df
+        float(c)
+    except ValueError:
+        all_numeric_headers = False
+        break
+
+if all_numeric_headers and df.shape[1] >= 2:
+    # Reload without header so the first row becomes data, not column names
+    try:
+        df = pd.read_csv(DATASET_PATH, header=None)
     except Exception:
         pass
-    df = pd.read_csv(path, header=None)
-    return df
+    if df.shape[1] < 2:
+        try:
+            df = pd.read_csv(DATASET_PATH, header=None, sep=r'\s+')
+        except Exception:
+            pass
 
-df = load_csv('heart.csv')
+    # Assign meaningful names based on common heart-disease dataset convention
+    # UCI Heart Disease: age, sex, cp, trestbps, chol, fbs, restecg, thalach,
+    #                    exang, oldpeak, slope, ca, thal, target
+    heart_col_names = [
+        'age', 'sex', 'cp', 'trestbps', 'chol', 'fbs', 'restecg',
+        'thalach', 'exang', 'oldpeak', 'slope', 'ca', 'thal', 'target'
+    ]
+    if df.shape[1] == len(heart_col_names):
+        df.columns = heart_col_names
+    else:
+        df.columns = [f'col_{i}' for i in range(df.shape[1])]
 
-# The dataset header line provided: "70.0 1.0 4.0 130.0 322.0 0.0 2.0 109.0 0.0 2.4 2.0 3.0 3.0 2"
-# This is 14 values, space-delimited, no header row.
-# From the source code we know the columns:
-expected_cols = [
-    'age',
-    'sex',
-    'chest_pain',
-    'resting_blood_pressure',
-    'serum_cholesterol',
-    'fasting_blood_sugar',
-    'resting_ecg',
-    'max_heart_rate',
-    'exercise_angina',
-    'st_depression',
-    'slope',
-    'num_major_vessels',
-    'thal',
-    'last'
-]
-
-# If the dataframe was loaded without headers and has 14 columns, assign names
-if df.shape[1] == len(expected_cols):
-    df.columns = expected_cols
-elif df.shape[1] == len(expected_cols) - 1:
-    # Maybe 'last' is missing
-    df.columns = expected_cols[:df.shape[1]]
-else:
-    # Normalize whatever columns we got
-    df.columns = [str(c).strip() for c in df.columns]
-    # Drop unnamed columns
-    df = df[[c for c in df.columns if not c.lower().startswith('unnamed')]]
-
-# Strip/normalize column names
-df.columns = [str(c).strip().replace('  ', ' ') for c in df.columns]
-
-# Coerce all columns to numeric
+# --- Coerce all columns to numeric where possible ---
 for c in df.columns:
     df[c] = pd.to_numeric(df[c], errors='coerce')
 
-# Drop rows with NaN/inf
+# Drop rows that are entirely NaN
+df.dropna(how='all', inplace=True)
+
+# Replace inf with NaN then drop
 df.replace([np.inf, -np.inf], np.nan, inplace=True)
-df.dropna(inplace=True)
 
-assert df.shape[0] > 0, "Dataset is empty after preprocessing"
-
-# --- Construct label ---
-# From source code: label is derived from 'thal' column: isSick = 0 if thal in (3,7) else 1
-# The original code uses columns 0:13 as data and derives label from 'thal' (column index 12)
-if 'thal' in df.columns:
-    thal_col = 'thal'
-elif df.shape[1] >= 14:
-    thal_col = df.columns[12]
+# --- Identify target ---
+# Prefer a column named 'target' or the last column
+target_col = None
+if 'target' in df.columns:
+    target_col = 'target'
 else:
-    thal_col = None
+    # Use last column as target
+    target_col = df.columns[-1]
 
-if thal_col is not None and thal_col in df.columns:
-    df['label'] = df[thal_col].apply(lambda x: 0 if x in (3, 7) else 1)
-else:
-    # Fallback: use last column as target
-    df['label'] = df[df.columns[-1]]
+# Drop rows where target is NaN
+df.dropna(subset=[target_col], inplace=True)
 
-# --- Define features ---
-# Features are the first 12 columns (
+# Feature columns: everything except target
+feature_cols = [c for c in df.columns if c != target_col]
+
+# Drop feature columns that are entirely NaN
+valid_feature_cols = [c for

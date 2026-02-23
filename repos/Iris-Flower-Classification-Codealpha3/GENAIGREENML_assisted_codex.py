@@ -7,65 +7,69 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
 
+DATASET_PATH = "Iris.csv"
 DATASET_HEADERS = ["Id", "SepalLengthCm", "SepalWidthCm", "PetalLengthCm", "PetalWidthCm", "Species"]
-SEED = 42
 
-
-def _normalize(value):
-    return str(value).strip().lower()
-
-
-EXPECTED_HEADERS_NORM = {_normalize(h) for h in DATASET_HEADERS}
-ID_KEY = next((h for h in DATASET_HEADERS if _normalize(h) == "id"), "id")
-SPECIES_KEY = next((h for h in DATASET_HEADERS if _normalize(h) == "species"), "species")
-ID_KEY_NORM = _normalize(ID_KEY)
-SPECIES_KEY_NORM = _normalize(SPECIES_KEY)
-
-
-def _parse_ok(df):
+def _needs_fallback(df, expected_headers):
     if df.shape[1] <= 1:
-        return False
-    cols_norm = {_normalize(c) for c in df.columns}
-    return len(cols_norm & EXPECTED_HEADERS_NORM) >= min(3, len(EXPECTED_HEADERS_NORM))
+        return True
+    expected = set(expected_headers)
+    return len(expected.intersection(df.columns)) == 0
 
-
-def load_data(path):
+def read_csv_robust(path, expected_headers):
     df = pd.read_csv(path)
-    if not _parse_ok(df):
-        df_alt = pd.read_csv(path, sep=";", decimal=",")
-        if _parse_ok(df_alt):
-            df = df_alt
+    if _needs_fallback(df, expected_headers):
+        df = pd.read_csv(path, sep=";", decimal=",")
     return df
 
+def _get_id_column(df, expected_headers):
+    for col in expected_headers:
+        if col in df.columns and col.lower() == "id":
+            return col
+    return None
+
+def _get_target_column(df, expected_headers):
+    for col in reversed(expected_headers):
+        if col in df.columns:
+            return col
+    return df.columns[-1]
+
+def prepare_data(df, expected_headers):
+    id_col = _get_id_column(df, expected_headers)
+    if id_col:
+        df = df.drop(columns=[id_col])
+    target_col = _get_target_column(df, expected_headers)
+    label_encoder = LabelEncoder()
+    df[target_col] = label_encoder.fit_transform(df[target_col])
+    y = df.pop(target_col)
+    X = df
+    return X, y
+
+def train_and_evaluate(X, y, seed):
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=seed, stratify=y
+    )
+    model = RandomForestClassifier(n_estimators=100, random_state=seed, n_jobs=1)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    return accuracy_score(y_test, y_pred)
 
 def main():
-    np.random.seed(SEED)
-    df = load_data("Iris.csv")
-    col_map = {_normalize(c): c for c in df.columns}
-    id_col = col_map.get(ID_KEY_NORM)
-    if id_col in df.columns:
-        df.pop(id_col)
-    species_col = col_map.get(SPECIES_KEY_NORM)
-    if species_col not in df.columns:
-        species_col = df.columns[-1]
-    y = LabelEncoder().fit_transform(df.pop(species_col))
-    X = df.to_numpy()
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=SEED, stratify=y
-    )
-    model = RandomForestClassifier(n_estimators=100, random_state=SEED)
-    model.fit(X_train, y_train)
-    accuracy = model.score(X_test, y_test)
+    seed = 42
+    np.random.seed(seed)
+    df = read_csv_robust(DATASET_PATH, DATASET_HEADERS)
+    X, y = prepare_data(df, DATASET_HEADERS)
+    accuracy = train_and_evaluate(X, y, seed)
     print(f"ACCURACY={accuracy:.6f}")
-
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Eliminated plotting, classification reports, and cross-validation to avoid non-essential computation and I/O.
-# - Reduced imports and used model.score to compute accuracy without storing prediction arrays.
-# - Used in-place column removal with pop and a single NumPy conversion to limit data copies.
-# - Implemented robust CSV parsing with delimiter/decimal fallback and case-insensitive column mapping.
-# - Fixed random seed for deterministic and reproducible results.
+# Removed visualization and verbose reporting steps to avoid unnecessary computation and dependencies.
+# Used in-place column removal and pop to reduce data copying and memory overhead.
+# Implemented robust CSV parsing with fallback to prevent misread data without repeated processing.
+# Derived schema from provided headers to avoid hardcoded column assumptions.
+# Set fixed seeds and single-threaded training for reproducible and lower-overhead execution.

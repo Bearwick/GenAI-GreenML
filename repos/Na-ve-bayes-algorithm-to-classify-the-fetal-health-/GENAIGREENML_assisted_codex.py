@@ -2,102 +2,84 @@
 # LLM: codex
 # Mode: assisted
 
-import os
 import pandas as pd
 import numpy as np
 from sklearn.naive_bayes import GaussianNB
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
+DATASET_PATH = "fetal_health.csv"
+DATASET_HEADERS = "baseline value,accelerations,fetal_movement,uterine_contractions,light_decelerations,severe_decelerations,prolongued_decelerations,abnormal_short_term_variability,mean_value_of_short_term_variability,percentage_of_time_with_abnormal_long_term_variability,mean_value_of_long_term_variability,histogram_width,histogram_min,histogram_max,histogram_number_of_peaks,histogram_number_of_zeroes,histogram_mode,histogram_mean,histogram_median,histogram_variance,histogram_tendency,fetal_health"
+TEST_OUTPUT_PATH = "TestData.csv"
+TEST_SIZE = 0.3
 RANDOM_STATE = 8
+
+def normalize(name):
+    return "".join(ch for ch in str(name).lower() if ch.isalnum())
+
+EXPECTED_HEADERS = [h.strip() for h in DATASET_HEADERS.split(",") if h.strip()]
+EXPECTED_NORM_HEADERS = [normalize(h) for h in EXPECTED_HEADERS]
+
 np.random.seed(RANDOM_STATE)
 
-DATASET_HEADERS = [
-    "baseline value",
-    "accelerations",
-    "fetal_movement",
-    "uterine_contractions",
-    "light_decelerations",
-    "severe_decelerations",
-    "prolongued_decelerations",
-    "abnormal_short_term_variability",
-    "mean_value_of_short_term_variability",
-    "percentage_of_time_with_abnormal_long_term_variability",
-    "mean_value_of_long_term_variability",
-    "histogram_width",
-    "histogram_min",
-    "histogram_max",
-    "histogram_number_of_peaks",
-    "histogram_number_of_zeroes",
-    "histogram_mode",
-    "histogram_mean",
-    "histogram_median",
-    "histogram_variance",
-    "histogram_tendency",
-    "fetal_health",
-]
-
-def _normalize(col):
-    return str(col).replace("\ufeff", "").strip().lower()
-
-_TARGET_NORM = _normalize(DATASET_HEADERS[-1])
-
-def _needs_fallback(df):
-    if df.shape[1] <= 1:
+def parsing_looks_wrong(df, expected_norm_headers):
+    if len(df.columns) <= 1:
         return True
-    cols_norm = {_normalize(c) for c in df.columns}
-    return _TARGET_NORM not in cols_norm
+    if any(";" in str(c) for c in df.columns):
+        return True
+    actual_norm = {normalize(c) for c in df.columns}
+    return not set(expected_norm_headers).issubset(actual_norm)
 
-def load_dataset(path):
-    df = pd.read_csv(path)
-    df.columns = [str(c).strip() for c in df.columns]
-    if _needs_fallback(df):
-        df = pd.read_csv(path, sep=";", decimal=",")
-        df.columns = [str(c).strip() for c in df.columns]
+def read_dataset(path, expected_norm_headers):
+    def load_csv(**kwargs):
+        return pd.read_csv(path, **kwargs)
+    def clean_columns(dataframe):
+        dataframe.columns = [str(c).strip() for c in dataframe.columns]
+        return dataframe
+    try:
+        df = clean_columns(load_csv())
+    except Exception:
+        df = clean_columns(load_csv(sep=";", decimal=","))
+    if parsing_looks_wrong(df, expected_norm_headers):
+        try:
+            df_alt = clean_columns(load_csv(sep=";", decimal=","))
+            if not parsing_looks_wrong(df_alt, expected_norm_headers):
+                df = df_alt
+        except Exception:
+            pass
     return df
 
-def resolve_target_column(df):
-    cols_norm = {_normalize(c): c for c in df.columns}
-    if _TARGET_NORM in cols_norm:
-        return cols_norm[_TARGET_NORM]
-    for norm, actual in cols_norm.items():
-        if _TARGET_NORM in norm or norm in _TARGET_NORM:
-            return actual
+def get_target_column(df, expected_norm_headers):
+    target_norm = expected_norm_headers[-1] if expected_norm_headers else normalize(df.columns[-1])
+    for col in df.columns:
+        if normalize(col) == target_norm:
+            return col
     return df.columns[-1]
 
-def resolve_data_path():
-    candidates = [
-        r"C:\Users\Mazen\Downloads\Bio-Assignment-2\fetal_health.csv",
-        "fetal_health.csv",
-    ]
-    for path in candidates:
-        if os.path.exists(path):
-            return path
-    return candidates[-1]
+def select_test_split(X, y, test_size, seed):
+    n_samples = len(X)
+    rng = np.random.RandomState(seed)
+    indices = rng.permutation(n_samples)
+    n_test = int(np.ceil(n_samples * test_size))
+    test_indices = indices[n_samples - n_test:]
+    return X.iloc[test_indices], y.iloc[test_indices]
 
-def main():
-    data_path = resolve_data_path()
-    df = load_dataset(data_path)
-    target_col = resolve_target_column(df)
-    feature_cols = [c for c in df.columns if c != target_col]
-    X = df[feature_cols].to_numpy()
-    y = df[target_col].to_numpy().ravel()
-    _, test_idx = train_test_split(
-        np.arange(len(y)), test_size=0.3, random_state=RANDOM_STATE, shuffle=True
-    )
-    X_test = X[test_idx]
-    y_test = y[test_idx]
-    model = GaussianNB()
-    model.fit(X, y)
-    y_pred = model.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred) * 100
-    print(f"ACCURACY={accuracy:.6f}")
+df = read_dataset(DATASET_PATH, EXPECTED_NORM_HEADERS)
+target_col = get_target_column(df, EXPECTED_NORM_HEADERS)
+y = df.pop(target_col)
+X = df
 
-if __name__ == "__main__":
-    main()
+x_test, y_test = select_test_split(X, y, test_size=TEST_SIZE, seed=RANDOM_STATE)
+x_test.to_csv(TEST_OUTPUT_PATH, index=False)
+
+model = GaussianNB()
+model.fit(X, y)
+y_pred = model.predict(x_test)
+
+accuracy = accuracy_score(y_test, y_pred) * 100
+print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Eliminated disk I/O by removing unnecessary CSV save/load of the test set.
-# Generated only test indices to avoid creating unused train splits and reduce memory copies.
-# Converted data to NumPy arrays once for efficient slicing and model operations.
-# Implemented robust CSV parsing with minimal retries and fixed random seed for reproducibility.
+# - Implemented deterministic index-based test selection to avoid creating unused training splits and reduce memory.
+# - Avoided redundant disk reads by using the in-memory test split for prediction while still writing the required CSV file.
+# - Used in-place target extraction with pop and precomputed normalized headers to minimize DataFrame copies and repeated work.
+# - Added lightweight parsing validation with a fallback CSV read to ensure robust input handling without repeated processing.

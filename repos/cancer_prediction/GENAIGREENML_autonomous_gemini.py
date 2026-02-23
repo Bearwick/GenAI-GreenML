@@ -4,132 +4,93 @@
 
 import pandas as pd
 import numpy as np
-import sys
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.linear_model import LogisticRegression
-from sklearn.impute import SimpleImputer
-from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
 
-def solve():
-    # 1. Robust CSV Loading
-    filename = 'Cancer_Data.csv'
-    try:
-        # Standard CSV load
-        df = pd.read_csv(filename)
-        if len(df.columns) < 2:
-            raise ValueError("Possible wrong delimiter")
-    except:
-        try:
-            # Fallback for common European formats
-            df = pd.read_csv(filename, sep=';', decimal=',')
-        except:
-            # If file doesn't exist or is unreadable, exit gracefully for the pipeline
-            return
+# Step 1: Robust Data Loading
+dataset_path = 'Cancer_Data.csv'
+try:
+    df = pd.read_csv(dataset_path)
+    if df.shape[1] <= 1:
+        raise ValueError
+except Exception:
+    df = pd.read_csv(dataset_path, sep=';', decimal=',')
 
-    # 2. Schema Normalization
-    # Strip whitespace and normalize column names
-    df.columns = [" ".join(str(c).strip().split()) for c in df.columns]
-    # Drop "Unnamed" garbage columns often found in Breast Cancer datasets
-    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-    # Drop 'id' if it exists as it has no predictive power
-    if 'id' in df.columns:
-        df = df.drop(columns=['id'])
+# Step 2: Schema Normalization
+df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
+df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
-    if df.empty:
-        return
+# Step 3: Identify Target and Features
+# Based on context 'diagnosis' is target. Fallback to second column if missing.
+target_col = None
+potential_targets = ['diagnosis', 'target', 'label', 'class']
+for pt in potential_targets:
+    if pt in df.columns:
+        target_col = pt
+        break
 
-    # 3. Target Identification
-    target_col = None
-    potential_targets = ['diagnosis', 'target', 'label', 'class']
-    for pt in potential_targets:
-        if pt in df.columns:
-            target_col = pt
-            break
-    
-    if target_col is None:
-        # Fallback: choose the column with the fewest unique values (likely classification)
-        # or the first non-numeric column
-        cat_cols = df.select_dtypes(include=['object', 'category']).columns
-        if len(cat_cols) > 0:
-            target_col = cat_cols[0]
-        else:
-            # If all numeric, take the last column
-            target_col = df.columns[-1]
+if target_col is None:
+    # Fallback: find a non-numeric column or pick the second column (typical for ID, Target, Features structure)
+    cat_cols = df.select_dtypes(include=['object']).columns
+    if len(cat_cols) > 0:
+        target_col = cat_cols[0]
+    else:
+        target_col = df.columns[1]
 
-    # 4. Feature and Target Separation
-    y_raw = df[target_col]
-    X_raw = df.drop(columns=[target_col])
+# Drop ID-like columns to prevent leakage/noise
+id_cols = ['id', 'uuid', 'index']
+features = [c for c in df.columns if c != target_col and c.lower() not in id_cols]
 
-    # 5. Robust Target Encoding
-    # Ensure target is categorical/binary for classification
-    le = LabelEncoder()
-    y = le.fit_transform(y_raw.astype(str))
-    
-    # Check for valid number of classes
-    n_classes = len(np.unique(y))
-    if n_classes < 2:
-        # Trivial case: accuracy is 100% or 0%
-        print(f"ACCURACY={1.000000:.6f}")
-        return
+# Step 4: Data Cleaning & Preprocessing
+# Ensure data is not empty
+if df.empty:
+    import sys
+    sys.exit(0)
 
-    # 6. Feature Preprocessing
-    # Filter numeric features and handle strings in features
-    # (One-hot encoding categorical features if they exist)
-    X_numeric = X_raw.select_dtypes(include=[np.number]).apply(pd.to_numeric, errors='coerce')
-    
-    # Fill NaN/Inf resulting from coercion or missing data
-    # Logic: Keep only numeric features for a lightweight baseline
-    X = X_numeric.fillna(0)
-    
-    if X.empty:
-        # If no numeric features, try to convert everything
-        X = X_raw.apply(pd.to_numeric, errors='coerce').fillna(0)
+X = df[features].copy()
+y = df[target_col].copy()
 
-    # 7. Reproducible Train/Test Split
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y if n_classes >= 2 else None
-    )
+# Robust coercion of features to numeric
+for col in X.columns:
+    X[col] = pd.to_numeric(X[col], errors='coerce')
 
-    if len(X_train) == 0 or len(X_test) == 0:
-        return
+# Target encoding (Classification context)
+le = LabelEncoder()
+y = le.fit_transform(y.astype(str))
 
-    # 8. Energy-Efficient Model Pipeline
-    # Logistic Regression (liblinear) is extremely lightweight for CPU
+# Handle edge case: only one class in target
+if len(np.unique(y)) < 2:
+    # Trivial baseline if classification is impossible
+    accuracy = 1.000000
+    print(f"ACCURACY={accuracy:.6f}")
+else:
+    # Step 5: Energy-Efficient Modeling
+    # Logistic Regression is highly CPU-efficient, linear in complexity, and fits the breast cancer task well.
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+    # Pipeline: Impute missing values -> Scale -> Logistic Regression
     pipeline = Pipeline([
-        ('imputer', SimpleImputer(strategy='median')), # Robust to outliers
-        ('scaler', StandardScaler()),                 # Required for Logistic Regression
-        ('classifier', LogisticRegression(
-            solver='liblinear', 
-            penalty='l2', 
-            C=1.0, 
-            random_state=42,
-            max_iter=100
-        ))
+        ('imputer', SimpleImputer(strategy='median')),
+        ('scaler', StandardScaler()),
+        ('model', LogisticRegression(solver='lbfgs', max_iter=1000, penalty='l2', random_state=42))
     ])
 
-    # 9. Training
+    # Step 6: Training and Evaluation
     pipeline.fit(X_train, y_train)
-
-    # 10. Evaluation
     y_pred = pipeline.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
 
-    # 11. Final Output
+    # Step 7: Final Output
     print(f"ACCURACY={accuracy:.6f}")
 
-if __name__ == "__main__":
-    solve()
-
-# Optimization Summary:
-# 1. Model Choice: Logistic Regression with 'liblinear' solver was selected as it is computationally efficient (O(n_features * n_samples)), 
-#    perfect for small-to-medium tabular datasets, and has a very low energy footprint compared to ensembles or deep learning.
-# 2. Preprocessing: Scikit-learn Pipeline ensures no data leakage and encapsulates scaling/imputation in a single pass.
-# 3. Resource Usage: The script uses standard libraries (pandas, numpy, sklearn) and avoids high-memory operations, 
-#    making it suitable for constrained CPU environments.
-# 4. Robustness: Implemented multi-stage CSV parsing, column name normalization, and automatic target/feature detection 
-#    to ensure the code runs end-to-end regardless of minor schema variations.
-# 5. Energy Efficiency: Eliminated heavy visualization libraries (matplotlib/seaborn) and complex feature engineering 
-#    to minimize CPU cycles and memory allocations.
-# 6. Reliability: Use of 'errors=coerce' and 'SimpleImputer' handles potential data corruption or missing values in the source CSV.
+# OPTIMIZATION SUMMARY
+# 1. Model Choice: Logistic Regression was selected over ensembles (Random Forest/XGBoost) to minimize CPU cycles and memory usage. 
+# 2. Solver Selection: 'lbfgs' is efficient for small-to-medium datasets and converges quickly on standardized data.
+# 3. Preprocessing: SimpleImputer with median and StandardScaler ensures stability for the linear model without heavy computation.
+# 4. Schema Handling: Implemented robust column normalization and automated feature/target detection to prevent crashes on varied CSV formats.
+# 5. Resource Efficiency: The pipeline avoids any deep learning or high-dimensional embeddings, making it suitable for low-power CPU environments.
+# 6. Memory Management: Unnecessary ID columns are dropped early, and internal data copies are minimized.

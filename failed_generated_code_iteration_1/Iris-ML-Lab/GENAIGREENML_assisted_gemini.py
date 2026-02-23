@@ -5,45 +5,48 @@
 import pandas as pd
 import numpy as np
 
-def run_analysis():
-    np.random.seed(42)
-    file_path = 'iris.csv'
-    
+def load_data(file_path):
     try:
         df = pd.read_csv(file_path)
-        if len(df.columns) < 5:
+        if df.shape[1] < 5:
             raise ValueError
-    except Exception:
+    except:
         df = pd.read_csv(file_path, sep=';', decimal=',')
+    return df
+
+def run_pipeline():
+    df = load_data('iris.csv')
     
     mapping = {'setosa': 0, 'versicolor': 1, 'virginica': 2}
-    mapped_dict = {k.lower(): v for k, v in mapping.items()}
+    y = df.iloc[:, -1].map(mapping).values.astype(int)
     
-    x = df.iloc[:, [2, 3]].values.astype(float)
-    y_raw = df.iloc[:, -1].astype(str).str.strip().str.lower().map(mapped_dict).values
+    X_petal = df.iloc[:, [2, 3]].values.astype(float)
     
-    valid_mask = ~np.isnan(y_raw.astype(float))
-    x = x[valid_mask]
-    y = y_raw[valid_mask].astype(int)
+    centroids = np.array([X_petal[y == i].mean(axis=0) for i in range(3)])
     
-    centroids = np.array([x[y == i].mean(axis=0) for i in range(3)])
+    sample = np.array([[3.1, 1.2]])
     
-    diff = x[:, np.newaxis, :] - centroids
-    dist_sq = np.sum(diff**2, axis=2)
-    predictions = np.argmin(dist_sq, axis=1)
+    diff_sample = sample - centroids
+    dist_sample = np.sqrt(np.sum(diff_sample**2, axis=1))
+    prediction = np.argmin(dist_sample)
     
-    accuracy = np.mean(predictions == y)
+    diff_all = X_petal[:, np.newaxis, :] - centroids
+    dist_sq_all = np.sum(diff_all**2, axis=2)
+    y_pred = np.argmin(dist_sq_all, axis=1)
+    
+    accuracy = np.mean(y_pred == y)
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
-    run_analysis()
+    np.random.seed(42)
+    run_pipeline()
 
 # Optimization Summary
-# 1. Replaced memory-intensive np.loadtxt(dtype='object') with pd.read_csv for faster, type-specific data loading.
-# 2. Implemented a robust parsing fallback to handle different CSV delimiters and decimal formats automatically.
-# 3. Eliminated all Matplotlib dependencies and visualization logic to drastically reduce runtime and energy consumption.
-# 4. Sliced only the necessary feature columns (petal length and width) early to minimize memory footprint.
-# 5. Replaced scipy.spatial.distance.cdist with vectorized NumPy broadcasting to reduce external dependencies and overhead.
-# 6. Used squared Euclidean distance for classification to avoid computationally expensive square root operations.
-# 7. Removed redundant loops, intermediate prints, and unnecessary data type conversions to streamline execution.
-# 8. Optimized centroid calculation using a compact, vectorized array comprehension.
+# 1. Removed all visualization logic (matplotlib) to eliminate heavy rendering and I/O overhead.
+# 2. Replaced numpy.loadtxt (object mode) with pandas.read_csv for more efficient C-based parsing.
+# 3. Optimized label encoding by using a dictionary map instead of multiple boolean mask assignments.
+# 4. Vectorized centroid calculation using list comprehension and numpy boolean indexing.
+# 5. Replaced scipy.spatial.distance.cdist with numpy broadcasting to reduce external library call overhead and compute distances in a single vectorized step.
+# 6. Minimized memory footprint by selecting only necessary features (petal dimensions) for the core classification task.
+# 7. Eliminated redundant data type conversions and intermediate print statements.
+# 8. Removed all file system side effects (saving plots) to reduce energy consumption.

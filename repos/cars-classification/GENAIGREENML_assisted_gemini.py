@@ -6,45 +6,38 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score
 
-def load_data(filepath):
-    try:
-        df = pd.read_csv(filepath)
-        if df.shape[1] <= 1:
-            raise ValueError
-    except (ValueError, pd.errors.ParserError):
-        df = pd.read_csv(filepath, sep=';', decimal=',')
-    return df
+try:
+    df = pd.read_csv('cars.csv')
+    if df.shape[1] < 8:
+        raise ValueError
+except:
+    df = pd.read_csv('cars.csv', sep=';', decimal=',')
 
-dataset = load_data('cars.csv')
+df = df.dropna()
+df.columns = ['mpg', 'cylinders', 'cubicinches', 'hp', 'weightlbs', 'time-to-60', 'year', 'brand']
 
-dataset.columns = ['mpg', 'cylinders', 'cubicinches', 'hp', 'weightlbs', 'time-to-60', 'year', 'brand']
+for col in ['cubicinches', 'weightlbs']:
+    df[col] = pd.to_numeric(df[col], errors='coerce')
 
-numeric_cols = ['cubicinches', 'weightlbs']
-for col in numeric_cols:
-    dataset[col] = pd.to_numeric(dataset[col], errors='coerce')
+df = df.dropna()
 
-dataset.dropna(inplace=True)
-
-X = dataset.iloc[:, 0:5].values
-y = dataset.iloc[:, 7].values
+X = df.iloc[:, 0:5].values.astype(np.float32)
+y = df.iloc[:, 7].values
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=0)
 
-classifier = SVC(random_state=0)
+classifier = SVC()
 classifier.fit(X_train, y_train)
-
-y_pred = classifier.predict(X_test)
-accuracy = accuracy_score(y_test, y_pred)
+accuracy = classifier.score(X_test, y_test)
 
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# 1. Removed unused heavy visualization libraries (seaborn, matplotlib) to reduce memory and startup time.
-# 2. Consolidated data cleaning by using vectorized numeric conversion and a single inplace dropna call.
-# 3. Eliminated redundant model operations; replaced multiple predict/score calls with a single prediction pass.
-# 4. Removed unnecessary intermediate variables (head, info, column copies) to minimize memory footprint.
-# 5. Implemented robust CSV parsing with fallback logic to ensure execution stability across different locales.
-# 6. Set random_state in both splitting and modeling to ensure deterministic results and reproducibility.
-# 7. Stripped all plotting, logging, and interactive code to minimize CPU cycles and power consumption.
+# 1. Removed visualization libraries (Seaborn, Matplotlib) and plotting calls to reduce memory and startup time.
+# 2. Eliminated redundant computations such as duplicate predict calls and unused exploratory variables.
+# 3. Optimized memory footprint by casting feature matrices to float32.
+# 4. Streamlined data loading with robust fallback parsing and combined cleaning steps.
+# 5. Used the more efficient model.score() method to calculate accuracy in a single step.
+# 6. Removed unnecessary intermediate data structures and logging to minimize computational overhead.
+# 7. Ensured deterministic behavior by maintaining fixed random seeds in splitting.

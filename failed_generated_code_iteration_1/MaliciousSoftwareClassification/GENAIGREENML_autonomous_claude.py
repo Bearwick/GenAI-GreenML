@@ -2,100 +2,98 @@
 # LLM: claude
 # Mode: autonomous
 
-import os
-import numpy as np
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
-
-data_path = './datasets/'
+import warnings
+warnings.filterwarnings("ignore")
 
 # Robust CSV loading
 try:
-    train = pd.read_csv(os.path.join(data_path, 'train.csv'))
-    if train.shape[1] < 3:
-        train = pd.read_csv(os.path.join(data_path, 'train.csv'), sep=';', decimal=',')
+    df = pd.read_csv("datasets/train.csv")
+    if df.shape[1] < 3:
+        df = pd.read_csv("datasets/train.csv", sep=";", decimal=",")
 except Exception:
-    train = pd.read_csv(os.path.join(data_path, 'train.csv'), sep=';', decimal=',')
+    df = pd.read_csv("datasets/train.csv", sep=";", decimal=",")
 
-# Normalize column names
-train.columns = [c.strip().replace('  ', ' ') for c in train.columns]
-train = train[[c for c in train.columns if not c.startswith('Unnamed')]]
+# Strip and normalize column names
+df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
+df = df[[c for c in df.columns if not c.startswith("Unnamed")]]
 
-# Determine target column
-ycol = 'label'
-if ycol not in train.columns:
-    # Fallback: pick last column or first non-constant numeric column
-    numeric_cols = train.select_dtypes(include=[np.number]).columns.tolist()
-    if numeric_cols:
-        ycol = numeric_cols[-1]
-    else:
-        ycol = train.columns[-1]
+# Identify target column
+target_col = None
+if "label" in df.columns:
+    target_col = "label"
+else:
+    for c in df.columns:
+        if "label" in c.lower() or "target" in c.lower() or "class" in c.lower():
+            target_col = c
+            break
 
-# Determine feature columns
-features = [c for c in train.columns if c not in [ycol, 'id']]
+if target_col is None:
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    for c in numeric_cols:
+        if df[c].nunique() > 1 and df[c].nunique() <= 20:
+            target_col = c
+            break
+    if target_col is None and len(numeric_cols) > 0:
+        target_col = numeric_cols[-1]
 
-# Coerce features to numeric
-for c in features:
-    train[c] = pd.to_numeric(train[c], errors='coerce')
+assert target_col is not None, "No suitable target column found"
 
-# Coerce target to numeric if possible
-train[ycol] = pd.to_numeric(train[ycol], errors='coerce')
+# Identify feature columns: drop id-like columns and target
+drop_cols = [target_col]
+for c in df.columns:
+    if c.lower() == "id" or c.lower() == "unnamed":
+        drop_cols.append(c)
+
+feature_cols = [c for c in df.columns if c not in drop_cols]
+
+# Coerce all feature columns to numeric
+for c in feature_cols:
+    df[c] = pd.to_numeric(df[c], errors="coerce")
+
+df[target_col] = pd.to_numeric(df[target_col], errors="coerce")
 
 # Drop rows with NaN in target
-train = train.dropna(subset=[ycol])
+df = df.dropna(subset=[target_col])
 
-# Fill NaN in features with 0
-train[features] = train[features].fillna(0)
+# Keep only numeric feature columns
+feature_cols = [c for c in feature_cols if df[c].dtype in [np.float64, np.int64, np.float32, np.int32]]
 
-# Replace inf
-train[features] = train[features].replace([np.inf, -np.inf], 0)
+# Replace inf with NaN, then fill NaN with median
+X = df[list(feature_cols)].copy()
+X.replace([np.inf, -np.inf], np.nan, inplace=True)
+X = X.fillna(X.median())
 
-assert len(train) > 0, "Dataset empty after preprocessing"
-assert len(features) > 0, "No features available"
+y = df[target_col].values
 
-X = train[list(features)].values
-y = train[ycol].values.astype(int)
+assert X.shape[0] > 0, "Dataset is empty after preprocessing"
+assert X.shape[1] > 0, "No features available"
 
-num_classes = len(np.unique(y))
-assert num_classes >= 2, "Need at least 2 classes for classification"
+# Determine if classification or regression
+n_classes = len(np.unique(y))
+is_classification = n_classes >= 2 and n_classes <= 50
 
 # Train/test split
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
+    X, y, test_size=0.2, random_state=42, stratify=y if is_classification else None
 )
 
-assert len(X_train) > 0 and len(X_test) > 0, "Empty split"
+assert len(X_train) > 0 and len(X_test) > 0, "Train/test split produced empty sets"
 
-# Energy-efficient pipeline: StandardScaler + LogisticRegression
-# LogisticRegression with saga solver handles multiclass efficiently
-pipe = Pipeline([
-    ('scaler', StandardScaler()),
-    ('clf', LogisticRegression(
-        max_iter=1000,
-        solver='saga',
-        multi_class='multinomial',
-        C=1.0,
-        random_state=42,
-        n_jobs=-1,
-        tol=1e-3,
-    ))
-])
-
-pipe.fit(X_train, y_train)
-y_pred = pipe.predict(X_test)
-accuracy = accuracy_score(y_test, y_pred)
-
-print(f"ACCURACY={accuracy:.6f}")
-
-# OPTIMIZATION SUMMARY
-# 1. Used LogisticRegression (multinomial, saga solver) instead of LightGBM ensemble
-#    - Much lower energy consumption on CPU, fast convergence for this feature set
-# 2. StandardScaler ensures numeric stability for the linear model
-# 3. Simple train/test split (80/20) with stratification for reproducibility
-# 4. No deep learning, no large ensembles - minimal computational footprint
-# 5. Robust CSV parsing with fallback separators and column normalization
-# 6. All features
+if is_classification:
+    # Use LogisticRegression with saga solver for multiclass - lightweight and efficient
+    # For 9-class malware classification, logistic regression is a strong baseline
+    pipeline = Pipeline([
+        ("scaler", StandardScaler()),
+        ("clf", LogisticRegression(
+            max_iter=1000,
+            solver="saga",
+            multi_class="multinomial",
+            C=1.0,
+            random_state=42,

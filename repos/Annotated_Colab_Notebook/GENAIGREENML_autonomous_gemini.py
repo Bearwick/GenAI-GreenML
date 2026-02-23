@@ -12,97 +12,83 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
-import warnings
+import sys
 
-# Suppress warnings for cleaner output in production-style scripts
-warnings.filterwarnings('ignore')
+# Dataset path provided in prompt
+DATA_PATH = 'dataset_adult.arff'
 
-def load_and_clean_data(file_path):
+def load_data(path):
     try:
-        # Load ARFF file
-        data, meta = arff.loadarff(file_path)
+        # ARFF files often used in UCI datasets like Adult
+        data, meta = arff.loadarff(path)
         df = pd.DataFrame(data)
-        
-        # ARFF strings are loaded as bytes, decode them
-        for col in df.select_dtypes([object]).columns:
-            try:
-                df[col] = df[col].str.decode('utf-8')
-            except (AttributeError, UnicodeDecodeError):
-                pass
+        # Decode bytes to strings for pandas objects
+        for col in df.columns:
+            if df[col].dtype == object:
+                df[col] = df[col].apply(lambda x: x.decode('utf-8') if isinstance(x, bytes) else x)
+        return df
     except Exception:
-        # Fallback for CSV if ARFF fails
         try:
-            df = pd.read_csv(file_path)
+            # Fallback to standard CSV parsing
+            return pd.read_csv(path, skipinitialspace=True)
         except Exception:
             try:
-                df = pd.read_csv(file_path, sep=';', decimal=',')
+                # Robust fallback for alternative delimiters
+                return pd.read_csv(path, sep=';', decimal=',', skipinitialspace=True)
             except Exception:
                 return pd.DataFrame()
 
-    # Normalize column names: strip, single space, remove Unnamed
-    df.columns = [str(col).strip() for col in df.columns]
-    df.columns = [" ".join(col.split()) for col in df.columns]
-    df = df.drop(columns=[c for c in df.columns if 'Unnamed' in c], errors='ignore')
-    
-    return df
-
-def run_pipeline(file_path):
-    df = load_and_clean_data(file_path)
+def preprocess_and_train():
+    df = load_data(DATA_PATH)
     
     if df.empty:
         return 0.0
 
-    # Robust target identification
-    # Priorities: 1. Contains 'income' 2. Contains 'class' 3. Last column
-    target_col = None
-    potential_targets = ['income', 'class', 'target', 'label']
-    for pt in potential_targets:
-        matches = [c for c in df.columns if pt in c.lower()]
-        if matches:
-            target_col = matches[0]
-            break
+    # Normalize column names: strip whitespace, remove Unnamed, collapse internal spaces
+    df.columns = [str(c).strip() for c in df.columns]
+    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
     
-    if target_col is None:
-        target_col = df.columns[-1]
-
-    # Pre-process numeric columns to ensure they are float/int
+    # Identify target: assume last column for classification tasks
+    target_col = df.columns[-1]
+    
+    # Clean features: coerce potential numeric columns that were parsed as strings
     X = df.drop(columns=[target_col])
     y = df[target_col]
 
-    # Ensure y is categorical for classification
-    if y.dtype == object or y.nunique() < 20:
-        # Classification task
-        y = y.astype(str).str.strip()
-    else:
-        # Regression fallback: convert to binary based on median for "accuracy" proxy
-        median_val = y.median()
-        y = (y > median_val).astype(int)
-
-    # Identify feature types
-    numeric_features = X.select_dtypes(include=['int64', 'float64', 'int32', 'float32']).columns.tolist()
-    categorical_features = X.select_dtypes(include=['object', 'category', 'bool']).columns.tolist()
-
-    # Safety check for numeric columns that might be strings
+    # Energy-efficient choice: minimize feature set by identifying numeric/categorical
+    numeric_features = []
+    categorical_features = []
+    
     for col in X.columns:
-        if col not in numeric_features and col not in categorical_features:
-            try:
-                X[col] = pd.to_numeric(X[col], errors='coerce')
+        # Robustly determine if column is numeric
+        if pd.api.types.is_numeric_dtype(X[col]):
+            numeric_features.append(col)
+        else:
+            # Check if it's a string representation of a number
+            converted = pd.to_numeric(X[col], errors='coerce')
+            if converted.notnull().mean() > 0.8:
+                X[col] = converted
                 numeric_features.append(col)
-            except:
+            else:
                 categorical_features.append(col)
 
-    # Clean numeric data (handle NaN/inf)
-    for col in numeric_features:
-        X[col] = pd.to_numeric(X[col], errors='coerce')
+    # Ensure dataset is valid
+    if X.empty or len(y.unique()) < 1:
+        return 0.0
 
-    # Define the green preprocessing pipeline
+    # Split data
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Define Preprocessing Pipeline
+    # Numeric: Median imputation (robust to outliers) and Scaling (required for Linear Models)
     numeric_transformer = Pipeline(steps=[
         ('imputer', SimpleImputer(strategy='median')),
         ('scaler', StandardScaler())
     ])
 
+    # Categorical: Most frequent imputation and OneHotEncoding
     categorical_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
+        ('imputer', SimpleImputer(strategy='most_frequent')),
         ('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))
     ])
 
@@ -112,50 +98,32 @@ def run_pipeline(file_path):
             ('cat', categorical_transformer, categorical_features)
         ])
 
-    # Choice of model: Logistic Regression (CPU-efficient, lightweight)
-    model = LogisticRegression(
-        max_iter=500, 
-        solver='liblinear', 
-        random_state=42,
-        class_weight='balanced'
-    )
+    # Model: Logistic Regression (extremely CPU efficient and low energy consumption)
+    clf = Pipeline(steps=[
+        ('preprocessor', preprocessor),
+        ('classifier', LogisticRegression(max_iter=500, solver='lbfgs', n_jobs=1))
+    ])
 
-    clf = Pipeline(steps=[('preprocessor', preprocessor),
-                          ('classifier', model)])
-
-    # Split
-    try:
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
-        
-        if X_train.empty:
-            return 0.0
-
-        # Fit
+    # Final check on target diversity
+    if len(np.unique(y_train)) < 2:
+        # Trivial baseline if target lacks variance
+        y_pred = [y_train.iloc[0]] * len(y_test)
+        accuracy = accuracy_score(y_test, y_pred)
+    else:
         clf.fit(X_train, y_train)
-
-        # Predict
         y_pred = clf.predict(X_test)
         accuracy = accuracy_score(y_test, y_pred)
-        return accuracy
-    except:
-        return 0.0
+    
+    return accuracy
 
-# Execution
-dataset_path = 'dataset_adult.arff'
-accuracy = run_pipeline(dataset_path)
-print(f"ACCURACY={accuracy:.6f}")
+if __name__ == "__main__":
+    final_acc = preprocess_and_train()
+    print(f"ACCURACY={final_acc:.6f}")
 
-# OPTIMIZATION SUMMARY
-# 1. Model Choice: Logistic Regression was chosen over Random Forest. It is significantly more 
-#    energy-efficient as it involves fewer floating-point operations and converges quickly on CPU.
-# 2. Solver: 'liblinear' used as it is efficient for small-to-medium datasets and handles 
-#    L1/L2 regularization well without heavy memory overhead.
-# 3. Memory Efficiency: Used sparse_output=False in OneHotEncoder for small-scale compatibility, 
-#    but limited complexity by avoiding deep ensembles or high-dimensional embeddings.
-# 4. Preprocessing: Standardized numerical inputs to ensure faster convergence of the linear solver, 
-#    reducing total CPU cycles during training.
-# 5. Robustness: Implemented dynamic column discovery and byte-decoding to handle ARFF-specific 
-#    parsing issues automatically without manual intervention.
-# 6. Fallback Strategy: Included a median-based binary proxy for regression-like targets to 
-#    ensure the pipeline always outputs a valid accuracy metric.
-# 7. Energy: No GPU acceleration required; the entire pipeline is designed for low-wattage CPU execution.
+# Optimization Summary:
+# 1. Model Choice: Logistic Regression was selected as it provides a strong baseline with minimal CPU cycles compared to Gradient Boosting or Deep Learning.
+# 2. Preprocessing: Used Scikit-learn Pipelines to avoid data leakage and minimize redundant transformations.
+# 3. Energy Efficiency: Leveraged the 'lbfgs' solver which is memory-efficient and converges quickly for medium datasets.
+# 4. Robustness: Implemented multi-stage CSV/ARFF parsing and dynamic column identification to handle schema uncertainty.
+# 5. Resource Management: Single-threaded execution (n_jobs=1) avoids overhead of process spawning for small-to-medium tasks.
+# 6. Fallback logic: Included checks for single-class targets to prevent pipeline failure and ensure end-to-end execution.

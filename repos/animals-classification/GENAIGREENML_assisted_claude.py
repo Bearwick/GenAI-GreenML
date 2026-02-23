@@ -9,7 +9,8 @@ from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 
 dataset = pd.read_csv('zoo.csv')
-if dataset.shape[1] < 5:
+
+if dataset.shape[1] < 3:
     dataset = pd.read_csv('zoo.csv', sep=';', decimal=',')
 
 X = dataset.iloc[:, 1:17].values
@@ -28,12 +29,10 @@ print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
 # Removed unused imports: seaborn, matplotlib (no visualizations needed)
-# Removed redundant .head() call that was unused
+# Removed redundant dataset.head() call that was stored but never used
 # Removed redundant classifier.score() call whose result was discarded
 # Removed redundant classifier.predict(X_test[15:25]) call whose result was discarded
-# Replaced manual confusion-matrix-based accuracy with sklearn.accuracy_score for correctness and simplicity
-# Removed all plots and visualizations
-# Removed all original prints/logging except final accuracy
+# Replaced manual confusion matrix diagonal sum with sklearn accuracy_score for correctness and simplicity
 # Added robust CSV fallback with sep=';' and decimal=','
 # Set random_state on SVC for reproducibility
-# Kept fixed random_state=0 on train_test_split as in original
+# Removed all plots, prints, and visualizations per requirements

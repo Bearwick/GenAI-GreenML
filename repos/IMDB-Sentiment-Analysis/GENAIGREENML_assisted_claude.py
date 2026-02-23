@@ -6,10 +6,9 @@ import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
-from sklearn import metrics
+from sklearn.metrics import accuracy_score
 
-SEED = 1
-np.random.seed(SEED)
+np.random.seed(42)
 
 def load_csv(path):
     df = pd.read_csv(path, header=0, names=['Class', 'text'])
@@ -21,27 +20,27 @@ docs = load_csv('movie_review_train.csv')
 docs_test = load_csv('movie_review_test.csv')
 
 label_map = {'Neg': 0, 'Pos': 1}
-y = docs['Class'].map(label_map).values
-y_test = docs_test['Class'].map(label_map).values
+y = docs.Class.map(label_map).values
+y_test = docs_test.Class.map(label_map).values
 
 vect = CountVectorizer(stop_words='english', min_df=0.03, max_df=0.8)
-X_train_transformed = vect.fit_transform(docs['text'])
-X_test_transformed = vect.transform(docs_test['text'])
+X_train_transformed = vect.fit_transform(docs.text)
+X_test_transformed = vect.transform(docs_test.text)
 
 mnb = MultinomialNB()
 mnb.fit(X_train_transformed, y)
 
 y_pred_class = mnb.predict(X_test_transformed)
 
-accuracy = metrics.accuracy_score(y_test, y_pred_class)
+accuracy = accuracy_score(y_test, y_pred_class)
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Removed all print statements, plots, and visualizations per requirements.
-# Combined fit and transform into fit_transform to avoid redundant pass over training data.
-# Removed intermediate DataFrames and unused variables (confusion matrix, ROC, etc.).
-# Removed redundant imports and duplicate computations (e.g., precision computed twice).
-# Used .values for label arrays to avoid pandas Series overhead during model fitting.
-# Implemented robust CSV fallback with sep=';' and decimal=','.
-# Set fixed random seed for reproducibility.
-# Kept only essential computation: vectorization, model training, prediction, and accuracy.
+# Removed all print statements, plots, visualizations, and unused computations (confusion matrix, ROC curve, etc.)
+# Combined fit and transform into fit_transform for the training vectorizer to avoid redundant pass
+# Removed intermediate variables that were never used (sensitivity, specificity, precision, predict_proba, etc.)
+# Removed unused imports (matplotlib, roc_curve, auc)
+# Used .values on pandas Series to avoid overhead of index alignment during model fitting
+# Added robust CSV fallback with sep=';' and decimal=',' as required
+# Set random seed for reproducibility
+# Preserved exact ML pipeline: CountVectorizer with same params -> MultinomialNB with default alpha=1

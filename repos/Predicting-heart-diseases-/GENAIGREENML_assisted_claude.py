@@ -17,9 +17,9 @@ RANDOM_STATE = 0
 try:
     df = pd.read_csv("heart/heart_dataset_.csv")
     if df.shape[1] < 2:
-        df = pd.read_csv("heart/heart_dataset_.csv", sep=';', decimal=',')
+        df = pd.read_csv("heart/heart_dataset_.csv", sep=";", decimal=",")
 except Exception:
-    df = pd.read_csv("heart/heart_dataset_.csv", sep=';', decimal=',')
+    df = pd.read_csv("heart/heart_dataset_.csv", sep=";", decimal=",")
 
 expected_cols = ["age", "sex", "cp", "trestbps", "chol", "fbs", "restecg",
                  "thalach", "exang", "oldpeak", "slope", "ca", "thal", "target"]
@@ -39,7 +39,7 @@ accuracies = {}
 
 lr = LogisticRegression(solver="lbfgs", random_state=RANDOM_STATE, max_iter=1000)
 lr.fit(x_train, y_train)
-accuracies['Logistic Regression'] = lr.score(x_test, y_test) * 100
+accuracies["Logistic Regression"] = lr.score(x_test, y_test) * 100
 
 best_knn_score = 0
 for k in range(1, 20):
@@ -48,34 +48,33 @@ for k in range(1, 20):
     score = knn.score(x_test, y_test)
     if score > best_knn_score:
         best_knn_score = score
-accuracies['KNN'] = best_knn_score * 100
+accuracies["KNN"] = best_knn_score * 100
 
 svm = SVC(random_state=1)
 svm.fit(x_train, y_train)
-accuracies['SVM'] = svm.score(x_test, y_test) * 100
+accuracies["SVM"] = svm.score(x_test, y_test) * 100
 
 nb = GaussianNB()
 nb.fit(x_train, y_train)
-accuracies['Naive Bayes'] = nb.score(x_test, y_test) * 100
+accuracies["Naive Bayes"] = nb.score(x_test, y_test) * 100
 
 dtc = DecisionTreeClassifier(random_state=RANDOM_STATE)
 dtc.fit(x_train, y_train)
-accuracies['Decision Tree'] = dtc.score(x_test, y_test) * 100
+accuracies["Decision Tree"] = dtc.score(x_test, y_test) * 100
 
 rf = RandomForestClassifier(n_estimators=1000, random_state=1)
 rf.fit(x_train, y_train)
-accuracies['Random Forest'] = rf.score(x_test, y_test) * 100
+accuracies["Random Forest"] = rf.score(x_test, y_test) * 100
 
-best_name = max(accuracies, key=accuracies.get)
-accuracy = accuracies[best_name] / 100.0
+best_model_name = max(accuracies, key=accuracies.get)
+accuracy = accuracies[best_model_name] / 100.0
 
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Removed all matplotlib/seaborn imports and plotting calls to eliminate unnecessary computation and I/O.
-# Removed all print/logging statements except the required accuracy output.
-# Removed TensorFlow import which was unused, saving significant import time and memory.
-# Removed unnecessary .T transpose operations on train/test arrays (sklearn accepts row-major directly).
-# Consolidated KNN search loop to track best score without storing a full list.
-# Added robust CSV parsing fallback with sep=';' and decimal=','.
-# Set random_state on Decision
+# Removed all matplotlib/seaborn imports and plotting calls to eliminate heavy visualization overhead.
+# Removed all print/logging statements except the final accuracy output.
+# Removed unused tensorflow/keras imports, saving significant import time and memory.
+# Removed redundant .T transpositions of train/test data; sklearn accepts (n_samples, n_features) directly.
+# Avoided retraining a separate KNN(k=3) for confusion matrix since confusion matrices and classification reports were not part of required output.
+# Removed confusion matrix

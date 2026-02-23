@@ -2,93 +2,99 @@
 # LLM: claude
 # Mode: autonomous
 
+import pickle
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-from sklearn import metrics
-import os
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
+from sklearn.metrics import accuracy_score
 
-# Attempt to load the dataset with robust CSV parsing
-data_file = '14k.csv'
+# Load the pickle file
+with open("dict.pickle", "rb") as f:
+    data = pickle.load(f)
 
-# Fallback: try to find any CSV file in current directory if 14k.csv not found
-if not os.path.exists(data_file):
-    csv_files = [f for f in os.listdir('.') if f.endswith('.csv') and not f.startswith('input')]
-    if csv_files:
-        data_file = csv_files[0]
+# Inspect what we got and convert to DataFrame
+if isinstance(data, dict):
+    # Could be a dict of arrays/lists, or a dict with specific keys like 'data', 'target'
+    if 'data' in data and 'target' in data:
+        X_raw = np.array(data['data'])
+        y_raw = np.array(data['target'])
+        if 'feature_names' in data:
+            feature_names = list(data['feature_names'])
+        else:
+            feature_names = [f"f{i}" for i in range(X_raw.shape[1])]
+        df = pd.DataFrame(X_raw, columns=feature_names)
+        df['__target__'] = y_raw
+        target_col = '__target__'
     else:
-        # Create a minimal synthetic dataset so code runs end-to-end
-        np.random.seed(42)
-        n = 200
-        X = np.random.randn(n, 5)
-        y = (X[:, 0] + X[:, 1] > 0).astype(int)
-        cols = [f'f{i}' for i in range(5)] + ['target']
-        df = pd.DataFrame(np.column_stack([X, y]), columns=cols)
-        data_file = None
-
-if data_file is not None:
-    try:
-        df = pd.read_csv(data_file)
-        # Check if parsing looks wrong (single column with many values)
-        if df.shape[1] < 2:
-            df = pd.read_csv(data_file, sep=';', decimal=',')
-    except Exception:
+        # Try to build a DataFrame from the dict directly
+        # Each key might be a column
         try:
-            df = pd.read_csv(data_file, sep=';', decimal=',')
+            df = pd.DataFrame(data)
         except Exception:
-            # Last resort: manual parsing as in original code
-            features = []
-            labels = []
-            first = True
-            import csv
-            with open(data_file, newline='') as csvfile:
-                reader = csv.reader(csvfile, delimiter=' ', quotechar='|')
-                for row in reader:
-                    cols_raw = row[0].split(",")
-                    if cols_raw[-1] == '':
-                        cols_raw.pop()
-                    if not first:
-                        both = np.asarray(cols_raw, dtype=np.float64).tolist()
-                        num = both.pop()
-                        if num > 0:
-                            num = 1
-                        elif num < 0:
-                            num = -1
-                        labels.append(num)
-                        features.append(both)
-                    else:
-                        first = False
-            feat_cols = [f'f{i}' for i in range(len(features[0]))]
-            df = pd.DataFrame(features, columns=feat_cols)
-            df['target'] = labels
+            # Maybe dict of single values or nested structures
+            # Try converting values
+            keys = list(data.keys())
+            vals = list(data.values())
+            # Check if values are arrays of same length
+            lengths = []
+            for v in vals:
+                if hasattr(v, '__len__') and not isinstance(v, str):
+                    lengths.append(len(v))
+                else:
+                    lengths.append(1)
+            if len(set(lengths)) == 1 and lengths[0] > 1:
+                df = pd.DataFrame({k: v for k, v in zip(keys, vals)})
+            else:
+                # Last resort: try to make a single-row DataFrame
+                df = pd.DataFrame({k: [v] for k, v in zip(keys, vals)})
+        target_col = None
+elif isinstance(data, pd.DataFrame):
+    df = data
+    target_col = None
+elif isinstance(data, (list, np.ndarray)):
+    arr = np.array(data)
+    if arr.ndim == 2:
+        df = pd.DataFrame(arr, columns=[f"f{i}" for i in range(arr.shape[1])])
+    else:
+        df = pd.DataFrame({'value': arr})
+    target_col = None
+else:
+    # Try converting to DataFrame
+    df = pd.DataFrame(data)
+    target_col = None
 
-# Strip and normalize column names
-df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
+# Clean column names
+df.columns = [str(c).strip() for c in df.columns]
+df.columns = [' '.join(c.split()) for c in df.columns]
 # Drop unnamed columns
 df = df[[c for c in df.columns if not c.lower().startswith('unnamed')]]
 
-# Coerce all columns to numeric where possible
-for col in df.columns:
-    df[col] = pd.to_numeric(df[col], errors='coerce')
+# If target_col not set, try to identify it
+# Based on project context: target is a classification label (-1, 0, 1) for junctional classification
+if target_col is None:
+    # Look for likely target columns
+    candidate_targets = []
+    for c in df.columns:
+        cl = c.lower()
+        if any(kw in cl for kw in ['target', 'label', 'class', 'category', 'output', 'y']):
+            candidate_targets.append(c)
 
-# Drop rows/cols that are entirely NaN
-df.dropna(axis=1, how='all', inplace=True)
-df.dropna(axis=0, how='all', inplace=True)
+    if candidate_targets:
+        target_col = candidate_targets[0]
+    else:
+        # Pick last column as target (common convention)
+        target_col = df.columns[-1]
 
-# Replace inf with NaN then drop
-df.replace([np.inf, -np.inf], np.nan, inplace=True)
-df.dropna(inplace=True)
-
-assert df.shape[0] > 0, "Dataset is empty after preprocessing"
-
-# Determine target: use the last column as target (matches original code behavior)
-target_col = df.columns[-1]
+# Separate features and target
 feature_cols = [c for c in df.columns if c != target_col]
 
-# If no feature columns, use all but first as features and first as target
-if len(feature_cols) == 0:
-    target_col = df.columns[0]
-    feature_cols = [c for c in df.columns if c !=
+# Coerce all feature columns to numeric
+for c in feature_cols:
+    df[c] = pd.to_numeric(df[c], errors='coerce')
+
+# Coerce target
+df[target_col] = pd

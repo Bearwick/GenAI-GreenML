@@ -2,289 +2,304 @@
 # LLM: codex
 # Mode: autonomous
 
-import warnings
-warnings.filterwarnings("ignore")
-
 import pandas as pd
 import numpy as np
+import re
+import warnings
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.metrics import accuracy_score, r2_score
 from sklearn.dummy import DummyClassifier, DummyRegressor
 
-def read_csv_robust(path):
+warnings.filterwarnings("ignore")
+np.random.seed(42)
+
+DATASET_PATH = "town_vax_data.csv"
+
+DATASET_HEADERS = [
+    "town",
+    "apartments_condos_multis_per_residential_parcels_2011",
+    "assessed_home_value_changes_2009-2013",
+    "births_per_1000_residents_2010",
+    "boaters_per_10000_residents_2012",
+    "burglaries_per_10000_residents_2011",
+    "cars_motorcycles_&_trucks_average_age_2012",
+    "cars_per_1000_residents_2012",
+    "class_size_in_school_district_2011-2012",
+    "condos_as_perc_of_parcels_2012",
+    "crashes_per_1000_residents_2007-2011",
+    "culture_and_rec_spending_per_person_2012",
+    "education_spending_as_a_percent_2012",
+    "education_spending_per_resident_2012",
+    "expenditures_per_resident_2012",
+    "females_percent_in_community_2010",
+    "fire_dept_spending_as_a_percent_2012",
+    "firefighter_costs_per_resident_2012",
+    "fixed_costs_percent_2012",
+    "gun_licenses_per_1000_residents_2012",
+    "historic_places_per_10000_2013",
+    "home_schooled_per_1000_students_2011-2012",
+    "homes_built_in_39_or_before",
+    "household_member_who_is_2_races_or_more_per_1000_households_2010",
+    "households_average_size_2010",
+    "households_one-person_2010",
+    "hybrid_cars_per_1000_vehicles_2013",
+    "in_home_since_1969_or_earlier",
+    "income_average_per_resident_2010",
+    "income_change_per_resident_2007-2010",
+    "inmates_in_state_prison_per_1000_residents",
+    "liquor_licenses_per_10000_2011",
+    "median_age_2011",
+    "miles_driven_daily_per_household_05-07",
+    "minority_students_per_district_2012-2013",
+    "motorcycles_change_in_ownership_2000-2012",
+    "motorcycles_per_1000_2012",
+    "multi-generation_households_2010",
+    "police_costs_per_resident_2013",
+    "police_employees_per_10000_residents_2011",
+    "police_spending_as_a_percent_2012",
+    "population_change_1950-2010",
+    "population_change_2010-2011",
+    "presidential_fundraising_obama_vs_romney",
+    "property_crimes_per_10000_residents_2012",
+    "property_tax_change_09-13",
+    "pupils_per_cost_average_by_district_2011-2012",
+    "residential_taxes_as_percent_of_all_property_taxes_2013",
+    "saltwater_fishing_licenses_per_1000_2013",
+    "school_district_growth_09-13",
+    "single-person_households_percent_65_and_older",
+    "snowmobiles_per_10000_residents_2012",
+    "state_aid_as_a_percent_of_town_budget_2012",
+    "students_in_public_schools_2011",
+    "tax-exempt_property_2012",
+    "taxable_property_by_percent_2012",
+    "teacher_salaries_by_average_2011",
+    "teachers_percent_under_40_years_old_2011-2012",
+    "trucks_per_1000_residents_2012",
+    "violent_crimes_per_10000_residents_2012",
+    "voters_as_a_percent_of_population_2012",
+    "voters_change_in_registrations_between_1982-2012",
+    "voters_democrats_as_a_percent_2012",
+    "2020_votes",
+    "2020_biden_margin",
+    "population",
+    "vax_level"
+]
+
+def read_csv_fallback(path):
     try:
-        df = pd.read_csv(path)
+        df_local = pd.read_csv(path)
     except Exception:
-        df = pd.read_csv(path, sep=';', decimal=',')
-        return df
-    def looks_wrong(d):
-        if d.shape[1] <= 1:
-            return True
-        for col in d.columns:
-            if isinstance(col, str) and ';' in col:
-                return True
-        return False
-    if looks_wrong(df):
+        df_local = pd.read_csv(path, sep=";", decimal=",")
+        return df_local
+    if df_local.shape[1] == 1:
         try:
-            df_alt = pd.read_csv(path, sep=';', decimal=',')
-            if df_alt.shape[1] > df.shape[1]:
-                df = df_alt
+            df_alt = pd.read_csv(path, sep=";", decimal=",")
+            if df_alt.shape[1] > 1:
+                df_local = df_alt
         except Exception:
             pass
-    return df
+    return df_local
 
-def normalize_columns(df):
-    cols = []
-    keep_cols = []
-    for orig in df.columns:
-        c = str(orig).strip()
-        c = " ".join(c.split())
-        if c.lower().startswith('unnamed') or c == '':
-            cols.append(None)
+def choose_target_column(df_local):
+    cols = list(df_local.columns)
+    if not cols:
+        return None
+    lower_map = {c.lower(): c for c in cols}
+    for name in ["vax_level", "target", "label", "class", "y"]:
+        if name in lower_map:
+            return lower_map[name]
+    n_rows = len(df_local)
+    candidate = None
+    best = None
+    for c in cols:
+        uniq = df_local[c].nunique(dropna=True)
+        if uniq <= 1:
             continue
-        cols.append(c)
-        keep_cols.append(orig)
-    df = df[keep_cols].copy()
-    new_names = [c for c in cols if c is not None]
-    seen = {}
-    unique_names = []
-    for name in new_names:
-        if name in seen:
-            seen[name] += 1
-            unique_names.append(f"{name}_{seen[name]}")
-        else:
-            seen[name] = 0
-            unique_names.append(name)
-    df.columns = unique_names
-    return df
-
-def simplify_name(name):
-    return ''.join(ch for ch in str(name).lower() if ch.isalnum())
-
-def find_target_column(df):
-    candidate_names = ['vax_level', 'vax level', 'vaxlevel', 'target', 'label', 'class']
-    simplified_map = {simplify_name(c): c for c in df.columns}
-    for cand in candidate_names:
-        key = simplify_name(cand)
-        if key in simplified_map:
-            return simplified_map[key]
-    for c in df.columns:
-        if 'vax' in simplify_name(c):
+        dtype = df_local[c].dtype
+        if dtype == object or str(dtype).startswith("category"):
+            if uniq <= min(20, max(2, int(0.1 * n_rows))):
+                if best is None or uniq < best:
+                    candidate = c
+                    best = uniq
+    if candidate is not None:
+        return candidate
+    for c in cols:
+        uniq = pd.to_numeric(df_local[c], errors="coerce").nunique(dropna=True)
+        if uniq > 1 and uniq <= min(20, max(2, int(0.1 * n_rows))):
             return c
-    return None
-
-def choose_numeric_target(df):
-    best_col = None
-    best_var = -np.inf
-    for c in df.columns:
-        s = pd.to_numeric(df[c], errors='coerce')
-        non_na = s.notna().sum()
-        if non_na < 2:
-            continue
-        if s.nunique(dropna=True) <= 1:
-            continue
-        var = s.var()
-        if pd.notna(var) and var > best_var:
-            best_var = var
-            best_col = c
-    return best_col
-
-def choose_categorical_target(df):
-    for c in reversed(df.columns):
-        if df[c].nunique(dropna=True) > 1:
+    for c in cols:
+        if pd.to_numeric(df_local[c], errors="coerce").nunique(dropna=True) > 1:
             return c
-    return df.columns[0]
+    return cols[-1]
 
-def detect_feature_types(df, exclude):
-    numeric_cols = []
-    categorical_cols = []
-    n_rows = len(df)
+df = read_csv_fallback(DATASET_PATH)
+
+clean_expected = [re.sub(r"\s+", " ", str(c).strip()) for c in DATASET_HEADERS]
+if len(df.columns) == len(clean_expected):
+    mismatch = 0
     for c in df.columns:
-        if c in exclude:
-            continue
-        s = df[c]
-        s_num = pd.to_numeric(s, errors='coerce')
-        non_na = s_num.notna().sum()
-        if non_na > 0 and (pd.api.types.is_numeric_dtype(s) or non_na / n_rows >= 0.5):
-            df[c] = s_num
-            numeric_cols.append(c)
-        else:
-            categorical_cols.append(c)
-    return numeric_cols, categorical_cols
+        c_clean = re.sub(r"\s+", " ", str(c).strip())
+        if c_clean not in clean_expected:
+            mismatch += 1
+    if mismatch > len(df.columns) * 0.5:
+        df.columns = clean_expected
 
-def filter_feature_columns(df, numeric_cols, categorical_cols):
-    clean_num = []
-    for c in numeric_cols:
-        s = pd.to_numeric(df[c], errors='coerce')
-        s = s.replace([np.inf, -np.inf], np.nan)
-        df[c] = s
-        if s.notna().sum() == 0:
-            continue
-        if s.nunique(dropna=True) <= 1:
-            continue
-        clean_num.append(c)
-    clean_cat = []
-    n_rows = len(df)
-    for c in categorical_cols:
-        n_unique = df[c].nunique(dropna=True)
-        if n_unique <= 1:
-            continue
-        if n_unique > max(50, int(0.5 * n_rows)):
-            continue
-        clean_cat.append(c)
-    return clean_num, clean_cat
+df.columns = [re.sub(r"\s+", " ", str(c).strip()) for c in df.columns]
+df = df.loc[:, ~df.columns.str.match(r"^Unnamed", na=False)]
+unique_cols = []
+counts = {}
+for c in df.columns:
+    if c in counts:
+        counts[c] += 1
+        unique_cols.append(f"{c}_{counts[c]}")
+    else:
+        counts[c] = 0
+        unique_cols.append(c)
+df.columns = unique_cols
+df = df.dropna(how="all")
 
-def determine_task(y):
-    y_non = y.dropna()
-    if y_non.empty:
-        return 'regression'
-    if pd.api.types.is_object_dtype(y_non) or pd.api.types.is_bool_dtype(y_non) or pd.api.types.is_categorical_dtype(y_non):
-        return 'classification'
-    n_unique = y_non.nunique()
-    if n_unique <= 20 and n_unique <= max(2, int(0.2 * len(y_non))):
-        return 'classification'
-    return 'regression'
-
-path = 'town_vax_data.csv'
-df = read_csv_robust(path)
-df = normalize_columns(df)
-df = df.dropna(axis=1, how='all')
-
-target_col = find_target_column(df)
+target_col = choose_target_column(df)
 if target_col is None:
-    target_col = choose_numeric_target(df)
-if target_col is None:
-    target_col = choose_categorical_target(df)
+    df["target"] = 0
+    target_col = "target"
 
-df = df[df[target_col].notna()].copy()
-assert len(df) > 0
-
-task = determine_task(df[target_col])
-
-if task == 'regression':
-    y = pd.to_numeric(df[target_col], errors='coerce')
-    y = y.replace([np.inf, -np.inf], np.nan)
-    mask = y.notna()
-    df = df.loc[mask].copy()
-    y = y.loc[mask]
+y_raw = df[target_col]
+n_rows = len(df)
+if y_raw.dtype == object or str(y_raw.dtype).startswith("category"):
+    uniq = y_raw.nunique(dropna=True)
+    classification = uniq <= min(20, max(2, int(0.1 * n_rows)))
 else:
-    y = df[target_col]
+    y_num_tmp = pd.to_numeric(y_raw, errors="coerce")
+    uniq = y_num_tmp.nunique(dropna=True)
+    classification = uniq <= 20 and uniq / max(1, len(y_num_tmp)) < 0.2
 
-assert len(df) > 0
+if classification:
+    mask = y_raw.notna()
+    if mask.sum() == 0:
+        classification = False
+        y = pd.Series(np.zeros(len(df)), index=df.index, dtype=float)
+    else:
+        df = df.loc[mask].copy()
+        y = y_raw.loc[mask]
+else:
+    y_numeric = pd.to_numeric(y_raw, errors="coerce")
+    if y_numeric.notna().sum() == 0:
+        y_numeric = pd.Series(pd.factorize(y_raw)[0], index=y_raw.index).astype(float)
+    mask = y_numeric.notna()
+    if mask.sum() == 0:
+        y_numeric = pd.Series(np.zeros(len(df)), index=df.index, dtype=float)
+        mask = y_numeric.notna()
+    df = df.loc[mask].copy()
+    y = y_numeric.loc[mask]
 
-numeric_cols, categorical_cols = detect_feature_types(df, exclude=[target_col])
-numeric_cols, categorical_cols = filter_feature_columns(df, numeric_cols, categorical_cols)
+assert df.shape[0] > 0
+
+feature_cols = [c for c in df.columns if c != target_col]
+if len(feature_cols) == 0:
+    df["dummy_feature"] = 0
+    feature_cols = ["dummy_feature"]
+
+numeric_cols = []
+categorical_cols = []
+orig_categorical_cols = []
+for col in feature_cols:
+    s = df[col]
+    if s.isna().all():
+        continue
+    if s.dtype == object or str(s.dtype).startswith("category"):
+        s_str = s.astype(str)
+        s_str[s.isna()] = np.nan
+        converted = pd.to_numeric(s_str.str.replace(",", ".", regex=False), errors="coerce")
+        non_na = s.notna().sum()
+        if non_na > 0 and converted.notna().sum() / non_na > 0.8:
+            df[col] = converted.replace([np.inf, -np.inf], np.nan)
+            numeric_cols.append(col)
+        else:
+            df[col] = s_str
+            categorical_cols.append(col)
+            orig_categorical_cols.append(col)
+    else:
+        df[col] = pd.to_numeric(s, errors="coerce").replace([np.inf, -np.inf], np.nan)
+        numeric_cols.append(col)
+
+numeric_cols = [c for c in numeric_cols if df[c].notna().any() and df[c].nunique(dropna=True) > 1]
+categorical_cols = [c for c in categorical_cols if df[c].notna().any() and df[c].nunique(dropna=True) > 1]
+
+if len(df) > 0 and categorical_cols:
+    filtered = []
+    for c in categorical_cols:
+        uniq = df[c].nunique(dropna=True)
+        if uniq / len(df) > 0.9:
+            continue
+        filtered.append(c)
+    categorical_cols = filtered
+
+if not numeric_cols and not categorical_cols:
+    if orig_categorical_cols:
+        best_col = min(orig_categorical_cols, key=lambda c: df[c].nunique(dropna=True))
+        categorical_cols = [best_col]
+    else:
+        df["dummy_feature"] = 0
+        numeric_cols = ["dummy_feature"]
 
 feature_cols = numeric_cols + categorical_cols
-X = df[feature_cols] if feature_cols else pd.DataFrame(index=df.index)
+X = df[feature_cols]
+
+transformers = []
+if numeric_cols:
+    num_pipe = Pipeline(steps=[("imputer", SimpleImputer(strategy="median")), ("scaler", StandardScaler(with_mean=False))])
+    transformers.append(("num", num_pipe, numeric_cols))
+if categorical_cols:
+    cat_pipe = Pipeline(steps=[("imputer", SimpleImputer(strategy="most_frequent")), ("onehot", OneHotEncoder(handle_unknown="ignore", sparse=True, dtype=np.float32))])
+    transformers.append(("cat", cat_pipe, categorical_cols))
+
+preprocessor = ColumnTransformer(transformers=transformers, remainder="drop", sparse_threshold=0.3)
 
 n_samples = len(df)
-test_size = max(1, int(0.25 * n_samples))
-if n_samples - test_size < 1:
-    test_size = n_samples - 1
-assert test_size >= 1 and n_samples - test_size >= 1
-
-stratify = None
-if task == 'classification':
-    try:
-        if y.nunique() >= 2:
-            class_counts = y.value_counts()
-            if class_counts.min() > 1:
-                stratify = y
-    except Exception:
-        stratify = None
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=test_size, random_state=42, shuffle=True, stratify=stratify
-)
+if n_samples > 1:
+    test_size = 0.2 if n_samples >= 5 else 0.5
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
+else:
+    X_train = X_test = X.copy()
+    y_train = y_test = y.copy()
 
 assert len(X_train) > 0 and len(X_test) > 0
 
-use_features = len(feature_cols) > 0
-
-if use_features:
-    transformers = []
-    if len(numeric_cols) > 0:
-        num_transformer = Pipeline(steps=[
-            ('imputer', SimpleImputer(strategy='median')),
-            ('scaler', StandardScaler(with_mean=False))
-        ])
-        transformers.append(('num', num_transformer, numeric_cols))
-    if len(categorical_cols) > 0:
-        cat_transformer = Pipeline(steps=[
-            ('imputer', SimpleImputer(strategy='most_frequent')),
-            ('onehot', OneHotEncoder(handle_unknown='ignore', sparse=True))
-        ])
-        transformers.append(('cat', cat_transformer, categorical_cols))
-    preprocessor = ColumnTransformer(
-        transformers=transformers,
-        remainder='drop',
-        sparse_threshold=0.3
-    )
-else:
-    preprocessor = None
-
-if task == 'classification':
-    n_classes = y_train.nunique() if hasattr(y_train, 'nunique') else len(np.unique(y_train))
-    if n_classes < 2 or not use_features:
-        model = DummyClassifier(strategy='most_frequent')
+if classification:
+    train_unique = pd.Series(y_train).nunique(dropna=True)
+    if train_unique < 2:
+        model = DummyClassifier(strategy="most_frequent")
     else:
-        model = LogisticRegression(max_iter=200, solver='lbfgs', multi_class='auto', random_state=42, n_jobs=1)
+        model = LogisticRegression(max_iter=200, solver="liblinear", random_state=42)
 else:
-    if y_train.nunique() < 2 or not use_features:
-        model = DummyRegressor(strategy='mean')
+    train_unique = pd.Series(y_train).nunique(dropna=True)
+    if train_unique < 2:
+        model = DummyRegressor(strategy="mean")
     else:
         model = Ridge(alpha=1.0)
 
-if use_features and preprocessor is not None:
-    pipeline = Pipeline(steps=[
-        ('preprocess', preprocessor),
-        ('model', model)
-    ])
-else:
-    pipeline = Pipeline(steps=[
-        ('model', model)
-    ])
+pipe = Pipeline(steps=[("preprocessor", preprocessor), ("model", model)])
+pipe.fit(X_train, y_train)
+y_pred = pipe.predict(X_test)
 
-try:
-    pipeline.fit(X_train, y_train)
-except Exception:
-    if task == 'classification':
-        model = DummyClassifier(strategy='most_frequent')
-    else:
-        model = DummyRegressor(strategy='mean')
-    if use_features and preprocessor is not None:
-        pipeline = Pipeline(steps=[
-            ('preprocess', preprocessor),
-            ('model', model)
-        ])
-    else:
-        pipeline = Pipeline(steps=[('model', model)])
-    pipeline.fit(X_train, y_train)
-
-y_pred = pipeline.predict(X_test)
-
-if task == 'classification':
+if classification:
     accuracy = accuracy_score(y_test, y_pred)
 else:
-    r2 = r2_score(y_test, y_pred)
-    if not np.isfinite(r2):
+    if len(y_test) < 2:
         r2 = 0.0
-    accuracy = (r2 + 1.0) / 2.0
-    if accuracy < 0.0:
-        accuracy = 0.0
-    if accuracy > 1.0:
-        accuracy = 1.0
+    else:
+        r2 = r2_score(y_test, y_pred)
+        if not np.isfinite(r2):
+            r2 = 0.0
+    accuracy = max(0.0, min(1.0, (r2 + 1.0) / 2.0))
 
 print(f"ACCURACY={accuracy:.6f}")
-
 # Optimization Summary
-# Used lightweight linear models (LogisticRegression/Ridge) with Dummy fallbacks to minimize CPU load.
-# Dropped constant and high-cardinality categorical features to reduce one-hot size and computation.
-# Applied simple imputation and sparse-friendly scaling/encoding via a single Pipeline for reproducibility.
-# Regression accuracy is a bounded proxy computed as (r2+1)/2 clipped to [0,1].
+# - Used lightweight linear models (logistic/ridge) with dummy fallbacks to keep CPU cost low.
+# - Applied minimal preprocessing (imputation, scaling, one-hot encoding) via a single Pipeline/ColumnTransformer for reproducibility.
+# - Converted regression R2 to a bounded [0,1] proxy to provide a stable accuracy-style metric when classification is not suitable.

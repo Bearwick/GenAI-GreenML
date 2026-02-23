@@ -2,58 +2,95 @@
 # LLM: codex
 # Mode: assisted
 
-import numpy as np
 import pandas as pd
+import numpy as np
+import random
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.preprocessing import LabelEncoder
 
-SEED = 42
-np.random.seed(SEED)
-
+DATASET_PATH = "cat_dog_data.csv"
 DATASET_HEADERS = "feature1,feature2,feature3,feature4,feature5,label"
-EXPECTED_HEADERS = [h.strip() for h in DATASET_HEADERS.split(",")]
 
-def read_csv_with_fallback(path, expected_headers):
+
+def parse_headers(headers_str):
+    if not headers_str:
+        return []
+    return [h.strip() for h in headers_str.split(",") if h.strip()]
+
+
+EXPECTED_COLUMNS = parse_headers(DATASET_HEADERS)
+
+
+def is_parsed_correctly(df, expected_cols):
+    if df is None or df.empty:
+        return False
+    if expected_cols:
+        expected_label = expected_cols[-1]
+        if expected_label in df.columns:
+            return True
+        if all(col in df.columns for col in expected_cols):
+            return True
+        if len(df.columns) == len(expected_cols):
+            return True
+        return False
+    return len(df.columns) > 1
+
+
+def load_dataset(path, expected_cols):
     df = pd.read_csv(path)
-    if df.shape[1] == 1 and len(expected_headers) > 1:
+    if not is_parsed_correctly(df, expected_cols):
         df = pd.read_csv(path, sep=";", decimal=",")
     return df
 
-def find_label_column(columns, expected_headers):
-    cols = [str(c).strip() for c in columns]
-    lower_cols = [c.lower() for c in cols]
-    if "label" in lower_cols:
-        return cols[lower_cols.index("label")]
-    expected_lower = [h.lower() for h in expected_headers]
-    for h in reversed(expected_lower):
-        if h in lower_cols:
-            return cols[lower_cols.index(h)]
-    return cols[-1]
 
-df = read_csv_with_fallback("cat_dog_data.csv", EXPECTED_HEADERS)
-df.columns = [str(c).strip() for c in df.columns]
+def resolve_columns(df, expected_cols):
+    if expected_cols:
+        expected_label = expected_cols[-1]
+        if expected_label in df.columns:
+            label_col = expected_label
+            feature_cols = [c for c in expected_cols[:-1] if c in df.columns]
+            if len(feature_cols) != len(expected_cols) - 1:
+                feature_cols = [c for c in df.columns if c != label_col]
+        else:
+            label_col = df.columns[-1]
+            feature_cols = [c for c in df.columns if c != label_col]
+    else:
+        label_col = df.columns[-1]
+        feature_cols = [c for c in df.columns if c != label_col]
+    return feature_cols, label_col
 
-label_col = find_label_column(df.columns, EXPECTED_HEADERS)
 
-X = df.drop(columns=[label_col]).to_numpy(copy=False)
-y = LabelEncoder().fit_transform(df[label_col].to_numpy(copy=False))
-del df
+def train_and_evaluate(df, feature_cols, label_col):
+    X = df[feature_cols].to_numpy()
+    y = df[label_col].to_numpy()
+    y_encoded = LabelEncoder().fit_transform(y)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y_encoded, test_size=0.3, random_state=42
+    )
+    model = SVC(kernel="linear")
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    accuracy = float(np.mean(y_pred == y_test))
+    return accuracy
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.3, random_state=SEED
-)
 
-model = SVC(kernel="linear", random_state=SEED)
-model.fit(X_train, y_train)
+def main():
+    seed = 42
+    random.seed(seed)
+    np.random.seed(seed)
+    df = load_dataset(DATASET_PATH, EXPECTED_COLUMNS)
+    feature_cols, label_col = resolve_columns(df, EXPECTED_COLUMNS)
+    accuracy = train_and_evaluate(df, feature_cols, label_col)
+    print(f"ACCURACY={accuracy:.6f}")
 
-accuracy = model.score(X_test, y_test)
 
-print(f"ACCURACY={accuracy:.6f}")
+if __name__ == "__main__":
+    main()
 
 # Optimization Summary
-# Used a single CSV read with delimiter fallback to avoid repeated parsing when unnecessary.
-# Trimmed column names and inferred the label column from expected headers to prevent hardcoding.
-# Converted data to NumPy arrays early and used model.score to avoid storing predictions.
-# Removed unused metric calculations and released the DataFrame to reduce memory footprint.
-# Set a fixed random seed for reproducible train/test splits.
+# - Removed unused reporting and metric imports to reduce computation and memory.
+# - Computed accuracy with a vectorized numpy mean to avoid extra sklearn overhead.
+# - Extracted numpy arrays once for model training to minimize repeated data conversions.
+# - Added a single-pass CSV parsing validation with fallback to avoid unnecessary I/O.
+# - Fixed random seeds for deterministic results without additional processing.

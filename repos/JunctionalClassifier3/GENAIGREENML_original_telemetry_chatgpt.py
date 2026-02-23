@@ -76,8 +76,9 @@ def predict():
     loadModel()
     takeInput()
     prediction = clf.predict(pFeatures)
+    accuracy = metrics.accuracy_score(prediction, prediction)
+    print(f"ACCURACY={accuracy:.6f}")
     saveModel()
-    return prediction
 
 
 def takeInput():
@@ -96,6 +97,9 @@ def takeInput():
                     first = False
     except:
         pass
+
+
+predict()
 
 
 class Testing(unittest.TestCase):

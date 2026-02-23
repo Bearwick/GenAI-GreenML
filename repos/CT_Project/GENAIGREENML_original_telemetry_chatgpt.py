@@ -19,9 +19,13 @@ def main() -> None:
     X = mail_data["Message"]
     Y = mail_data["Category"]
 
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=3)
+    X_train, X_test, Y_train, Y_test = train_test_split(
+        X, Y, test_size=0.2, random_state=3
+    )
 
-    feature_extraction = TfidfVectorizer(min_df=1, stop_words="english", lowercase=True)
+    feature_extraction = TfidfVectorizer(
+        min_df=1, stop_words="english", lowercase=True
+    )
 
     X_train_features = feature_extraction.fit_transform(X_train)
     X_test_features = feature_extraction.transform(X_test)
@@ -36,6 +40,12 @@ def main() -> None:
     accuracy = accuracy_score(Y_test, prediction_on_test_data)
 
     print(f"ACCURACY={accuracy:.6f}")
+
+    input_mail = [
+        "I've been searching for the right words to thank you for this breather. I promise i wont take your help for granted and will fulfil my promise. You have been wonderful and a blessing at all times"
+    ]
+    input_data_features = feature_extraction.transform(input_mail)
+    _ = model.predict(input_data_features)
 
 
 if __name__ == "__main__":

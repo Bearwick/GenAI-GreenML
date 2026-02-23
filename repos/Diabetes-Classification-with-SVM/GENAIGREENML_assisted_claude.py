@@ -3,13 +3,13 @@
 # Mode: assisted
 
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 from imblearn.over_sampling import SMOTE
 import scipy.stats as stats
+import numpy as np
 
 np.random.seed(42)
 
@@ -22,10 +22,7 @@ except (ValueError, pd.errors.ParserError):
 
 target_col = 'Outcome'
 if target_col not in data.columns:
-    for col in data.columns:
-        if col.strip().lower() == 'outcome':
-            target_col = col
-            break
+    target_col = data.columns[-1]
 
 X = data.drop(target_col, axis=1)
 y = data[target_col]
@@ -46,7 +43,7 @@ param_distributions = {
 }
 
 random_search = RandomizedSearchCV(
-    SVC(random_state=42),
+    SVC(),
     param_distributions,
     n_iter=50,
     cv=5,
@@ -63,12 +60,12 @@ accuracy = accuracy_score(y_test, y_pred)
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Removed all matplotlib/seaborn imports and plot generation to save memory and computation.
-# Removed all print statements and logging except the final accuracy output.
-# Removed unused metric computations (classification_report, confusion_matrix, roc_curve, roc_auc_score, f1_score, precision_recall_curve) that were only used for display/plotting.
-# Removed unused seaborn and matplotlib imports to reduce import overhead.
-# Added robust CSV parsing fallback with sep=';' and decimal=',' as required.
-# Added flexible target column detection to handle whitespace or case variations.
-# Set fixed random seeds for reproducibility (numpy and SVC).
-# Kept the same model, dataset, task, hyperparameter search, and SMOTE pipeline to preserve original behavior.
-# Reduced memory footprint by not storing intermediate results (confusion matrix, ROC data, etc.) that are never used.
+# Removed all matplotlib/seaborn imports and plot generation to save computation and memory.
+# Removed unused metric computations (classification_report, confusion_matrix, roc_curve, auc, f1, precision_recall) since only accuracy is needed for output.
+# Removed all print/logging statements except the required accuracy output.
+# Removed seaborn and matplotlib imports entirely to reduce import overhead.
+# Added robust CSV fallback parsing with sep=';' and decimal=',' as required.
+# Set global random seed for reproducibility.
+# Kept the same ML pipeline (MinMaxScaler, SMOTE, RandomizedSearchCV with SVC) to preserve original behavior.
+# Avoided saving any artifacts to disk.
+# Derived target column name from data rather than hardcoding, with fallback to last column.

@@ -8,30 +8,32 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 
-RANDOM_STATE = 0
+RANDOM_SEED = 0
+np.random.seed(RANDOM_SEED)
 
 try:
     dataset = pd.read_csv('cars.csv')
     if dataset.shape[1] < 2:
-        raise ValueError("Too few columns")
-except (ValueError, pd.errors.ParserError):
+        dataset = pd.read_csv('cars.csv', sep=';', decimal=',')
+except Exception:
     dataset = pd.read_csv('cars.csv', sep=';', decimal=',')
 
-expected_columns = ['mpg', 'cylinders', 'cubicinches', 'hp', 'weightlbs', 'time-to-60', 'year', 'brand']
-if len(dataset.columns) == len(expected_columns):
-    dataset.columns = expected_columns
+expected_cols = ['mpg', 'cylinders', 'cubicinches', 'hp', 'weightlbs', 'time-to-60', 'year', 'brand']
+if len(dataset.columns) == len(expected_cols):
+    dataset.columns = expected_cols
 
 dataset = dataset.dropna()
 dataset['cubicinches'] = pd.to_numeric(dataset['cubicinches'], errors='coerce')
 dataset['weightlbs'] = pd.to_numeric(dataset['weightlbs'], errors='coerce')
 dataset = dataset.dropna()
 
-X = dataset[['mpg', 'cylinders', 'cubicinches', 'hp', 'weightlbs']].values
+feature_cols = ['mpg', 'cylinders', 'cubicinches', 'hp', 'weightlbs']
+X = dataset[feature_cols].values
 y = dataset['brand'].values
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=RANDOM_STATE)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=RANDOM_SEED)
 
-classifier = SVC(random_state=RANDOM_STATE)
+classifier = SVC(random_state=RANDOM_SEED)
 classifier.fit(X_train, y_train)
 
 y_pred = classifier.predict(X_test)
@@ -40,13 +42,12 @@ accuracy = accuracy_score(y_test, y_pred)
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Removed unused imports (seaborn, matplotlib) to reduce import overhead and memory.
-# Removed redundant .head(), .info(), .columns assignments that served no computational purpose.
-# Removed all visualization calls (barplot) as they are not needed for model evaluation.
-# Removed redundant classifier.score() call before predict, since accuracy is computed from predictions.
-# Removed duplicate predict call — original called predict twice; now only once.
-# Removed confusion_matrix computation as it was unused beyond assignment.
-# Added robust CSV fallback parsing (default then sep=';' with decimal=',').
-# Used column names directly instead of iloc for clarity and correctness.
-# Set random_state on SVC for reproducibility.
-# Fixed random seed as a constant for deterministic behavior.
+# - Removed unused imports (seaborn, matplotlib) to reduce import overhead.
+# - Removed intermediate variables (data, da, dataa, z) that were never used.
+# - Removed all visualization calls (barplot) to eliminate unnecessary computation.
+# - Removed duplicate predict call; predict is called only once now.
+# - Removed confusion_matrix computation since it was unused beyond assignment.
+# - Used column names directly instead of iloc for clarity and robustness.
+# - Added robust CSV fallback parsing (sep=';', decimal=',') per requirements.
+# - Set fixed random seed for reproducibility.
+# - Replaced classifier.score with direct accuracy_score on single prediction to avoid redundant inference.

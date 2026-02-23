@@ -7,57 +7,80 @@ import numpy as np
 import random
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
-from sklearn.metrics import confusion_matrix
 
+DATASET_PATH = "cars.csv"
 DATASET_HEADERS = "mpg, cylinders, cubicinches, hp, weightlbs, time-to-60, year, brand"
-EXPECTED_COLUMNS = [h.strip() for h in DATASET_HEADERS.split(",")]
-FEATURE_COLS = EXPECTED_COLUMNS[:5]
-LABEL_COL = EXPECTED_COLUMNS[7]
-NUMERIC_COLS = [EXPECTED_COLUMNS[i] for i in (2, 4)]
 
-def read_csv_robust(path, expected_cols):
-    expected_set = set(expected_cols)
-    def clean(frame):
-        frame.columns = [str(c).strip() for c in frame.columns]
-        return frame
-    df = clean(pd.read_csv(path))
-    if df.shape[1] == 1 or (df.shape[1] != len(expected_cols) and not expected_set.issubset(df.columns)):
-        df = clean(pd.read_csv(path, sep=";", decimal=","))
-    if df.shape[1] == len(expected_cols):
-        df.columns = expected_cols
-    elif expected_set.issubset(df.columns):
-        df = df[expected_cols]
+
+def _normalize(col):
+    return "".join(ch for ch in str(col).lower() if ch.isalnum())
+
+
+def read_dataset(path, expected):
+    df = pd.read_csv(path)
+    if df.shape[1] == 1 or df.shape[1] < len(expected):
+        df_alt = pd.read_csv(path, sep=";", decimal=",")
+        if df_alt.shape[1] > df.shape[1]:
+            df = df_alt
+    if any(str(c).lower().startswith("unnamed") for c in df.columns):
+        df = df.loc[:, [c for c in df.columns if not str(c).lower().startswith("unnamed")]]
+    return align_columns(df, expected)
+
+
+def align_columns(df, expected):
+    df_cols = list(df.columns)
+    if df_cols == expected:
+        return df
+    norm_map = {_normalize(c): c for c in df_cols}
+    expected_norm = [_normalize(h) for h in expected]
+    if all(n in norm_map for n in expected_norm):
+        df = df.loc[:, [norm_map[n] for n in expected_norm]]
+        df.columns = expected
+        return df
+    if df.shape[1] >= len(expected):
+        df = df.iloc[:, :len(expected)].copy()
+        df.columns = expected
+        return df
+    df = df.copy()
+    for i, h in enumerate(expected):
+        if i >= df.shape[1]:
+            df[h] = np.nan
+    df = df.loc[:, expected]
     return df
 
-def prepare_dataset(df, numeric_cols):
-    for col in numeric_cols:
+
+def preprocess(df):
+    df = df.copy()
+    for col in ("cubicinches", "weightlbs"):
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
     return df.dropna()
 
+
 def main():
     np.random.seed(0)
     random.seed(0)
-    dataset = read_csv_robust("cars.csv", EXPECTED_COLUMNS)
-    dataset = prepare_dataset(dataset, NUMERIC_COLS)
-    X = dataset[FEATURE_COLS].to_numpy()
-    y = dataset[LABEL_COL].to_numpy()
+    expected = [h.strip() for h in DATASET_HEADERS.split(",")]
+    df = read_dataset(DATASET_PATH, expected)
+    df = preprocess(df)
+    feature_cols = expected[:5]
+    target_col = expected[-1]
+    X = df.loc[:, feature_cols].to_numpy(copy=False)
+    y = df.loc[:, target_col].to_numpy(copy=False)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.25, random_state=0
     )
     classifier = SVC()
     classifier.fit(X_train, y_train)
-    y_pred = classifier.predict(X_test)
-    cm = confusion_matrix(y_test, y_pred)
-    accuracy = float((y_pred == y_test).mean())
+    accuracy = classifier.score(X_test, y_test)
     print(f"ACCURACY={accuracy:.6f}")
+
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed unused dataset inspection and visualization steps to cut unnecessary computation and imports.
-# - Consolidated missing-value handling and numeric conversions into a single cleaning pass.
-# - Eliminated duplicate predictions by reusing y_pred for both accuracy and confusion matrix.
-# - Aligned columns once based on DATASET_HEADERS to avoid redundant reordering and data movement.
-# - Added deterministic seeding and robust CSV fallback parsing for stable, reproducible execution.
+# - Removed unused libraries and visualization steps to reduce runtime and imports.
+# - Consolidated preprocessing into a single pass with targeted numeric conversion and one dropna.
+# - Implemented robust CSV parsing and column alignment to avoid repeated manual adjustments.
+# - Eliminated redundant predictions and used direct score computation for accuracy.

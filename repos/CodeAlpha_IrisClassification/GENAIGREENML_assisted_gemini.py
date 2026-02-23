@@ -5,35 +5,35 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
-def execute_pipeline(file_path="Iris.csv"):
+def load_data(path):
     try:
-        df = pd.read_csv(file_path)
-        if df.shape[1] <= 1:
-            df = pd.read_csv(file_path, sep=';', decimal=',')
-    except Exception:
-        return
+        df = pd.read_csv(path)
+        if len(df.columns) < 2:
+            raise ValueError
+    except:
+        df = pd.read_csv(path, sep=';', decimal=',')
+    return df
+
+def run_pipeline():
+    df = load_data("Iris.csv")
 
     if 'Id' in df.columns:
         df.drop(columns=['Id'], inplace=True)
     
-    target_col = 'Species'
-    if target_col not in df.columns:
-        return
-
-    X = df.drop(columns=[target_col]).astype(np.float32)
-    le = LabelEncoder()
-    y = le.fit_transform(df[target_col])
+    target_col = 'Species' if 'Species' in df.columns else df.columns[-1]
+    
+    X = df.drop(columns=[target_col]).values
+    y, _ = pd.factorize(df[target_col])
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
 
-    log_reg = LogisticRegression(max_iter=200)
+    log_reg = LogisticRegression(max_iter=200, random_state=42)
     log_reg.fit(X_train, y_train)
     
     rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
@@ -45,14 +45,14 @@ def execute_pipeline(file_path="Iris.csv"):
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
-    execute_pipeline()
+    run_pipeline()
 
 # Optimization Summary
-# 1. Removed heavy visualization libraries (seaborn, matplotlib) to reduce memory footprint and startup time.
-# 2. Eliminated redundant print statements, classification reports, and confusion matrix calculations to save CPU cycles.
-# 3. Cast feature data to float32 to reduce memory usage without loss of precision for this task.
-# 4. Implemented robust CSV loading with a fallback mechanism for different delimiters/decimals.
-# 5. Removed unnecessary intermediate data structures and simplified the preprocessing pipeline.
-# 6. Optimized the logic to drop the 'Id' column in-place to minimize data duplication.
-# 7. Maintained reproducibility by keeping fixed random seeds and stratified splits.
-# 8. Encapsulated code in a function to avoid global namespace pollution.
+# 1. Removed heavy visualization libraries (seaborn, matplotlib) to reduce memory import overhead and energy consumption.
+# 2. Replaced LabelEncoder with pd.factorize for faster, lower-overhead categorical encoding.
+# 3. Utilized .values to convert DataFrames to NumPy arrays early, reducing overhead of pandas metadata during model training.
+# 4. Eliminated redundant metric calculations (confusion matrix, classification report) and string formatting to save CPU cycles.
+# 5. Implemented robust CSV parsing with fallback to handle potential delimiter issues without manual intervention.
+# 6. Set fixed random seeds (42) for reproducibility while maintaining deterministic algorithm behavior.
+# 7. Optimized data flow by dropping the 'Id' column in-place and avoiding intermediate data structures.
+# 8. Removed all IO-heavy print statements and logging except for the required final output.

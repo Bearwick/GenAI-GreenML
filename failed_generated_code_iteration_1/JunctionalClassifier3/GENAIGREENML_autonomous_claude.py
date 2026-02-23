@@ -2,106 +2,96 @@
 # LLM: claude
 # Mode: autonomous
 
+import pickle
 import pandas as pd
 import numpy as np
-from sklearn.svm import LinearSVC
 from sklearn.model_selection import train_test_split
-from sklearn import metrics
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.impute import SimpleImputer
-import os
-import sys
-
-# Suppress warnings for clean output
+from sklearn.svm import LinearSVC
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
 import warnings
 warnings.filterwarnings("ignore")
 
-# Determine the dataset file to use
-dataset_file = None
-for candidate in ['14k.csv', 'input.csv', 'test.csv', 'test2.csv']:
-    if os.path.exists(candidate):
-        dataset_file = candidate
-        break
+# Load the pickle file
+DATASET_PATH = "dict.pickle"
 
-if dataset_file is None:
-    # Search for any CSV in current directory
-    csv_files = [f for f in os.listdir('.') if f.endswith('.csv')]
-    if csv_files:
-        dataset_file = csv_files[0]
+with open(DATASET_PATH, "rb") as f:
+    data = pickle.load(f, encoding="latin1")
 
-assert dataset_file is not None, "No CSV file found in directory"
+# Inspect what we loaded
+# data could be a dict, DataFrame, or other structure
+if isinstance(data, pd.DataFrame):
+    df = data.copy()
+elif isinstance(data, dict):
+    # Try to construct a DataFrame from the dict
+    # Check if values are arrays/lists of same length
+    if all(isinstance(v, (list, np.ndarray)) for v in data.values()):
+        try:
+            df = pd.DataFrame(data)
+        except Exception:
+            # Maybe it's a nested structure; try to figure it out
+            # Could be {key: array} with different lengths
+            max_len = max(len(np.atleast_1d(v)) for v in data.values())
+            new_data = {}
+            for k, v in data.items():
+                v = np.atleast_1d(v)
+                if len(v) == max_len:
+                    new_data[k] = v
+            df = pd.DataFrame(new_data)
+    elif all(isinstance(v, dict) for v in data.values()):
+        # dict of dicts
+        df = pd.DataFrame(data).T
+    else:
+        # Try direct conversion
+        try:
+            df = pd.DataFrame(data)
+        except Exception:
+            # Last resort: try to find arrays and a target
+            arrays = {}
+            for k, v in data.items():
+                v = np.atleast_1d(v)
+                arrays[k] = v
+            # Find common length
+            lengths = {k: len(v) for k, v in arrays.items()}
+            most_common_len = max(set(lengths.values()), key=list(lengths.values()).count)
+            filtered = {k: v for k, v in arrays.items() if len(v) == most_common_len}
+            df = pd.DataFrame(filtered)
+elif isinstance(data, (list, np.ndarray)):
+    df = pd.DataFrame(data)
+else:
+    # Try converting directly
+    df = pd.DataFrame(data)
 
-# Robust CSV reading
-df = None
-try:
-    df = pd.read_csv(dataset_file)
-    if df.shape[1] < 2:
-        df = pd.read_csv(dataset_file, sep=';', decimal=',')
-except Exception:
+# Normalize column names
+df.columns = [str(c).strip() for c in df.columns]
+df.columns = [' '.join(c.split()) for c in df.columns]
+# Drop unnamed columns
+df = df[[c for c in df.columns if not c.lower().startswith('unnamed')]]
+
+assert df.shape[0] > 0, "Dataset is empty after loading"
+assert df.shape[1] > 1, "Dataset has fewer than 2 columns"
+
+# Based on the project context, this is a classification task for retinal blood vessel junctions
+# Target values are -1 (remodelling), 0 (mixed/uncertainty), 1 (inactive)
+# Try to identify the target column
+
+# Heuristic: find a column that looks like a classification target
+# Look for columns with few unique values that could be labels (-1, 0, 1)
+target_col = None
+feature_cols = []
+
+# First, try to find a column with values in {-1, 0, 1}
+for col in df.columns:
     try:
-        df = pd.read_csv(dataset_file, sep=';', decimal=',')
+        vals = pd.to_numeric(df[col], errors='coerce').dropna()
+        unique_vals = set(vals.unique())
+        if unique_vals.issubset({-1.0, 0.0, 1.0}) and len(unique_vals) >= 2:
+            target_col = col
+            break
     except Exception:
-        pass
+        continue
 
-if df is None or df.shape[1] < 2:
-    # Try the original source code's parsing approach
-    import csv as csv_module
-    features_list = []
-    labels_list = []
-    first = True
-    with open(dataset_file, newline='') as csvfile:
-        reader = csv_module.reader(csvfile, delimiter=' ', quotechar='|')
-        for row in reader:
-            cols = row[0].split(",") if len(row) > 0 else row
-            if cols and cols[-1] == '':
-                cols.pop()
-            if not first:
-                try:
-                    both = np.asarray(cols, dtype=np.double).tolist()
-                    num = both.pop()
-                    features_list.append(both)
-                    labels_list.append(num)
-                except ValueError:
-                    pass
-            else:
-                first = False
-    if len(features_list) > 0:
-        n_feat = len(features_list[0])
-        col_names = [f'f{i}' for i in range(n_feat)] + ['target']
-        all_data = [f + [l] for f, l in zip(features_list, labels_list)]
-        df = pd.DataFrame(all_data, columns=col_names)
-
-assert df is not None and len(df) > 0, "Failed to load dataset"
-
-# Clean column names
-df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
-drop_cols = [c for c in df.columns if c.startswith('Unnamed')]
-if drop_cols:
-    df.drop(columns=drop_cols, inplace=True)
-
-assert df.shape[1] >= 2, "Dataset must have at least 2 columns"
-
-# Identify target: last column as in the source code's convention
-target_col = df.columns[-1]
-feature_cols = list(df.columns[:-1])
-
-# Coerce all columns to numeric
-for c in df.columns:
-    df[c] = pd.to_numeric(df[c], errors='coerce')
-
-# Drop rows with NaN in target
-df.dropna(subset=[target_col], inplace=True)
-assert len(df) > 0, "No valid rows after cleaning"
-
-# Replace inf with NaN then handle
-df.replace([np.inf, -np.inf], np.nan, inplace=True)
-
-# Prepare features and target
-X = df[feature_cols].copy()
-y = df[target_col].copy()
-
-# Apply the same label transformation as in the source code:
-# positive -> 1, negative -> -1, zero -> 0
-# This makes it a classification task
-y_transformed =
+# If not found, look for categorical column or column named 'class', 'label', 'target', 'y'
+if target

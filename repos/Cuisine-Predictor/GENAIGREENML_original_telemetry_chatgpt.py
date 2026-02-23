@@ -2,6 +2,9 @@
 # LLM: chatgpt
 # Mode: original_telemetry
 
+#!/usr/bin/env python
+# coding: utf-8
+
 import json
 import os
 import pandas as pd
@@ -11,8 +14,8 @@ from unidecode import unidecode
 def prior_probability():
     global classes
     global class_dcount
-    classes = list(class_tcount.keys())
     global prior_prob
+    classes = list(class_tcount.keys())
     for i in classes:
         prior_prob[i] = class_dcount[i] / len(data)
 
@@ -51,16 +54,14 @@ def file_read():
 
 def results_storage():
     file_path = "result.xlsx"
-    data = {"Keys": list(qdoc_class.keys()), "Values": list(qdoc_class.values())}
+    data_local = {"Keys": list(qdoc_class.keys()), "Values": list(qdoc_class.values())}
     if not os.path.exists(file_path):
-        df = pd.DataFrame(data)
+        df = pd.DataFrame(data_local)
         df.to_excel(file_path, index=False)
-    else:
-        pass
 
 
 def naive_based(queryset):
-    qdoc_class = {}
+    qdoc_class_local = {}
     for doc in queryset:
         classes_dprob = {}
         for c in classes:
@@ -71,8 +72,8 @@ def naive_based(queryset):
                 p_ingredient = p_ingredient * i_ingredient
             temp = p_ingredient * prior_prob[c]
             classes_dprob[c] = temp
-        qdoc_class[doc["id"]] = max(classes_dprob, key=lambda k: classes_dprob[k])
-    return qdoc_class
+        qdoc_class_local[doc["id"]] = max(classes_dprob, key=lambda k: classes_dprob[k])
+    return qdoc_class_local
 
 
 def testdata():
@@ -83,7 +84,6 @@ def testdata():
 
 
 def empirical_accuracy():
-    global qdoc_class
     correctly_classified = 0
     with open("train.json", "r") as f:
         queryset = json.load(f)
@@ -92,8 +92,8 @@ def empirical_accuracy():
     for doc in queryset:
         if doc["cuisine"] == empirical_dict[doc["id"]]:
             correctly_classified += 1
-    empirical_accuracy_value = correctly_classified / l
-    return empirical_accuracy_value
+    accuracy = correctly_classified / l
+    print(f"ACCURACY={accuracy:.6f}")
 
 
 data = []
@@ -108,5 +108,4 @@ classes = []
 file_read()
 prior_probability()
 testdata()
-accuracy = empirical_accuracy()
-print(f"ACCURACY={accuracy:.6f}")
+empirical_accuracy()

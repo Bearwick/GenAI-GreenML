@@ -3,21 +3,28 @@
 # Mode: assisted
 
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 
-try:
-    dataset = pd.read_csv('zoo.csv')
-    if len(dataset.columns) < 2:
-        raise ValueError
-except (pd.errors.ParserError, ValueError, Exception):
-    dataset = pd.read_csv('zoo.csv', sep=';', decimal=',')
+def load_dataset(path):
+    try:
+        df = pd.read_csv(path)
+        if df.shape[1] <= 1:
+            raise ValueError
+    except (pd.errors.ParserError, ValueError):
+        df = pd.read_csv(path, sep=';', decimal=',')
+    return df
+
+dataset = load_dataset('zoo.csv')
 
 X = dataset.iloc[:, 1:17].values
 y = dataset.iloc[:, 17].values
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, random_state=0
+)
 
 classifier = SVC()
 classifier.fit(X_train, y_train)
@@ -28,10 +35,10 @@ accuracy = accuracy_score(y_test, y_pred)
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# 1. Removed unused imports (seaborn, matplotlib, numpy) to reduce memory usage and library loading overhead.
-# 2. Eliminated redundant calls such as dataset.head() and unused intermediate predictions (X_test[15:25]).
-# 3. Removed heavy visualization logic and plotting dependencies (Seaborn/Matplotlib) which consume significant CPU/memory.
-# 4. Streamlined accuracy calculation by using accuracy_score instead of manual confusion matrix indexing.
-# 5. Implemented a robust CSV parsing fallback to handle different delimiters (comma vs semicolon) efficiently.
-# 6. Minimized data movement by avoiding unnecessary slicing and temporary storage of large arrays.
-# 7. Reduced computational overhead by fitting and predicting only once for the required evaluation.
+# 1. Removed heavy visualization libraries (seaborn, matplotlib) to minimize memory footprint and energy usage.
+# 2. Eliminated redundant calls such as head() display, intermediate predict() slices, and redundant score() calls.
+# 3. Optimized accuracy calculation using sklearn.metrics.accuracy_score instead of manual confusion matrix summation.
+# 4. Implemented robust CSV parsing with a fallback mechanism to handle different delimiters efficiently.
+# 5. Removed all I/O operations (plots, logs, and unnecessary prints) to reduce computational overhead and runtime.
+# 6. Used a fixed random seed in data splitting to ensure reproducibility with minimal complexity.
+# 7. Simplified the workflow by removing intermediate data structures and unnecessary loops.

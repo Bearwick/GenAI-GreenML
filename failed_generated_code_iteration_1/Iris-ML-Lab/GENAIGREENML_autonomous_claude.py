@@ -2,97 +2,89 @@
 # LLM: claude
 # Mode: autonomous
 
-import numpy as np
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.neighbors import NearestCentroid
 from sklearn.metrics import accuracy_score
 
-# --- Robust CSV loading ---
-file_name = 'iris.csv'
+DATASET_PATH = "iris.csv"
 
+df = None
 try:
-    df = pd.read_csv(file_name)
+    df = pd.read_csv(DATASET_PATH)
     if df.shape[1] < 2:
-        df = pd.read_csv(file_name, sep=';', decimal=',')
+        df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
 except Exception:
-    df = pd.read_csv(file_name, sep=';', decimal=',')
+    df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
 
-# --- Column name normalization ---
 df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
 df = df.loc[:, ~df.columns.str.startswith('Unnamed')]
 
-# --- Identify target and features ---
-expected_target = 'species'
-expected_features = ['sepal_length', 'sepal_width', 'petal_length', 'petal_width']
+assert df.shape[0] > 0 and df.shape[1] >= 2, "Dataset is empty or has fewer than 2 columns after cleanup."
 
-if expected_target in df.columns:
+expected_features = ['sepal_length', 'sepal_width', 'petal_length', 'petal_width']
+expected_target = 'species'
+
+available_cols = list(df.columns)
+
+if expected_target in available_cols:
     target_col = expected_target
 else:
-    # Fallback: pick the last non-numeric column, or last column
-    non_numeric = df.select_dtypes(exclude='number').columns.tolist()
-    if non_numeric:
-        target_col = non_numeric[-1]
+    obj_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
+    if obj_cols:
+        target_col = obj_cols[-1]
     else:
-        target_col = df.columns[-1]
+        num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        target_col = num_cols[-1] if num_cols else available_cols[-1]
 
-available_features = [c for c in expected_features if c in df.columns]
-if len(available_features) == 0:
-    available_features = [c for c in df.columns if c != target_col]
+feature_cols = [c for c in expected_features if c in available_cols]
+if len(feature_cols) == 0:
+    feature_cols = [c for c in available_cols if c != target_col]
 
-# --- Prepare features and target ---
-X = df[list(available_features)].copy()
-y = df[target_col].copy()
+for c in feature_cols:
+    df[c] = pd.to_numeric(df[c], errors='coerce')
 
-# Coerce features to numeric
-for col in X.columns:
-    X[col] = pd.to_numeric(X[col], errors='coerce')
+df = df.dropna(subset=feature_cols + [target_col])
+df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=feature_cols)
 
-# Drop rows with NaN in features or target
-valid_mask = X.notna().all(axis=1) & y.notna()
-X = X.loc[valid_mask].reset_index(drop=True)
-y = y.loc[valid_mask].reset_index(drop=True)
+assert df.shape[0] > 0, "No samples remaining after preprocessing."
 
-# Replace inf with NaN then drop
-X = X.replace([np.inf, -np.inf], np.nan).dropna()
-y = y.loc[X.index].reset_index(drop=True)
-X = X.reset_index(drop=True)
+X = df[list(feature_cols)].values
+y_raw = df[target_col]
 
-assert len(X) > 0, "Dataset is empty after preprocessing"
+le = LabelEncoder()
+y = le.fit_transform(y_raw.astype(str))
 
-# --- Encode target if categorical ---
-is_classification = True
-if y.dtype == object or y.dtype.name == 'category':
-    le = LabelEncoder()
-    y = pd.Series(le.fit_transform(y))
-else:
-    y_numeric = pd.to_numeric(y, errors='coerce')
-    unique_vals = y_numeric.dropna().unique()
-    if len(unique_vals) < 20:
-        le = LabelEncoder()
-        y = pd.Series(le.fit_transform(y.astype(str)))
-    else:
-        is_classification = True
-        le = LabelEncoder()
-        y = pd.Series(le.fit_transform(y.astype(str)))
+n_classes = len(np.unique(y))
+assert n_classes >= 2, "Target has fewer than 2 classes; cannot perform classification."
 
-n_classes = y.nunique()
-if n_classes < 2:
-    # Trivial baseline: predict the single class
-    accuracy = 1.0
-    print(f"ACCURACY={accuracy:.6f}")
-    import sys
-    sys.exit(0)
-
-# --- Train/test split ---
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-assert len(X_train) > 0 and len(X_test) > 0, "Train/test split produced empty sets"
+assert X_train.shape[0] > 0 and X_test.shape[0] > 0, "Train or test split is empty."
 
-# --- Lightweight pipeline: StandardScaler + LogisticRegression ---
 pipeline = Pipeline([
-    ('scaler',
+    ('scaler', StandardScaler()),
+    ('clf', NearestCentroid()),
+])
+
+pipeline.fit(X_train, y_train)
+y_pred = pipeline.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+
+print(f"ACCURACY={accuracy:.6f}")
+
+# OPTIMIZATION SUMMARY
+# - Model choice: NearestCentroid (nearest-centroid classifier) aligns with the project's
+#   README which specifies centroid-based classification with Euclidean distance.
+#   It is extremely lightweight: O(n) training, O(k*d) prediction where k=num classes.
+# - StandardScaler ensures features are on comparable scales for Euclidean distance.
+# - No large ensembles or deep learning; this is one of the most energy-efficient
+#   classifiers available, requiring virtually no compute at inference time.
+# - LabelEncoder handles string species labels robustly.
+# - Robust CSV parsing with semicolon/decimal fallback and column name normalization.
+# - Stratified train/test split (80/20

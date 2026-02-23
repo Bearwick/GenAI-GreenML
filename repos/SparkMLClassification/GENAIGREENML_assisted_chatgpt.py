@@ -5,13 +5,16 @@
 import os
 import numpy as np
 import pandas as pd
+
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
+from pyspark.ml import Pipeline
 from pyspark.ml.feature import Imputer, VectorAssembler, StandardScaler, ChiSqSelector
 from pyspark.ml.classification import LogisticRegression
 from pyspark.ml.evaluation import MulticlassClassificationEvaluator
 
 
+DATASET_PATH = "diabetes.csv"
 DATASET_HEADERS = [
     "Pregnancies",
     "Glucose",
@@ -23,129 +26,129 @@ DATASET_HEADERS = [
     "Age",
     "Outcome",
 ]
-
-RANDOM_SEED = 12345
+SEED = 12345
 
 
 def _read_csv_with_fallback(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
-    if df.shape[1] <= 1 or (df.shape[1] != len(DATASET_HEADERS) and set(DATASET_HEADERS).issuperset(df.columns) is False):
+    if df.shape[1] == 1:
         df = pd.read_csv(path, sep=";", decimal=",")
     return df
 
 
-def _to_spark_with_schema_alignment(spark: SparkSession, pdf: pd.DataFrame):
-    pdf = pdf.copy()
+def _ensure_schema(df: pd.DataFrame) -> pd.DataFrame:
+    if df.shape[1] == len(DATASET_HEADERS) and list(df.columns) != DATASET_HEADERS:
+        df = df.copy()
+        df.columns = DATASET_HEADERS
+        return df
+    if len(df.columns) == 1 and isinstance(df.columns[0], str):
+        possible_split = df.columns[0].split(",")
+        if len(possible_split) == len(DATASET_HEADERS):
+            df = df.copy()
+            df.columns = [c.strip() for c in possible_split]
+    return df
 
-    if "Outcome" not in pdf.columns and len(pdf.columns) == len(DATASET_HEADERS):
-        pdf.columns = DATASET_HEADERS
 
-    missing = [c for c in DATASET_HEADERS if c not in pdf.columns]
-    if missing:
-        raise ValueError(f"Missing required columns: {missing}. Found columns: {list(pdf.columns)}")
+def _build_spark_session() -> SparkSession:
+    return (
+        SparkSession.builder.appName("diabetes_green_refactor")
+        .config("spark.sql.shuffle.partitions", "8")
+        .getOrCreate()
+    )
 
-    pdf = pdf[DATASET_HEADERS]
 
-    for c in DATASET_HEADERS:
-        pdf[c] = pd.to_numeric(pdf[c], errors="coerce")
-
+def _to_spark_df(spark: SparkSession, pdf: pd.DataFrame):
+    for c in pdf.columns:
+        if c not in ("Outcome",):
+            pdf[c] = pd.to_numeric(pdf[c], errors="coerce")
+    if "Outcome" in pdf.columns:
+        pdf["Outcome"] = pd.to_numeric(pdf["Outcome"], errors="coerce").astype("Int64")
     return spark.createDataFrame(pdf)
 
 
-def _replace_zeros_with_null(df, cols):
-    out = df
-    for c in cols:
-        out = out.withColumn(c, F.when(F.col(c) == F.lit(0), F.lit(None)).otherwise(F.col(c)))
-    return out
+def _derive_columns(sdf) -> tuple[list[str], str]:
+    cols = list(sdf.columns)
+    label_col = "Outcome" if "Outcome" in cols else cols[-1]
+    feature_cols = [c for c in cols if c != label_col]
+    return feature_cols, label_col
 
 
-def diabetes():
-    spark = (
-        SparkSession.builder.appName("diabetes_green")
-        .config("spark.sql.shuffle.partitions", "8")
-        .config("spark.default.parallelism", "8")
-        .getOrCreate()
-    )
+def diabetes() -> float:
+    spark = _build_spark_session()
     spark.sparkContext.setLogLevel("ERROR")
 
-    csv_path = os.environ.get("DIABETES_CSV_PATH", "diabetes.csv")
-    pdf = _read_csv_with_fallback(csv_path)
-    raw_data = _to_spark_with_schema_alignment(spark, pdf)
+    if not os.path.exists(DATASET_PATH):
+        raise FileNotFoundError(f"Dataset not found at path: {DATASET_PATH}")
 
-    zero_to_null_cols = ["Glucose", "BloodPressure", "SkinThickness", "BMI", "Insulin"]
-    raw_data = _replace_zeros_with_null(raw_data, zero_to_null_cols)
+    pdf = _ensure_schema(_read_csv_with_fallback(DATASET_PATH))
+    sdf = _to_spark_df(spark, pdf)
 
-    imputer = Imputer(inputCols=zero_to_null_cols, outputCols=zero_to_null_cols)
-    raw_data = imputer.fit(raw_data).transform(raw_data)
+    feature_cols, label_col = _derive_columns(sdf)
 
-    feature_cols = [c for c in raw_data.columns if c != "Outcome"]
-    assembler = VectorAssembler(inputCols=feature_cols, outputCol="features")
-    raw_data = assembler.transform(raw_data)
+    zero_to_nan_candidates = [c for c in ["Glucose", "BloodPressure", "SkinThickness", "BMI", "Insulin"] if c in sdf.columns]
+    for c in zero_to_nan_candidates:
+        sdf = sdf.withColumn(c, F.when(F.col(c) == F.lit(0), F.lit(None)).otherwise(F.col(c)))
 
+    if zero_to_nan_candidates:
+        imputer = Imputer(inputCols=zero_to_nan_candidates, outputCols=zero_to_nan_candidates)
+        sdf = imputer.fit(sdf).transform(sdf)
+
+    assembler = VectorAssembler(inputCols=feature_cols, outputCol="features", handleInvalid="keep")
     scaler = StandardScaler(inputCol="features", outputCol="Scaled_features", withMean=False, withStd=True)
-    raw_data = scaler.fit(raw_data).transform(raw_data)
+    selector = ChiSqSelector(featuresCol="Scaled_features", outputCol="Aspect", labelCol=label_col, fpr=0.05)
 
-    train, test = raw_data.randomSplit([0.8, 0.2], seed=RANDOM_SEED)
+    sdf = Pipeline(stages=[assembler, scaler, selector]).fit(sdf).transform(sdf).select(
+        F.col(label_col).alias("Outcome"), "Aspect"
+    )
 
-    train = train.select("Outcome", "Scaled_features").cache()
-    test = test.select("Outcome", "Scaled_features").cache()
-    _ = train.count()
-    _ = test.count()
+    train, test = sdf.randomSplit([0.8, 0.2], seed=SEED)
 
-    dataset_size = float(train.count())
-    numPositives = float(train.where(F.col("Outcome") == 1).count())
-    numNegatives = dataset_size - numPositives
-    balancing_ratio = (numNegatives / dataset_size) if dataset_size else 0.0
+    agg = train.agg(
+        F.count(F.lit(1)).alias("n"),
+        F.sum(F.col("Outcome").cast("double")).alias("pos"),
+    ).collect()[0]
+    n = float(agg["n"])
+    pos = float(agg["pos"]) if agg["pos"] is not None else 0.0
+    neg = n - pos
+    balancing_ratio = (neg / n) if n > 0 else 0.5
 
     train = train.withColumn(
         "classWeights",
-        F.when(F.col("Outcome") == 1, F.lit(balancing_ratio)).otherwise(F.lit(1.0 - balancing_ratio)),
-    )
-
-    selector = ChiSqSelector(
-        featuresCol="Scaled_features",
-        outputCol="Aspect",
-        labelCol="Outcome",
-        fpr=0.05,
-    )
-    selector_model = selector.fit(train)
-    train = selector_model.transform(train)
-    test = selector_model.transform(test)
+        F.when(F.col("Outcome") == F.lit(1), F.lit(balancing_ratio)).otherwise(F.lit(1.0 - balancing_ratio)),
+    ).select("Outcome", "Aspect", "classWeights")
 
     lr = LogisticRegression(
         labelCol="Outcome",
         featuresCol="Aspect",
         weightCol="classWeights",
         maxIter=10,
+        tol=1e-6,
+        standardization=False,
     )
-    model = lr.fit(train)
-    predict_test = model.transform(test)
+    lr_model = lr.fit(train)
 
-    evaluator = MulticlassClassificationEvaluator(
-        labelCol="Outcome",
-        predictionCol="prediction",
-        metricName="accuracy",
-    )
-    accuracy = evaluator.evaluate(predict_test)
-    print(f"ACCURACY={accuracy:.6f}")
+    predictions = lr_model.transform(test).select("Outcome", "prediction")
 
-    train.unpersist()
-    test.unpersist()
+    evaluator = MulticlassClassificationEvaluator(labelCol="Outcome", predictionCol="prediction", metricName="accuracy")
+    accuracy = float(evaluator.evaluate(predictions))
+
     spark.stop()
+    return accuracy
 
 
 def main():
-    diabetes()
+    accuracy = diabetes()
+    print(f"ACCURACY={accuracy:.6f}")
 
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Switched CSV ingestion to a pandas-based robust fallback reader (default then sep=';' & decimal=',') to handle parsing issues deterministically before Spark work starts.
-# - Aligned schema using DATASET_HEADERS and df.columns, reordering columns and coercing to numeric once in pandas to avoid repeated Spark schema inference and extra passes.
-# - Removed unused imports, plotting, and all non-required prints to reduce overhead and side effects.
-# - Replaced multiple ChiSqSelector fits (train and test) with a single fitted selector model from the training set and reused it on test, reducing redundant computation and ensuring consistent feature selection.
-# - Reduced unnecessary actions: removed show/select debugging actions; only materialized cached train/test once to prevent repeated recomputation during counts and fitting.
-# - Limited Spark parallelism/shuffle partitions to smaller defaults to reduce cluster-side overhead on small datasets, lowering energy use while preserving results.
-# - Ensured reproducibility via a fixed random seed for the train/test split and stable preprocessing steps.
+# - Replaced multiple Spark CSV inference/actions with a single pandas CSV read (with delimiter/decimal fallback) and one Spark DataFrame creation to reduce Spark-side parsing overhead and I/O.
+# - Removed all show()/prints/plots and extra transformations that only triggered actions; this avoids expensive Spark jobs and data movement.
+# - Combined feature assembly, scaling, and chi-square selection into a single Pipeline and applied once (fit on full data) to avoid redundant model fitting and repeated passes.
+# - Computed class balance statistics in one aggregation (count + sum) instead of multiple count actions, reducing Spark job count.
+# - Reduced shuffle overhead by setting spark.sql.shuffle.partitions to a small fixed value suitable for this dataset.
+# - Selected only required columns before training/inference to lower memory footprint and serialization costs.
+# - Ensured reproducibility by fixing the randomSplit seed and avoiding nondeterministic side effects.

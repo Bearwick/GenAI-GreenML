@@ -2,99 +2,95 @@
 # LLM: claude
 # Mode: autonomous
 
-import numpy as np
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
-import warnings
-warnings.filterwarnings("ignore")
 
-# Robust CSV loading
-file_candidates = [
-    "heart/heart_dataset_.csv",
-    "heart_dataset_.csv",
-    "heart.csv",
-    "heart/heart.csv",
-]
+# --- Robust CSV Loading ---
+try:
+    df = pd.read_csv("heart/heart_dataset_.csv")
+    if df.shape[1] < 2:
+        df = pd.read_csv("heart/heart_dataset_.csv", sep=';', decimal=',')
+except Exception:
+    df = pd.read_csv("heart/heart_dataset_.csv", sep=';', decimal=',')
 
-df = None
-for fpath in file_candidates:
-    try:
-        df = pd.read_csv(fpath)
-        if df.shape[1] < 2:
-            df = pd.read_csv(fpath, sep=';', decimal=',')
-        break
-    except Exception:
-        continue
-
-if df is None:
-    import glob
-    csv_files = glob.glob("**/*.csv", recursive=True)
-    for fpath in csv_files:
-        try:
-            df = pd.read_csv(fpath)
-            if df.shape[1] < 2:
-                df = pd.read_csv(fpath, sep=';', decimal=',')
-            if df.shape[1] >= 2:
-                break
-        except Exception:
-            continue
-
-assert df is not None and df.shape[0] > 0, "No valid CSV found."
-
-# Normalize column names
+# --- Column name normalization ---
 df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
-df = df.loc[:, ~df.columns.str.startswith('Unnamed')]
+df = df[[c for c in df.columns if not c.startswith('Unnamed')]]
 
-# Expected schema
+# --- Define expected schema ---
 expected_features = ['age', 'sex', 'cp', 'trestbps', 'chol', 'fbs', 'restecg',
                      'thalach', 'exang', 'oldpeak', 'slope', 'ca', 'thal']
-target_col = 'target'
+expected_target = 'target'
 
-# Check target column exists
-if target_col not in df.columns:
-    # Try to find a suitable target
+# --- Identify target ---
+if expected_target in df.columns:
+    target_col = expected_target
+else:
+    # Fallback: pick last column or first numeric non-constant column
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-    if len(numeric_cols) >= 2:
-        target_col = numeric_cols[-1]
-    else:
-        target_col = df.columns[-1]
+    non_const = [c for c in numeric_cols if df[c].nunique() > 1]
+    target_col = non_const[-1] if non_const else df.columns[-1]
 
-# Determine available feature columns
-available_features = [c for c in expected_features if c in df.columns]
+# --- Identify features ---
+available_features = [c for c in expected_features if c in df.columns and c != target_col]
 if len(available_features) == 0:
     available_features = [c for c in df.columns if c != target_col]
 
-# Coerce all to numeric
-for c in available_features + [target_col]:
-    df[c] = pd.to_numeric(df[c], errors='coerce')
+# --- Coerce all to numeric ---
+for col in available_features + [target_col]:
+    df[col] = pd.to_numeric(df[col], errors='coerce')
 
-# Drop rows with NaN/inf in target or features
-df = df.replace([np.inf, -np.inf], np.nan)
-df = df.dropna(subset=available_features + [target_col])
+# --- Drop rows with NaN/inf in relevant columns ---
+subset = available_features + [target_col]
+df = df[subset].replace([np.inf, -np.inf], np.nan).dropna()
 
-assert df.shape[0] > 0, "Dataset empty after cleaning."
+assert df.shape[0] > 0, "Dataset empty after preprocessing"
 
-X = df[list(available_features)].values
-y = df[target_col].values
+X = df[list(available_features)]
+y = df[target_col]
 
-# Determine if classification is viable
-unique_classes = np.unique(y)
-is_classification = len(unique_classes) >= 2 and len(unique_classes) <= 50
+# --- Determine task type ---
+n_classes = y.nunique()
+is_classification = n_classes >= 2 and n_classes <= 30
 
 if is_classification:
-    # Binarize if needed (original source treats 1=no disease, 2=disease; 
-    # standard heart dataset uses 0/1; handle both)
+    # Convert target to integer labels for classification
+    y = y.astype(int)
+
+    # Handle multiclass vs binary
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=0, stratify=y if len(unique_classes) <= 30 else None
+        X, y, test_size=0.2, random_state=42, stratify=y
     )
 
-    assert X_train.shape[0] > 0 and X_test.shape[0] > 0
+    assert X_train.shape[0] > 0 and X_test.shape[0] > 0, "Empty split"
 
-    # Lightweight pipeline: StandardScaler + LogisticRegression
+    # Lightweight logistic regression pipeline
     pipe = Pipeline([
         ('scaler', StandardScaler()),
-        ('clf', LogisticRegression(solver='lbfgs', max_iter=1000, random_state
+        ('clf', LogisticRegression(
+            max_iter=500,
+            solver='lbfgs',
+            multi_class='auto',
+            random_state=42,
+            C=1.0
+        ))
+    ])
+
+    pipe.fit(X_train, y_train)
+    y_pred = pipe.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+
+else:
+    # Regression fallback with R^2 clamped to [0,1]
+    from sklearn.linear_model import Ridge
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+
+    assert X_train.shape[0] > 0 and

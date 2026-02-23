@@ -3,161 +3,167 @@
 # Mode: assisted
 
 import os
-os.environ["PYTHONHASHSEED"] = "0"
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+SEED = 0
+os.environ["PYTHONHASHSEED"] = str(SEED)
+os.environ.setdefault("TF_DETERMINISTIC_OPS", "1")
 
 import random
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from keras.layers import BatchNormalization, Dense
-from keras.models import Sequential
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Dense, BatchNormalization
+from tensorflow.keras.constraints import MaxNorm
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
+from sklearn.model_selection import train_test_split
 
-random.seed(0)
-np.random.seed(0)
+random.seed(SEED)
+np.random.seed(SEED)
 tf.random.set_seed(1)
+try:
+    tf.config.experimental.enable_op_determinism()
+except Exception:
+    pass
 
-DATASET_HEADERS = "a_acc,a_don,b_rotN,density,logP(o/w),logS,rings,Weight,Activity_value"
-EXPECTED_HEADERS = [h.strip() for h in DATASET_HEADERS.split(",") if h.strip()]
-LABEL_NAME = EXPECTED_HEADERS[-1] if EXPECTED_HEADERS else None
+DATASET_HEADERS = ["a_acc", "a_don", "b_rotN", "density", "logP(o/w)", "logS", "rings", "Weight", "Activity_value"]
+FEATURE_HEADERS = DATASET_HEADERS[:-1]
 
-
-def _is_parsing_ok(df, expected_cols):
-    if df is None or df.empty:
-        return False
-    cols = list(df.columns)
-    if len(cols) == 1 and len(expected_cols) > 1:
-        return False
-    if expected_cols and any(col in cols for col in expected_cols):
-        return True
-    return len(cols) > 1
-
-
-def read_csv_fallback(path, expected_cols):
-    try:
-        df = pd.read_csv(path)
-    except Exception:
-        return pd.read_csv(path, sep=";", decimal=",")
-    if not _is_parsing_ok(df, expected_cols):
+def read_csv_robust(path, headers=None):
+    df = pd.read_csv(path)
+    expected_cols = len(headers) if headers is not None else None
+    if df.shape[1] == 1 or (expected_cols is not None and df.shape[1] < expected_cols):
         try:
-            df_alt = pd.read_csv(path, sep=";", decimal=",")
-            if _is_parsing_ok(df_alt, expected_cols):
+            df_alt = pd.read_csv(path, sep=';', decimal=',')
+            if df_alt.shape[1] > df.shape[1]:
                 df = df_alt
         except Exception:
             pass
-    df.columns = [c.strip() if isinstance(c, str) else c for c in df.columns]
+    df.columns = [str(c).strip() for c in df.columns]
+    unnamed = [c for c in df.columns if str(c).lower().startswith("unnamed")]
+    if unnamed:
+        df = df.drop(columns=unnamed)
+    if headers is not None and len(df.columns) == len(headers) and list(df.columns) != headers:
+        df.columns = headers
     return df
 
+def infer_label_column(df, headers):
+    for col in df.columns:
+        if str(col).strip().lower() == "activity_value":
+            return col
+    if headers is not None and len(df.columns) == len(headers):
+        if list(df.columns) != headers:
+            df.columns = headers
+        if "Activity_value" in df.columns:
+            return "Activity_value"
+    return df.columns[-1]
 
-def select_feature_columns(df, expected_cols, label_col):
-    if expected_cols:
-        cols = [c for c in df.columns if c in expected_cols and c != label_col]
-        if cols:
-            return cols
-    if label_col and label_col in df.columns:
-        return [c for c in df.columns if c != label_col]
-    return list(df.columns)
-
-
-def extract_xy(df, feature_cols, label_col):
-    if feature_cols and all(c in df.columns for c in feature_cols):
-        X = df[feature_cols].to_numpy()
+def split_features_labels(df, label_col, feature_cols=None):
+    if label_col in df.columns:
+        y = df[label_col].to_numpy()
+        X_df = df.drop(columns=[label_col])
     else:
-        if label_col and label_col in df.columns:
-            X = df.drop(columns=[label_col]).to_numpy()
-        else:
-            X = df.to_numpy()
-    y = df[[label_col]].to_numpy() if label_col and label_col in df.columns else None
-    return X, y
+        y = df.iloc[:, -1].to_numpy()
+        X_df = df.iloc[:, :-1]
+    if y.ndim == 1:
+        y = y.reshape(-1, 1)
+    if feature_cols is not None:
+        if all(col in X_df.columns for col in feature_cols):
+            X_df = X_df[feature_cols]
+        elif X_df.shape[1] == len(feature_cols):
+            X_df = X_df.iloc[:, :len(feature_cols)]
+    return X_df.to_numpy(), y, list(X_df.columns)
 
+def extract_features(df, feature_cols, label_col=None):
+    if label_col and label_col in df.columns and df.shape[1] == len(feature_cols) + 1:
+        df = df.drop(columns=[label_col])
+    if feature_cols and all(col in df.columns for col in feature_cols):
+        df = df[feature_cols]
+    elif feature_cols and df.shape[1] == len(feature_cols):
+        df = df.iloc[:, :len(feature_cols)]
+    return df.to_numpy()
 
-def filter_outliers(X, y):
-    pca = PCA(n_components=2)
+def remove_outliers(X, y, seed):
+    n_comp = 2 if X.shape[1] >= 2 else 1
+    pca = PCA(n_components=n_comp, random_state=seed)
     X_pca = pca.fit_transform(X)
     iso = IsolationForest(contamination=0.1, n_estimators=100, random_state=0, verbose=0)
     mask = iso.fit_predict(X_pca) != -1
-    if y is None:
-        return X[mask], None
     return X[mask], y[mask]
 
+train_path = "herg_train_activity.csv"
+test_path = "herg_test_activity.csv"
+cas_path = "cas.csv"
 
-def align_feature_count(X, target_count):
-    if X.shape[1] > target_count:
-        return X[:, :target_count]
-    if X.shape[1] < target_count:
-        pad = target_count - X.shape[1]
-        return np.pad(X, ((0, 0), (0, pad)), constant_values=0)
-    return X
+train_df = read_csv_robust(train_path, DATASET_HEADERS)
+label_col = infer_label_column(train_df, DATASET_HEADERS)
+X_all, y_all, feature_cols = split_features_labels(train_df, label_col)
 
+if os.path.exists(test_path):
+    test_df = read_csv_robust(test_path, DATASET_HEADERS)
+    test_label_col = infer_label_column(test_df, DATASET_HEADERS)
+    X_test, y_test, _ = split_features_labels(test_df, test_label_col, feature_cols)
+    X_train, y_train = X_all, y_all
+else:
+    y_flat = y_all.reshape(-1)
+    stratify = y_flat if len(np.unique(y_flat)) > 1 else None
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_all, y_all, test_size=0.3, random_state=SEED, stratify=stratify
+    )
 
-train_df = read_csv_fallback("herg_train_activity.csv", EXPECTED_HEADERS)
-test_df = read_csv_fallback("herg_test_activity.csv", EXPECTED_HEADERS)
+del train_df, X_all, y_all
+try:
+    del test_df
+except NameError:
+    pass
 
-feature_cols = select_feature_columns(train_df, EXPECTED_HEADERS, LABEL_NAME)
-X_train, y_train = extract_xy(train_df, feature_cols, LABEL_NAME)
-X_test, y_test = extract_xy(test_df, feature_cols, LABEL_NAME)
-
-if X_test.shape[1] != X_train.shape[1]:
-    common_cols = [c for c in feature_cols if c in test_df.columns]
-    if common_cols:
-        feature_cols = common_cols
-        X_train = train_df[feature_cols].to_numpy()
-        X_test = test_df[feature_cols].to_numpy()
-    else:
-        min_features = min(X_train.shape[1], X_test.shape[1])
-        X_train = X_train[:, :min_features]
-        X_test = X_test[:, :min_features]
-        if feature_cols:
-            feature_cols = feature_cols[:min_features]
-
-del train_df, test_df
-
-if y_train is None or y_test is None:
-    raise ValueError("Label column not found in datasets.")
-
-scaler = MinMaxScaler(feature_range=(0, 1))
+scaler = MinMaxScaler(feature_range=(0, 1), copy=False)
 X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
-X_train, y_train = filter_outliers(X_train, y_train)
-X_test, y_test = filter_outliers(X_test, y_test)
+X_train, y_train = remove_outliers(X_train, y_train, SEED)
+X_test, y_test = remove_outliers(X_test, y_test, SEED)
 
 X_train = X_train.astype(np.float32, copy=False)
 X_test = X_test.astype(np.float32, copy=False)
 y_train = y_train.astype(np.float32, copy=False)
 y_test = y_test.astype(np.float32, copy=False)
 
-input_dim = X_train.shape[1]
-model = Sequential()
-model.add(BatchNormalization())
-model.add(Dense(200, input_dim=input_dim, activation="relu", kernel_initializer="random_uniform", kernel_constraint="MaxNorm"))
-model.add(BatchNormalization())
-model.add(Dense(200, activation="relu"))
-model.add(Dense(200, activation="relu"))
-model.add(Dense(1, activation="sigmoid"))
-model.compile(loss="binary_crossentropy", optimizer="adam", metrics=["accuracy"])
+tf.keras.backend.clear_session()
+
+model = Sequential([
+    BatchNormalization(input_shape=(X_train.shape[1],)),
+    Dense(200, activation='relu', kernel_initializer='random_uniform', kernel_constraint=MaxNorm()),
+    BatchNormalization(),
+    Dense(200, activation='relu'),
+    Dense(200, activation='relu'),
+    Dense(1, activation='sigmoid')
+])
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 model.fit(X_train, y_train, epochs=200, batch_size=100, shuffle=True, verbose=0)
 
-_, test_acc = model.evaluate(X_test, y_test, verbose=0)
+test_pred = model.predict(X_test, verbose=0)
+test_pred_class = (test_pred >= 0.5).astype(np.int32).reshape(-1)
+y_test_int = y_test.astype(np.int32).reshape(-1)
+accuracy = float(np.mean(test_pred_class == y_test_int))
 
-new_df = read_csv_fallback("cas.csv", EXPECTED_HEADERS)
-X_new, _ = extract_xy(new_df, feature_cols, LABEL_NAME)
-X_new = align_feature_count(X_new, X_train.shape[1])
-X_new = scaler.transform(X_new.astype(np.float32, copy=False)).astype(np.float32, copy=False)
+if os.path.exists(cas_path):
+    cas_df = read_csv_robust(cas_path, FEATURE_HEADERS)
+    X_cas = extract_features(cas_df, feature_cols, label_col=label_col)
+    if X_cas.size > 0:
+        X_cas = scaler.transform(X_cas)
+        X_cas = X_cas.astype(np.float32, copy=False)
+        cas_pred = model.predict(X_cas, verbose=0)
+        cas_class = (cas_pred >= 0.5).astype(np.int32)
+        pd.DataFrame(cas_class, columns=['prediction']).to_csv('CAS_full_herg.csv')
+    del cas_df
 
-pred_prob = model.predict(X_new, verbose=0)
-pred_class = (pred_prob > 0.5).astype(int)
-pd.DataFrame(pred_class, columns=["prediction"]).to_csv("CAS_full_herg.csv")
-
-accuracy = float(test_acc)
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# - Consolidated CSV loading with schema-aware fallback parsing to avoid redundant reads and mis-parsing.
-# - Removed unused scalers, duplicate predictions, and extra metric calculations to cut unnecessary computation.
-# - Dropped validation evaluation during training to reduce per-epoch overhead without affecting model weights.
-# - Delayed casting to float32 until after outlier filtering to preserve behavior while reducing memory for training.
-# - Modularized preprocessing and alignment logic to minimize repeated code and intermediate data movement.
+# - Consolidated robust CSV loading with delimiter fallback and header normalization to avoid repeated parsing and schema errors.
+# - Removed redundant scaler objects, duplicate predictions, and per-epoch validation evaluation to cut unnecessary computation.
+# - Vectorized outlier filtering and accuracy calculation while discarding unused intermediates to reduce memory footprint.
+# - Used in-place scaling and float32 conversion after preprocessing to minimize data movement and storage.
+# - Enforced deterministic seeding and optional deterministic TF ops plus conditional CAS processing for reproducible, efficient runs.

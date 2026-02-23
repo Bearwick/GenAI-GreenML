@@ -6,61 +6,66 @@ import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 
-SEED = 42
+DATASET_PATH = "music.csv"
 DATASET_HEADERS = "age,gender,genre"
+SEED = 42
 
-def parse_headers(header_str):
-    return [h.strip() for h in header_str.split(",") if h.strip()]
 
-EXPECTED_HEADERS = parse_headers(DATASET_HEADERS)
-
-def read_csv_with_fallback(path, expected_headers):
+def read_dataset(path, headers):
+    expected = [h.strip() for h in headers.split(",") if h.strip()]
     df = pd.read_csv(path)
-    if len(df.columns) == 1 and len(expected_headers) > 1:
-        try:
-            df_alt = pd.read_csv(path, sep=";", decimal=",")
-            if len(df_alt.columns) > 1:
-                return df_alt
-        except Exception:
-            return df
-    return df
+    if parsing_suspect(df, expected):
+        df = pd.read_csv(path, sep=";", decimal=",")
+    return df, expected
 
-def resolve_column(columns, name):
-    name_lower = name.strip().lower()
-    for col in columns:
-        if col.strip().lower() == name_lower:
-            return col
-    return None
 
-def prepare_data(path):
-    df = read_csv_with_fallback(path, EXPECTED_HEADERS)
-    target_col = resolve_column(df.columns, EXPECTED_HEADERS[-1]) if EXPECTED_HEADERS else None
-    if target_col is None:
-        target_col = df.columns[-1]
-    feature_cols = [c for c in df.columns if c != target_col]
+def parsing_suspect(df, expected):
+    if df.shape[1] == 1 and len(expected) > 1:
+        return True
+    if not expected:
+        return False
+    cols_lower = {str(c).strip().lower() for c in df.columns}
+    expected_lower = [h.strip().lower() for h in expected]
+    matches = sum(1 for h in expected_lower if h in cols_lower)
+    return matches == 0
+
+
+def derive_schema(df, expected):
+    cols = list(df.columns)
+    lower_map = {str(c).strip().lower(): c for c in cols}
+    target = None
+    if expected:
+        target = lower_map.get(expected[-1].strip().lower())
+    if target is None:
+        for h in reversed(expected):
+            target = lower_map.get(h.strip().lower())
+            if target is not None:
+                break
+    if target is None:
+        target = cols[-1]
+    feature_cols = [c for c in cols if c != target]
+    return feature_cols, target
+
+
+def main():
+    df, expected = read_dataset(DATASET_PATH, DATASET_HEADERS)
+    feature_cols, target_col = derive_schema(df, expected)
     X = df[feature_cols]
     y = df[target_col]
-    return X, y
-
-def train_and_evaluate(X, y):
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=SEED
     )
     model = DecisionTreeClassifier(random_state=SEED)
     model.fit(X_train, y_train)
-    return model.score(X_test, y_test)
-
-def main():
-    X, y = prepare_data("music.csv")
-    accuracy = train_and_evaluate(X, y)
+    accuracy = model.score(X_test, y_test)
     print(f"ACCURACY={accuracy:.6f}")
+
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# Used fixed random_state values for deterministic splits and model training.
-# Added a lightweight CSV parsing fallback to correct delimiter issues only when needed.
-# Resolved the target column dynamically from provided headers and actual columns.
-# Computed accuracy via model.score to avoid extra prediction storage and metric calls.
-# Limited imports to required components to reduce overhead.
+# - Added deterministic random_state for reproducible data splits and model training.
+# - Implemented CSV parsing validation with a lightweight fallback delimiter/decimal.
+# - Derived target/features from provided headers and actual columns to avoid hardcoding.
+# - Used model.score to avoid storing prediction arrays and reduce memory overhead.

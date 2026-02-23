@@ -16,30 +16,33 @@ obj_cols = df.select_dtypes([object]).columns
 for col in obj_cols:
     df[col] = df[col].str.decode('utf-8')
 
-target_col = None
-for col in df.columns:
-    if 'income' in col.lower() or 'class' in col.lower():
-        target_col = col
-        break
+target_col = df.columns[-1]
 
-if target_col is None:
-    target_col = df.columns[-1]
+cat_cols = df.select_dtypes(include=['object']).columns.tolist()
+non_target_cat = [c for c in cat_cols if c != target_col]
 
 from sklearn.preprocessing import LabelEncoder
 
-cat_cols = df.select_dtypes(include=['object']).columns.tolist()
+le_target = LabelEncoder()
+y = le_target.fit_transform(df[target_col])
+
 label_encoders = {}
-for col in cat_cols:
+for col in non_target_cat:
     le = LabelEncoder()
-    df[col] = le.fit_transform(df[col])
+    df[col] = le.fit_transform(df[col].astype(str))
     label_encoders[col] = le
 
-y = df[target_col].values
-X = df.drop(target_col, axis=1).values
+X = df.drop(columns=[target_col])
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=42
+)
 
-clf = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+clf = RandomForestClassifier(
+    n_estimators=100,
+    random_state=42,
+    n_jobs=-1,
+)
 clf.fit(X_train, y_train)
 
 y_pred = clf.predict(X_test)
@@ -48,12 +51,10 @@ accuracy = accuracy_score(y_test, y_pred)
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# 1. Replaced one-hot encoding (get_dummies) with LabelEncoder for categorical features,
-#    reducing memory footprint and feature dimensionality significantly, which speeds up
-#    both training and prediction in tree-based models without affecting their behavior.
-# 2. Converted X and y to numpy arrays before train_test_split to avoid DataFrame overhead.
-# 3. Added n_jobs=-1 to RandomForestClassifier to utilize all CPU cores for parallel training.
-# 4. Dynamically detect the target column instead of hardcoding a one-hot encoded name,
-#    making the code robust to slight schema variations.
-# 5. Removed all prints, plots, classification report, and logging per requirements.
-# 6. Used a fixed random_state for reproducibility.
+# 1. Replaced one-hot encoding (get_dummies) with label encoding to reduce memory footprint and feature dimensionality significantly, which lowers computation in tree-based models that handle ordinal integers natively.
+# 2. Used n_jobs=-1 in RandomForestClassifier to parallelize tree fitting across all CPU cores, reducing wall-clock time and energy per unit of work.
+# 3. Removed all print statements, plots, and classification_report computation to eliminate unnecessary I/O and redundant metric calculations.
+# 4. Dynamically detected the target column as the last column instead of hardcoding a specific dummy column name, improving robustness.
+# 5. Used LabelEncoder for the target variable instead of relying on get_dummies column naming conventions.
+# 6. Fixed random seed for reproducibility.
+# 7. Avoided creating intermediate encoded DataFrame (df_encoded), reducing peak memory usage.

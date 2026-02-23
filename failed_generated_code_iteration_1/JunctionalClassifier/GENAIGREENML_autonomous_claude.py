@@ -2,100 +2,92 @@
 # LLM: claude
 # Mode: autonomous
 
-import numpy as np
+import pickle
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.svm import LinearSVC
 from sklearn.linear_model import LogisticRegression
-from sklearn import metrics
-import os
-import sys
+from sklearn.metrics import accuracy_score
 
-# Attempt to load the dataset with robust CSV parsing
-data_file = '14k.csv'
+# Load the pickle file
+with open("dict.pickle", "rb") as f:
+    data = pickle.load(f, encoding="latin1")
 
-# Check if file exists; if not, try common alternatives
-if not os.path.exists(data_file):
-    candidates = [f for f in os.listdir('.') if f.endswith('.csv')]
-    if candidates:
-        data_file = candidates[0]
-    else:
-        print("ACCURACY=0.000000")
-        sys.exit(0)
-
-# Robust CSV reading
+# Explore the loaded data to build a DataFrame
+# The pickle could be a dict, DataFrame, or other structure
 df = None
-try:
-    df = pd.read_csv(data_file)
-    if df.shape[1] < 2:
-        raise ValueError("Too few columns, retry with sep=';'")
-except Exception:
+
+if isinstance(data, pd.DataFrame):
+    df = data
+elif isinstance(data, dict):
+    # Try to construct a DataFrame from the dict
+    # Could be {column_name: array} or nested structures
+    # First check if values are array-like of consistent length
     try:
-        df = pd.read_csv(data_file, sep=';', decimal=',')
+        df = pd.DataFrame(data)
     except Exception:
-        print("ACCURACY=0.000000")
-        sys.exit(0)
+        # Maybe it's a nested dict or has non-uniform lengths
+        # Try to flatten or find the right key
+        for key, val in data.items():
+            if isinstance(val, pd.DataFrame):
+                df = val
+                break
+            elif isinstance(val, dict):
+                try:
+                    df = pd.DataFrame(val)
+                    break
+                except Exception:
+                    continue
+            elif isinstance(val, np.ndarray) and val.ndim == 2:
+                df = pd.DataFrame(val)
+                break
+        if df is None:
+            # Last resort: try to see if dict has 'data' and 'target' keys (sklearn-style)
+            if "data" in data and "target" in data:
+                X_raw = np.array(data["data"])
+                y_raw = np.array(data["target"])
+                if X_raw.ndim == 1:
+                    X_raw = X_raw.reshape(-1, 1)
+                cols = [f"feature_{i}" for i in range(X_raw.shape[1])]
+                df = pd.DataFrame(X_raw, columns=cols)
+                df["target"] = y_raw
+            else:
+                # Try converting all values to lists and building df
+                converted = {}
+                for k, v in data.items():
+                    if hasattr(v, '__len__') and not isinstance(v, str):
+                        converted[k] = list(v) if not isinstance(v, list) else v
+                if converted:
+                    lengths = [len(v) for v in converted.values()]
+                    max_len = max(lengths)
+                    # Keep only columns with the most common length
+                    from collections import Counter
+                    len_counts = Counter(lengths)
+                    most_common_len = len_counts.most_common(1)[0][0]
+                    filtered = {k: v for k, v in converted.items() if len(v) == most_common_len}
+                    if filtered:
+                        df = pd.DataFrame(filtered)
+elif isinstance(data, np.ndarray):
+    if data.ndim == 2:
+        df = pd.DataFrame(data, columns=[f"col_{i}" for i in range(data.shape[1])])
+    elif data.ndim == 1 and hasattr(data[0], '__len__'):
+        df = pd.DataFrame(list(data))
 
-if df is None or df.empty:
-    print("ACCURACY=0.000000")
-    sys.exit(0)
+assert df is not None and len(df) > 0, "Could not construct a valid DataFrame from the pickle file"
 
-# Strip/normalize column names
-df.columns = df.columns.str.strip()
-df.columns = df.columns.str.replace(r'\s+', ' ', regex=True)
+# Clean column names
+df.columns = [str(c).strip() for c in df.columns]
+df.columns = [" ".join(c.split()) for c in df.columns]
 # Drop unnamed columns
-df = df[[c for c in df.columns if not c.lower().startswith('unnamed')]]
+df = df[[c for c in df.columns if not c.lower().startswith("unnamed")]]
 
-# Coerce all columns to numeric where possible
-for c in df.columns:
-    df[c] = pd.to_numeric(df[c], errors='coerce')
+# Based on the README, the task is classification of retinal blood vessel junctions
+# Labels are: -1 (remodelling), 0 (mixed/uncertainty), 1 (inactive)
+# Try to identify target column
+target_col = None
 
-# Drop rows/columns that are entirely NaN
-df = df.dropna(axis=1, how='all')
-df = df.dropna(axis=0, how='any')
-
-assert df.shape[0] > 0, "Dataset empty after cleaning"
-assert df.shape[1] >= 2, "Need at least 2 columns"
-
-# The original source code uses the last column as the label
-# and converts it: >0 -> 1, <0 -> -1, ==0 stays 0
-target_col = df.columns[-1]
-feature_cols = list(df.columns[:-1])
-
-X = df[feature_cols].values.astype(np.float64)
-y_raw = df[target_col].values.astype(np.float64)
-
-# Replace inf with NaN and then drop
-mask = np.isfinite(X).all(axis=1) & np.isfinite(y_raw)
-X = X[mask]
-y_raw = y_raw[mask]
-
-assert X.shape[0] > 0, "No valid samples after removing inf/NaN"
-
-# Transform labels as in original code: >0 -> 1, <0 -> -1, ==0 -> 0
-y = np.where(y_raw > 0, 1, np.where(y_raw < 0, -1, 0))
-
-# Check number of classes
-unique_classes = np.unique(y)
-is_classification = len(unique_classes) >= 2
-
-if not is_classification:
-    # Fallback: trivial baseline, always predict the single class
-    accuracy = 1.0
-    print(f"ACCURACY={accuracy:.6f}")
-    sys.exit(0)
-
-# Train/test split with fixed random state for reproducibility
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.3, random_state=42, stratify=y if len(unique_classes) <= 50 else None
-)
-
-assert X_train.shape[0] > 0, "Training set is empty"
-assert X_test.shape[0] > 0, "Test set is empty"
-
-# Standardize features
-scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
-
-# Use LogisticRegression
+# Look for common target column names
+target_candidates = ["target", "label", "class", "Class", "Label", "Target", "y", "output", "Output", "

@@ -5,130 +5,135 @@
 import numpy as np
 import pandas as pd
 import warnings
-from sklearn.model_selection import train_test_split
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import SelectFpr, chi2
 from sklearn.linear_model import LogisticRegression
-from sklearn.exceptions import ConvergenceWarning
 
-SEED = 12345
-DATASET_HEADERS = "Pregnancies,Glucose,BloodPressure,SkinThickness,Insulin,BMI,DiabetesPedigreeFunction,Age,Outcome"
+warnings.filterwarnings("ignore", category=ConvergenceWarning)
+
+RANDOM_SEED = 12345
+DATASET_PATH = "diabetes.csv"
+DATASET_HEADERS = [
+    "Pregnancies",
+    "Glucose",
+    "BloodPressure",
+    "SkinThickness",
+    "Insulin",
+    "BMI",
+    "DiabetesPedigreeFunction",
+    "Age",
+    "Outcome",
+]
+
+np.random.seed(RANDOM_SEED)
 
 
-def read_csv_with_fallback(path, expected_headers):
-    df = pd.read_csv(path)
-    if expected_headers:
-        expected_len = len(expected_headers)
-        if df.shape[1] == 1 or (df.shape[1] < expected_len and not set(expected_headers).issubset(df.columns)):
-            try:
-                df_alt = pd.read_csv(path, sep=";", decimal=",")
-                if df_alt.shape[1] >= df.shape[1]:
-                    df = df_alt
-            except Exception:
-                pass
+def load_dataset(path, headers):
+    def read_csv(**kwargs):
+        try:
+            return pd.read_csv(path, **kwargs)
+        except Exception:
+            return pd.DataFrame()
+
+    def clean(df):
+        if df.empty:
+            return df
+        df = df.loc[:, ~df.columns.astype(str).str.startswith("Unnamed")]
+        df.columns = [str(c).strip() for c in df.columns]
+        return df
+
+    def looks_wrong(df):
+        if df.empty:
+            return True
+        cols = df.columns.tolist()
+        if len(cols) == 1:
+            return True
+        if len(cols) != len(headers) and not set(headers).issubset(cols):
+            return True
+        return False
+
+    df = clean(read_csv())
+    if looks_wrong(df):
+        df_alt = clean(read_csv(sep=";", decimal=","))
+        if not looks_wrong(df_alt):
+            df = df_alt
+    if df.shape[1] == len(headers) and not set(headers).issubset(df.columns):
+        df.columns = headers
+    if set(headers).issubset(df.columns):
+        df = df[headers]
     return df
 
 
-def align_columns(df, expected_headers):
-    if not expected_headers:
-        return df
-    if len(df.columns) == len(expected_headers) and all(isinstance(c, (int, np.integer)) for c in df.columns):
-        df.columns = expected_headers
-        return df
+def prepare_data(df, headers):
     df.columns = [str(c).strip() for c in df.columns]
-    lower_map = {c.lower(): c for c in df.columns}
-    if all(h.lower() in lower_map for h in expected_headers):
-        df = df[[lower_map[h.lower()] for h in expected_headers]]
-        df.columns = expected_headers
-    elif len(df.columns) == len(expected_headers) and not set(expected_headers).issubset(df.columns):
-        df.columns = expected_headers
-    return df
-
-
-def compute_accuracy(path):
-    expected_headers = [h.strip() for h in DATASET_HEADERS.split(",") if h.strip()]
-    df = read_csv_with_fallback(path, expected_headers)
-    df = align_columns(df, expected_headers)
-    if expected_headers and set(expected_headers).issubset(df.columns):
-        df = df[expected_headers]
     df = df.apply(pd.to_numeric, errors="coerce")
-    label_col = None
-    for h in expected_headers[::-1]:
-        if h in df.columns and h.lower() == "outcome":
-            label_col = h
-            break
-    if label_col is None and expected_headers and expected_headers[-1] in df.columns:
-        label_col = expected_headers[-1]
+    label_col = next((c for c in df.columns if c.lower() == "outcome"), None)
     if label_col is None:
-        label_col = df.columns[-1]
-    zero_target = {"glucose", "bloodpressure", "skinthickness", "bmi", "insulin"}
-    zero_names = {h.lower() for h in expected_headers if h.lower() in zero_target}
-    zero_cols = [col for col in df.columns if col.lower() in zero_names]
+        label_col = headers[-1] if headers and headers[-1] in df.columns else df.columns[-1]
+    zero_cols = [
+        c
+        for c in ["Glucose", "BloodPressure", "SkinThickness", "BMI", "Insulin"]
+        if c in df.columns
+    ]
     if zero_cols:
-        df.loc[:, zero_cols] = df[zero_cols].replace(0, np.nan)
-        means = df[zero_cols].mean()
-        df.loc[:, zero_cols] = df[zero_cols].fillna(means)
-    feature_cols = [col for col in df.columns if col != label_col]
-    X = df[feature_cols].to_numpy(dtype=float)
-    y = df[label_col].to_numpy(dtype=float)
-    if np.isnan(y).any():
-        mask = ~np.isnan(y)
-        X = X[mask]
-        y = y[mask]
-    if np.isnan(X).any():
-        col_means = np.nanmean(X, axis=0)
-        inds = np.where(np.isnan(X))
-        X[inds] = np.take(col_means, inds[1])
+        df[zero_cols] = df[zero_cols].replace(0, np.nan)
+        df[zero_cols] = df[zero_cols].fillna(df[zero_cols].mean())
+    feature_cols = [c for c in df.columns if c != label_col]
+    X = df[feature_cols].to_numpy(dtype=np.float64)
+    y = df[label_col].to_numpy(dtype=np.int64)
+    return X, y
+
+
+def train_and_evaluate(X, y, seed):
+    rng = np.random.RandomState(seed)
+    mask = rng.rand(len(y)) < 0.8
     scaler = StandardScaler(with_mean=False)
     X_scaled = scaler.fit_transform(X)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_scaled, y, test_size=0.2, random_state=SEED, shuffle=True
-    )
-    dataset_size = y_train.shape[0]
-    num_pos = float(np.sum(y_train == 1))
-    num_neg = float(dataset_size - num_pos)
-    balancing_ratio = num_neg / dataset_size if dataset_size else 0.0
-    class_weight = {0.0: 1 - balancing_ratio, 1.0: balancing_ratio}
+    X_train = X_scaled[mask]
+    X_test = X_scaled[~mask]
+    y_train = y[mask]
+    y_test = y[~mask]
+    if y_train.size == 0 or y_test.size == 0:
+        split_idx = int(0.8 * len(y))
+        X_train = X_scaled[:split_idx]
+        X_test = X_scaled[split_idx:]
+        y_train = y[:split_idx]
+        y_test = y[split_idx:]
+    dataset_size = y_train.size
+    if dataset_size == 0:
+        return 0.0
+    num_pos = np.sum(y_train == 1)
+    num_neg = dataset_size - num_pos
+    balance_ratio = num_neg / dataset_size
+    weights = np.where(y_train == 1, balance_ratio, 1.0 - balance_ratio)
     selector = SelectFpr(chi2, alpha=0.05)
     X_train_sel = selector.fit_transform(X_train, y_train)
     X_test_sel = selector.transform(X_test)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", ConvergenceWarning)
-        try:
-            model = LogisticRegression(
-                max_iter=10,
-                solver="lbfgs",
-                penalty="none",
-                random_state=SEED,
-                class_weight=class_weight,
-            )
-            model.fit(X_train_sel, y_train)
-        except Exception:
-            model = LogisticRegression(
-                max_iter=10,
-                solver="lbfgs",
-                C=1e6,
-                penalty="l2",
-                random_state=SEED,
-                class_weight=class_weight,
-            )
-            model.fit(X_train_sel, y_train)
-    y_pred = model.predict(X_test_sel)
-    accuracy = float(np.mean(y_pred == y_test))
+    if X_train_sel.shape[1] == 0:
+        X_train_sel = X_train
+        X_test_sel = X_test
+    lr = LogisticRegression(max_iter=10, solver="lbfgs", C=1e6, random_state=seed)
+    lr.fit(X_train_sel, y_train, sample_weight=weights)
+    y_pred = lr.predict(X_test_sel)
+    accuracy = float(np.mean(y_pred == y_test)) if y_test.size else 0.0
     return accuracy
 
 
 def main():
-    np.random.seed(SEED)
-    accuracy = compute_accuracy("diabetes.csv")
+    df = load_dataset(DATASET_PATH, DATASET_HEADERS)
+    X, y = prepare_data(df, DATASET_HEADERS)
+    accuracy = train_and_evaluate(X, y, RANDOM_SEED)
     print(f"ACCURACY={accuracy:.6f}")
 
 
 if __name__ == "__main__":
     main()
 
+
 # Optimization Summary
-# - Replaced Spark-based processing with pandas/numpy and scikit-learn to avoid distributed overhead for a small dataset.
-# - Used vectorized pandas mean imputation and minimized intermediate objects to cut computation and memory use.
-# - Reused a single fitted feature selector for test data and used class_weight instead of per-row weights to reduce redundancy.
-# - Fixed random seeds and suppressed convergence warnings for deterministic, minimal-output execution.
+# - Replaced the distributed Spark pipeline with a lightweight pandas/sklearn workflow to reduce startup and data movement overhead.
+# - Applied vectorized zero-to-NaN replacement and mean imputation to avoid iterative transformations.
+# - Scaled the full dataset once and reused a fixed-seed boolean mask for deterministic, low-cost splitting.
+# - Fit the feature selector a single time and reused it for test data to remove redundant fitting.
+# - Limited computation to required predictions and the final accuracy output only.

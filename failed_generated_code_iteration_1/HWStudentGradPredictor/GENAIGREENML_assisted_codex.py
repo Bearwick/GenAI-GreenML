@@ -2,71 +2,73 @@
 # LLM: codex
 # Mode: assisted
 
+import warnings
 import pandas as pd
 import numpy as np
-import random
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import accuracy_score
+from sklearn.exceptions import ConvergenceWarning
 
-DATASET_HEADERS = "Marital status;Application mode;Application order;Daytime/evening attendance;Previous qualification;Previous qualification (grade);Nacionality;Mother's qualification;Father's qualification;Mother's occupation;Father's occupation;Admission grade;Displaced;Educational special needs;Debtor;Tuition fees up to date;Gender;Scholarship holder;Age at enrollment;International;Curricular units 1st sem (credited);Curricular units 1st sem (enrolled);Curricular units 1st sem (evaluations);Curricular units 1st sem (approved);Curricular units 1st sem (grade);Curricular units 1st sem (without evaluations);Curricular units 2nd sem (credited);Curricular units 2nd sem (enrolled);Curricular units 2nd sem (evaluations);Curricular units 2nd sem (approved);Curricular units 2nd sem (grade);Curricular units 2nd sem (without evaluations);Unemployment rate;Inflation rate;GDP;Graduated (target)"
+DATASET_PATH = "data/students_graduate_predict.csv"
+DATASET_HEADERS = (
+    "Marital status;Application mode;Application order;Daytime/evening attendance;"
+    "Previous qualification;Previous qualification (grade);Nacionality;Mother's qualification;"
+    "Father's qualification;Mother's occupation;Father's occupation;Admission grade;Displaced;"
+    "Educational special needs;Debtor;Tuition fees up to date;Gender;Scholarship holder;"
+    "Age at enrollment;International;Curricular units 1st sem (credited);Curricular units 1st sem (enrolled);"
+    "Curricular units 1st sem (evaluations);Curricular units 1st sem (approved);Curricular units 1st sem (grade);"
+    "Curricular units 1st sem (without evaluations);Curricular units 2nd sem (credited);"
+    "Curricular units 2nd sem (enrolled);Curricular units 2nd sem (evaluations);"
+    "Curricular units 2nd sem (approved);Curricular units 2nd sem (grade);"
+    "Curricular units 2nd sem (without evaluations);Unemployment rate;Inflation rate;GDP;Graduated (target)"
+)
+HEADERS = [h.strip() for h in DATASET_HEADERS.split(';')]
 
-SEED = 1
-
-def normalize_numeric_columns(df):
-    obj_cols = df.select_dtypes(include=["object"]).columns
-    if len(obj_cols) == 0:
-        return df
-    for col in obj_cols:
-        series = df[col]
-        converted = pd.to_numeric(series, errors="ignore")
-        if converted.dtype == object:
-            if series.astype(str).str.contains(",", regex=False, na=False).any():
-                converted = pd.to_numeric(series.astype(str).str.replace(",", ".", regex=False), errors="ignore")
-        df[col] = converted
-    return df
-
-def read_dataset(path, expected_cols):
+def load_dataset(path, headers):
     df = pd.read_csv(path)
     df.columns = [c.strip() for c in df.columns]
-    if df.shape[1] == 1 or not set(df.columns).intersection(expected_cols):
-        df = pd.read_csv(path, sep=";", decimal=",")
+    if df.shape[1] != len(headers) or any(col not in headers for col in df.columns):
+        df = pd.read_csv(path, sep=';', decimal=',')
         df.columns = [c.strip() for c in df.columns]
-    df = normalize_numeric_columns(df)
+    if len(df.columns) == len(headers) and df.columns.tolist() != headers:
+        df.columns = headers
+    obj_cols = df.select_dtypes(include='object').columns
+    if len(obj_cols) > 0:
+        df[obj_cols] = df[obj_cols].replace(',', '.', regex=True)
+        df[obj_cols] = df[obj_cols].apply(pd.to_numeric, errors='ignore')
     return df
 
-def get_target_column(df, expected_cols):
-    target_candidates = [c for c in expected_cols if "target" in c.lower()]
-    for candidate in target_candidates:
-        if candidate in df.columns:
-            return candidate
-    if target_candidates and len(df.columns) == len(expected_cols):
-        idx = expected_cols.index(target_candidates[0])
-        return df.columns[idx]
-    if expected_cols and expected_cols[-1] in df.columns:
-        return expected_cols[-1]
-    return df.columns[-1]
+def prepare_data(df, headers):
+    target_col = headers[-1] if headers[-1] in df.columns else df.columns[-1]
+    y = df.pop(target_col).to_numpy()
+    X = df.to_numpy()
+    return X, y
 
-def main():
-    random.seed(SEED)
-    np.random.seed(SEED)
-    expected_cols = [c.strip() for c in DATASET_HEADERS.split(";") if c.strip()]
-    df = read_dataset("data/students_graduate_predict.csv", expected_cols)
-    target_col = get_target_column(df, expected_cols)
-    y = df.pop(target_col)
-    X = df
-    x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.15, random_state=SEED)
-    model = MLPClassifier(hidden_layer_sizes=(5, 7), max_iter=800, random_state=SEED)
+def train_and_evaluate(X, y):
+    x_train, x_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.15, random_state=1
+    )
+    model = MLPClassifier(hidden_layer_sizes=(5, 7), max_iter=800, random_state=1)
     model.fit(x_train, y_train)
     y_pred = model.predict(x_test)
     accuracy = accuracy_score(y_test, y_pred)
+    return accuracy
+
+def main():
+    warnings.filterwarnings("ignore", category=ConvergenceWarning)
+    np.random.seed(1)
+    df = load_dataset(DATASET_PATH, HEADERS)
+    X, y = prepare_data(df, HEADERS)
+    del df
+    accuracy = train_and_evaluate(X, y)
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed unused predictions, plots, and extra metric computations to cut unnecessary work.
-# - Used in-place target extraction with pop to avoid duplicating feature data.
-# - Added robust CSV parsing with minimal numeric normalization for reliable ingestion.
-# - Fixed random seeds and model random_state to ensure reproducible results.
+# - Removed plotting and unused metric calculations to cut unnecessary computation and dependencies.
+# - Used in-place target extraction with NumPy arrays and released the DataFrame to reduce memory overhead.
+# - Implemented robust CSV parsing with fallback and minimal type conversion to avoid redundant processing.
+# - Fixed random seeds and model random_state for deterministic, reproducible results.

@@ -2,110 +2,62 @@
 # LLM: codex
 # Mode: assisted
 
-import os
-import random
-import numpy as np
-import pandas as pd
 from scipy.io import arff
+import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
-os.environ["PYTHONHASHSEED"] = "42"
-random.seed(42)
-np.random.seed(42)
+SEED = 42
+np.random.seed(SEED)
 
-def read_csv_with_fallback(path):
-    df = pd.read_csv(path)
-    if df.shape[1] == 1:
-        col_name = df.columns[0]
-        sample = df.iloc[0, 0] if not df.empty else ""
-        if (isinstance(col_name, str) and ";" in col_name) or (isinstance(sample, str) and ";" in sample):
+def load_dataset(path):
+    try:
+        data, _ = arff.loadarff(path)
+        df = pd.DataFrame(data)
+    except Exception:
+        df = pd.read_csv(path)
+        if df.shape[1] <= 1:
             df = pd.read_csv(path, sep=";", decimal=",")
     return df
 
-def load_dataset(path):
-    if path.lower().endswith(".arff"):
-        try:
-            data, _ = arff.loadarff(path)
-            df = pd.DataFrame(data)
-        except Exception:
-            df = read_csv_with_fallback(path)
-    else:
-        df = read_csv_with_fallback(path)
-    return df
-
-def apply_headers(df):
-    headers = globals().get("DATASET_HEADERS")
-    if isinstance(headers, (list, tuple)) and len(headers) == df.shape[1]:
-        df.columns = list(headers)
-    return df
-
-def decode_object_columns(df):
+def decode_bytes_columns(df):
     obj_cols = df.select_dtypes(include=["object"]).columns
+    byte_types = (bytes, bytearray, np.bytes_)
     for col in obj_cols:
         series = df[col]
-        sample = series.dropna()
-        if not sample.empty and isinstance(sample.iloc[0], (bytes, bytearray)):
+        sample = next((v for v in series.values if isinstance(v, byte_types)), None)
+        if sample is not None:
             df[col] = series.str.decode("utf-8")
     return df
 
-def infer_target_column(df):
-    tc = globals().get("TARGET_COLUMN")
-    if isinstance(tc, str) and tc in df.columns:
-        return tc
-    lower_map = {c.lower(): c for c in df.columns}
-    for name in ("target", "class", "label", "output"):
-        if name in lower_map:
-            return lower_map[name]
-    return df.columns[-1]
+file_path = "dataset_adult.arff"
+df = load_dataset(file_path)
+df = decode_bytes_columns(df)
 
-def encode_target(y):
-    if y.dtype == object:
-        dummies = pd.get_dummies(y, drop_first=True)
-        if dummies.shape[1] == 1:
-            return dummies.iloc[:, 0].astype("int8")
-        if dummies.shape[1] > 1:
-            codes, _ = pd.factorize(y)
-            return pd.Series(codes, index=y.index, dtype="int32")
-        return pd.Series(0, index=y.index, dtype="int8")
-    if y.dtype == bool:
-        return y.astype("int8")
-    return y
+target_col = df.columns[-1]
+target_series = df.pop(target_col)
 
-def main():
-    file_path = "dataset_adult.arff"
-    df = load_dataset(file_path)
-    df = apply_headers(df)
-    df = decode_object_columns(df)
+y_df = pd.get_dummies(target_series, drop_first=True)
+y = y_df.iloc[:, 0] if y_df.shape[1] > 0 else pd.Series(dtype="int64")
 
-    target_col = infer_target_column(df)
-    X = df.drop(columns=[target_col])
-    y_raw = df[target_col]
-    y = encode_target(y_raw)
+X = pd.get_dummies(df, drop_first=True)
 
-    obj_cols = X.select_dtypes(include=["object"]).columns
-    if len(obj_cols) > 0:
-        X_encoded = pd.get_dummies(X, drop_first=True)
-    else:
-        X_encoded = X
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=SEED
+)
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_encoded, y, test_size=0.3, random_state=42
-    )
+clf = RandomForestClassifier(random_state=SEED)
+clf.fit(X_train, y_train)
 
-    clf = RandomForestClassifier(random_state=42)
-    clf.fit(X_train, y_train)
-
-    y_pred = clf.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    print(f"ACCURACY={accuracy:.6f}")
-
-if __name__ == "__main__":
-    main()
+y_pred = clf.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# - Separated target encoding from feature encoding to avoid redundant dummy expansion.
-# - Decoded byte columns conditionally to prevent unnecessary full-column processing.
-# - Skipped one-hot encoding when no categorical features exist to reduce overhead.
-# - Removed unused reporting/output and set fixed seeds for deterministic execution.
+# Used in-place target extraction to avoid an extra feature copy.
+# Encoded the target separately to skip redundant dummy columns.
+# Decoded categorical byte columns only when needed to reduce processing.
+# Removed unnecessary reporting steps to cut computation and output.
+# Fixed random seeding for deterministic results.

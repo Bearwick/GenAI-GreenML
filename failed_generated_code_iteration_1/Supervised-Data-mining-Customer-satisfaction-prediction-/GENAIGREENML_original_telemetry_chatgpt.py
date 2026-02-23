@@ -2,73 +2,79 @@
 # LLM: chatgpt
 # Mode: original_telemetry
 
+#!/usr/bin/env python
+# coding: utf-8
+
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn import tree
 from sklearn.model_selection import GridSearchCV
 from sklearn import metrics
 from imblearn.over_sampling import SMOTE
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
 
-EJdata = pd.read_csv("EireJet.csv")
-pd.set_option("display.max_columns", None)
 
-EJdata = EJdata.dropna(how="any", axis=0)
+def main():
+    EJdata = pd.read_csv("EireJet.csv")
+    pd.set_option("display.max_columns", None)
 
-EJdata["Gender"] = EJdata["Gender"].map({"Female": 1, "Male": 0})
-EJdata["Frequent Flyer"] = EJdata["Frequent Flyer"].map({"Yes": 1, "No": 0})
-EJdata["Type of Travel"] = EJdata["Type of Travel"].map({"Personal Travel": 1, "Business travel": 0})
-EJdata["Class"] = EJdata["Class"].map({"Eco": 0, "Eco Plus": 1, "Business": 2})
-EJdata["satisfaction"] = EJdata["satisfaction"].map({"neutral or dissatisfied": 0, "satisfied": 1})
+    EJdata = EJdata.dropna(how="any", axis=0)
 
-X = EJdata.drop("satisfaction", axis=1)
-Y = EJdata["satisfaction"]
+    EJdata["Gender"] = EJdata["Gender"].map({"Female": 1, "Male": 0})
+    EJdata["Frequent Flyer"] = EJdata["Frequent Flyer"].map({"Yes": 1, "No": 0})
+    EJdata["Type of Travel"] = EJdata["Type of Travel"].map({"Personal Travel": 1, "Business travel": 0})
+    EJdata["Class"] = EJdata["Class"].map({"Eco": 0, "Eco Plus": 1, "Business": 2})
+    EJdata["satisfaction"] = EJdata["satisfaction"].map({"neutral or dissatisfied": 0, "satisfied": 1})
 
-feature_scaler = StandardScaler()
-X_scaled = feature_scaler.fit_transform(X)
+    X = EJdata.drop("satisfaction", axis=1)
+    Y = EJdata["satisfaction"]
 
-X_train, X_test, Y_train, Y_test = train_test_split(X_scaled, Y, test_size=0.3, random_state=100)
-X_train, X_test, Y_train, Y_test = train_test_split(X_scaled, Y, test_size=0.3, random_state=100)
+    feature_scaler = StandardScaler()
+    X_scaled = feature_scaler.fit_transform(X)
 
-smote = SMOTE(random_state=101)
-X_train, Y_train = smote.fit_sample(X_train, Y_train)
+    X_train, X_test, Y_train, Y_test = train_test_split(X_scaled, Y, test_size=0.3, random_state=100)
+    X_train, X_test, Y_train, Y_test = train_test_split(X_scaled, Y, test_size=0.3, random_state=100)
 
-rfc = RandomForestClassifier(criterion="entropy", max_features="auto", random_state=1)
-grid_prm = {"n_estimators": [50, 100, 150, 200, 250, 300]}
-gd_sr = GridSearchCV(estimator=rfc, param_grid=grid_prm, scoring="precision", cv=5)
-gd_sr.fit(X_train, Y_train)
-_ = gd_sr.best_params_
-_ = gd_sr.best_score_
+    smote = SMOTE(random_state=101)
+    X_train, Y_train = smote.fit_sample(X_train, Y_train)
 
-rfc = RandomForestClassifier(n_estimators=150, criterion="entropy", max_features="auto", random_state=1)
-rfc.fit(X_train, Y_train)
-Y_pred = rfc.predict(X_test)
-accuracy = metrics.accuracy_score(Y_test, Y_pred)
-print(f"ACCURACY={accuracy:.6f}")
+    rfc = RandomForestClassifier(criterion="entropy", max_features="auto", random_state=1)
+    grid_prm = {"n_estimators": [50, 100, 150, 200, 250, 300]}
+    gd_sr = GridSearchCV(estimator=rfc, param_grid=grid_prm, scoring="precision", cv=5)
+    gd_sr.fit(X_train, Y_train)
 
-Adaboost = AdaBoostClassifier(random_state=1)
-gridparamt = {"n_estimators": [30, 35, 40, 45, 50, 55, 60]}
-gd_sr = GridSearchCV(estimator=Adaboost, param_grid=gridparamt, scoring="precision", cv=5)
-gd_sr.fit(X_train, Y_train)
-_ = gd_sr.best_params_
-_ = gd_sr.best_score_
+    rfc = RandomForestClassifier(n_estimators=150, criterion="entropy", max_features="auto", random_state=1)
+    rfc.fit(X_train, Y_train)
+    Y_pred = rfc.predict(X_test)
+    accuracy = metrics.accuracy_score(Y_test, Y_pred)
+    print(f"ACCURACY={accuracy:.6f}")
 
-Adaboost = AdaBoostClassifier(n_estimators=50, random_state=1)
-Adaboost.fit(X_train, Y_train)
-Y_pred = Adaboost.predict(X_test)
+    Adaboost = AdaBoostClassifier(random_state=1)
+    gridparamt = {"n_estimators": [30, 35, 40, 45, 50, 55, 60]}
+    gd_sr = GridSearchCV(estimator=Adaboost, param_grid=gridparamt, scoring="precision", cv=5)
+    gd_sr.fit(X_train, Y_train)
 
-Gradientboost = GradientBoostingClassifier(random_state=1)
-grid_param = {
-    "n_estimators": [100, 150, 200],
-    "max_depth": [9, 10, 11, 12],
-    "max_leaf_nodes": [8, 12, 16, 20, 24, 28, 32],
-}
-grd_sr = GridSearchCV(estimator=Gradientboost, param_grid=grid_param, scoring="precision", cv=5)
-grd_sr.fit(X_train, Y_train)
-_ = grd_sr.best_params_
-_ = grd_sr.best_score_
+    Adaboost = AdaBoostClassifier(n_estimators=50, random_state=1)
+    Adaboost.fit(X_train, Y_train)
+    Y_pred = Adaboost.predict(X_test)
 
-Gradientboost = GradientBoostingClassifier(n_estimators=200, max_depth=9, max_leaf_nodes=32, random_state=1)
-Gradientboost.fit(X_train, Y_train)
-Y_pred = Gradientboost.predict(X_test)
+    Gradientboost = GradientBoostingClassifier(random_state=1)
+    grid_param = {
+        "n_estimators": [100, 150, 200],
+        "max_depth": [9, 10, 11, 12],
+        "max_leaf_nodes": [8, 12, 16, 20, 24, 28, 32],
+    }
+    grd_sr = GridSearchCV(estimator=Gradientboost, param_grid=grid_param, scoring="precision", cv=5)
+    grd_sr.fit(X_train, Y_train)
+
+    Gradientboost = GradientBoostingClassifier(n_estimators=200, max_depth=9, max_leaf_nodes=32, random_state=1)
+    Gradientboost.fit(X_train, Y_train)
+    Y_pred = Gradientboost.predict(X_test)
+
+
+if __name__ == "__main__":
+    main()

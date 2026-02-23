@@ -15,6 +15,9 @@ try:
 except Exception:
     iris = pd.read_csv("iris.csv", sep=';', decimal=',')
 
+if 'Id' in iris.columns:
+    iris = iris.drop(columns=['Id'])
+
 label_encoder = LabelEncoder()
 iris["Species"] = label_encoder.fit_transform(iris["Species"])
 
@@ -26,15 +29,18 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 model = GaussianNB()
 model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
+
 accuracy = accuracy_score(y_test, y_pred)
 
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Removed unused imports (matplotlib, seaborn, MultinomialNB, BernoulliNB, confusion_matrix, precision_score, recall_score).
-# Kept only GaussianNB which is the primary and best-performing model for this dataset, removing redundant MultinomialNB and BernoulliNB evaluations.
-# Converted DataFrame slices to numpy arrays (.values) to reduce overhead during model fitting and prediction.
-# Removed all plotting functions and print statements except the required accuracy output.
-# Added robust CSV fallback parsing with sep=';' and decimal=',' detection.
-# Removed intermediate confusion matrix computation and unused metric calculations to reduce computation.
-# Fixed random_state=42 for reproducibility as in the original code.
+# 1. Removed unused imports (matplotlib, seaborn, MultinomialNB, BernoulliNB, confusion_matrix, precision_score, recall_score).
+# 2. Dropped the 'Id' column early to avoid carrying unnecessary data through the pipeline.
+# 3. Converted features to numpy arrays (.values) to avoid pandas overhead during model fitting.
+# 4. Kept only GaussianNB as the primary model (best accuracy per README: 1.00); removed Multinomial and Bernoulli variants that were secondary evaluations.
+# 5. Removed all plotting, printing, and visualization code.
+# 6. Removed the evaluate_model and plot_confusion_matrix helper functions to eliminate unused computation.
+# 7. Added robust CSV parsing fallback for separator/decimal variations.
+# 8. Fixed random_state=42 for reproducibility (same as original).
+# 9. No artifacts saved to disk.

@@ -5,44 +5,48 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
+from sklearn.metrics import accuracy_score
 
-def load_iris(file_path):
+def run_pipeline():
+    path = "iris.csv"
     try:
-        df = pd.read_csv(file_path)
+        df = pd.read_csv(path)
         if df.shape[1] < 2:
             raise ValueError
     except (pd.errors.ParserError, ValueError):
-        df = pd.read_csv(file_path, sep=';', decimal=',')
-    return df
+        df = pd.read_csv(path, sep=';', decimal=',')
 
-iris = load_iris("iris.csv")
+    X = df.iloc[:, :-1].values
+    y = pd.factorize(df.iloc[:, -1], sort=True)[0]
 
-iris["Species"] = iris["Species"].astype('category').cat.codes
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
 
-X = iris.iloc[:, :-1].values
-y = iris.iloc[:, -1].values
+    gnb = GaussianNB()
+    gnb.fit(X_train, y_train)
+    gnb_acc = accuracy_score(y_test, gnb.predict(X_test))
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
+    mnb = MultinomialNB()
+    mnb.fit(X_train, y_train)
+    mnb.predict(X_test)
 
-models = [GaussianNB(), MultinomialNB(), BernoulliNB()]
-best_accuracy = 0
+    bnb = BernoulliNB()
+    bnb.fit(X_train, y_train)
+    bnb.predict(X_test)
 
-for model in models:
-    model.fit(X_train, y_train)
-    acc = model.score(X_test, y_test)
-    if isinstance(model, GaussianNB):
-        best_accuracy = acc
+    print(f"ACCURACY={gnb_acc:.6f}")
 
-print(f"ACCURACY={best_accuracy:.6f}")
+if __name__ == "__main__":
+    run_pipeline()
 
 # Optimization Summary
-# 1. Removed heavy visualization libraries (matplotlib, seaborn) to reduce memory and startup time.
-# 2. Replaced LabelEncoder with category codes for faster, more memory-efficient label preprocessing.
-# 3. Implemented robust CSV parsing with fallback to handle different delimiters and decimal formats efficiently.
-# 4. Converted pandas DataFrames to NumPy arrays using .values to speed up model training and prediction.
-# 5. Minimized redundant computation by removing unused metric calculations (precision, recall, confusion matrix) and plots.
-# 6. Streamlined model evaluation into a loop to reduce code duplication and overhead.
-# 7. Used model.score() directly for accuracy calculation to avoid unnecessary function calls and imports.
-# 8. Fixed random seed (42) to ensure reproducibility with minimal computational variance.
+# 1. Removed heavy visualization dependencies (matplotlib, seaborn) to minimize memory footprint and import time.
+# 2. Replaced LabelEncoder with pd.factorize(sort=True) for faster and more memory-efficient target encoding.
+# 3. Utilized .values to pass NumPy arrays directly to scikit-learn, reducing dataframe overhead during model training.
+# 4. Eliminated redundant metric calculations (Precision, Recall, Error Rate) and Confusion Matrix generation as they were not required for the final output.
+# 5. Removed all plotting logic and external file saving to reduce I/O overhead and energy consumption.
+# 6. Optimized CSV loading with a robust fallback mechanism and minimal column processing.
+# 7. Ensured reproducibility by maintaining the fixed random seed (42).
+# 8. Streamlined model execution flow to avoid redundant function calls and intermediate data structures.
+# 9. Reduced total runtime by skipping unnecessary prediction logging and iterative printing.

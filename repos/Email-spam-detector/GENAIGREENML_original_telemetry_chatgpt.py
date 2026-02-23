@@ -89,13 +89,9 @@ def train_spam_classifier(df):
     return model, vectorizer
 
 
-def main():
+if __name__ == "__main__":
     spam_dir = "emails/spam"
     good_dir = "emails/good"
 
     df = load_emails(spam_dir, good_dir)
-    train_spam_classifier(df)
-
-
-if __name__ == "__main__":
-    main()
+    model, vectorizer = train_spam_classifier(df)

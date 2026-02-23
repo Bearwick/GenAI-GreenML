@@ -3,57 +3,57 @@
 # Mode: assisted
 
 import pandas as pd
+import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
-from sklearn.preprocessing import LabelEncoder
 from nltk.stem import PorterStemmer
 
-RANDOM_SEED = 42
+def refactored_spam_classifier():
+    ps = PorterStemmer()
 
-try:
-    df = pd.read_csv("spam.csv", encoding='utf-8')
-except (UnicodeDecodeError, Exception):
-    df = pd.read_csv("spam.csv", sep=';', decimal=',', encoding='latin-1')
+    def convert(text):
+        return " ".join([ps.stem(word) for word in str(text).split(" ")])
 
-expected_cols = ["Category", "Message"]
-if not all(col in df.columns for col in expected_cols):
-    df = df.iloc[:, :2]
-    df.columns = expected_cols
+    try:
+        df = pd.read_csv("spam.csv", encoding='utf-8')
+    except (UnicodeDecodeError, pd.errors.ParserError):
+        try:
+            df = pd.read_csv("spam.csv", encoding='latin-1')
+        except (UnicodeDecodeError, pd.errors.ParserError):
+            df = pd.read_csv("spam.csv", sep=';', decimal=',', encoding='latin-1')
 
-df = df[expected_cols].dropna()
+    df = df.iloc[:, [0, 1]]
+    df.columns = ["Category", "Message"]
+    
+    df["Category"] = df["Category"].map({'ham': 0, 'spam': 1})
+    df["Message"] = df["Message"].apply(convert)
 
-ps = PorterStemmer()
+    X_train, X_test, y_train, y_test = train_test_split(
+        df["Message"], 
+        df["Category"], 
+        test_size=0.2, 
+        random_state=42
+    )
 
-def convert(text):
-    return " ".join([ps.stem(word) for word in str(text).split(" ")])
+    cv = CountVectorizer(stop_words="english")
+    X_train_count = cv.fit_transform(X_train)
+    X_test_count = cv.transform(X_test)
 
-df["Message"] = df["Message"].apply(convert)
+    model = MultinomialNB()
+    model.fit(X_train_count, y_train)
 
-le = LabelEncoder()
-df["Category"] = le.fit_transform(df["Category"])
+    accuracy = model.score(X_test_count, y_test)
+    print(f"ACCURACY={accuracy:.6f}")
 
-X_train, X_test, y_train, y_test = train_test_split(
-    df["Message"], 
-    df["Category"], 
-    test_size=0.2, 
-    random_state=RANDOM_SEED
-)
-
-cv = CountVectorizer(stop_words="english")
-X_train_count = cv.fit_transform(X_train)
-X_test_count = cv.transform(X_test)
-
-model = MultinomialNB()
-model.fit(X_train_count, y_train)
-
-accuracy = model.score(X_test_count, y_test)
-print(f"ACCURACY={accuracy:.6f}")
+if __name__ == "__main__":
+    refactored_spam_classifier()
 
 # Optimization Summary
-# - Improved computational efficiency by replacing manual loops with list comprehensions in the stemming function.
-# - Reduced memory footprint by filtering the dataframe to essential columns and dropping null values immediately after loading.
-# - Enhanced robustness and avoided runtime failures with a multi-stage CSV parsing fallback mechanism (handling encodings and delimiters).
-# - Ensured reproducibility by implementing a fixed random seed for data splitting.
-# - Eliminated redundant computations and overhead by removing interactive functions, printing, and display settings.
-# - Optimized data flow by transforming only the necessary feature sets for training and evaluation.
+# 1. Improved CSV parsing with multi-stage fallback (encoding and delimiter) to ensure robustness and prevent runtime crashes.
+# 2. Replaced LabelEncoder with a direct dictionary map for the 'Category' column, reducing overhead.
+# 3. Optimized the stemming function using a list comprehension instead of a for-loop with list appends for better performance.
+# 4. Integrated random_state in train_test_split to ensure reproducibility of results across different runs.
+# 5. Reduced memory footprint by explicitly selecting only the necessary columns from the raw dataframe immediately after loading.
+# 6. Streamlined the workflow by removing interactive inputs and redundant print statements, focusing on batch processing.
+# 7. Transformed X_test using the existing CountVectorizer instance to efficiently compute accuracy without retraining.

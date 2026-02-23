@@ -2,81 +2,88 @@
 # LLM: codex
 # Mode: assisted
 
-import random
-import warnings
 import numpy as np
 import pandas as pd
+import warnings
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
+from sklearn.exceptions import ConvergenceWarning
 
-DATASET_HEADERS = "Category,Message"
-SEED = 42
+warnings.filterwarnings("ignore", category=ConvergenceWarning)
+np.random.seed(42)
 
-def read_csv_with_fallback(path, headers):
+DATASET_PATH = "mail_data.csv"
+DATASET_HEADERS = ["Category", "Message"]
+
+
+def read_csv_robust(path, expected_headers):
     try:
         df = pd.read_csv(path)
     except Exception:
         return pd.read_csv(path, sep=";", decimal=",")
-    if needs_fallback(df, headers):
-        df = pd.read_csv(path, sep=";", decimal=",")
+    if df.shape[1] < len(expected_headers) or not set(expected_headers).issubset(df.columns):
+        try:
+            df_alt = pd.read_csv(path, sep=";", decimal=",")
+            if df_alt.shape[1] >= len(expected_headers):
+                df = df_alt
+        except Exception:
+            pass
     return df
 
-def needs_fallback(df, headers):
-    if df.shape[1] == 1:
-        return True
-    cols_lower = [str(c).strip().lower() for c in df.columns]
-    expected_lower = [h.strip().lower() for h in headers]
-    if not set(expected_lower).issubset(cols_lower):
-        if any(";" in str(c) for c in df.columns):
-            return True
-    return False
 
-def resolve_columns(df, headers):
-    cols_lower = {str(c).strip().lower(): c for c in df.columns}
-    resolved = [cols_lower.get(h.strip().lower()) for h in headers]
-    used = {c for c in resolved if c is not None}
-    if any(c is None for c in resolved):
-        for i, c in enumerate(resolved):
-            if c is None:
-                for col in df.columns:
-                    if col not in used:
-                        resolved[i] = col
-                        used.add(col)
-                        break
-    if any(c is None for c in resolved):
-        raise ValueError("Required columns not found")
-    return resolved
+def align_columns(df, expected_headers):
+    lower_map = {c.lower(): c for c in df.columns}
+    matched = []
+    for header in expected_headers:
+        col = header if header in df.columns else lower_map.get(header.lower())
+        if col is not None:
+            matched.append(col)
+    if len(matched) == len(expected_headers):
+        df = df.loc[:, matched].copy()
+        df.columns = expected_headers
+    else:
+        df = df.iloc[:, :len(expected_headers)].copy()
+        df.columns = expected_headers
+    return df
+
+
+def load_data(path, expected_headers):
+    df = read_csv_robust(path, expected_headers)
+    df = align_columns(df, expected_headers)
+    df.fillna("", inplace=True)
+    df["Category"] = (
+        df["Category"].astype(str).str.lower().map({"spam": 0, "ham": 1}).astype("int64")
+    )
+    return df["Message"], df["Category"]
+
+
+def train_evaluate(X, y):
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=3
+    )
+    vectorizer = TfidfVectorizer(min_df=1, stop_words="english", lowercase=True)
+    X_train_features = vectorizer.fit_transform(X_train)
+    X_test_features = vectorizer.transform(X_test)
+    model = LogisticRegression(random_state=42)
+    model.fit(X_train_features, y_train)
+    predictions = model.predict(X_test_features)
+    return accuracy_score(y_test, predictions)
+
 
 def main():
-    warnings.filterwarnings("ignore")
-    np.random.seed(SEED)
-    random.seed(SEED)
-    headers = [h.strip() for h in DATASET_HEADERS.split(",") if h.strip()]
-    df = read_csv_with_fallback("mail_data.csv", headers)
-    category_col, message_col = resolve_columns(df, headers)
-    df[category_col] = df[category_col].fillna("")
-    df[message_col] = df[message_col].fillna("")
-    df[category_col] = df[category_col].map({"spam": 0, "ham": 1}).astype("int64")
-    X_train, X_test, y_train, y_test = train_test_split(
-        df[message_col], df[category_col], test_size=0.2, random_state=3
-    )
-    vectorizer = TfidfVectorizer(stop_words="english", lowercase=True)
-    X_train_features = vectorizer.fit_transform(X_train)
-    model = LogisticRegression(random_state=SEED)
-    model.fit(X_train_features, y_train)
-    y_pred_test = model.predict(vectorizer.transform(X_test))
-    accuracy = accuracy_score(y_test, y_pred_test)
-    input_mail = ["I've been searching for the right words to thank you for this breather. I promise i wont take your help for granted and will fulfil my promise. You have been wonderful and a blessing at all times"]
-    _ = model.predict(vectorizer.transform(input_mail))
+    X, y = load_data(DATASET_PATH, DATASET_HEADERS)
+    accuracy = train_evaluate(X, y)
     print(f"ACCURACY={accuracy:.6f}")
+
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed nonessential outputs and redundant computations to lower runtime overhead.
-# - Limited missing-value handling to required columns and resolved schema dynamically to reduce data movement.
-# - Predicted directly from transformed test data to avoid storing extra feature matrices.
-# - Added robust CSV parsing with fallback and fixed seeds for reproducibility.
+# Consolidated preprocessing and label encoding to avoid redundant dataframe operations.
+# Removed unnecessary dataset inspections, training accuracy, and demo predictions to cut extra compute.
+# Added robust CSV parsing and column alignment with minimal copying for reliable input handling.
+# Applied deterministic seeds and suppressed convergence warnings for stable, clean output.
+# Streamlined feature extraction and evaluation to reduce data movement and runtime.

@@ -12,46 +12,67 @@ from sklearn.naive_bayes import MultinomialNB
 RANDOM_SEED = 42
 
 
-def _read_csv_robust(path: str, expected_headers: tuple[str, ...]) -> pd.DataFrame:
+def _read_csv_robust(path: str, expected_cols: int = 2) -> pd.DataFrame:
     df = pd.read_csv(path)
-    if df.shape[1] != len(expected_headers):
+    if df.shape[1] != expected_cols:
         df = pd.read_csv(path, sep=";", decimal=",")
-    if df.shape[1] != len(expected_headers):
-        df = pd.read_csv(path, header=0, names=list(expected_headers), sep=None, engine="python")
-        if df.shape[1] != len(expected_headers):
-            df = pd.read_csv(path, header=0, names=list(expected_headers), sep=";", decimal=",")
-    df.columns = list(expected_headers)
     return df
 
 
-def _map_labels(series: pd.Series) -> pd.Series:
-    return series.map({"Neg": 0, "Pos": 1}).astype("int8")
+def _standardize_schema(df: pd.DataFrame, dataset_headers: list[str]) -> pd.DataFrame:
+    df = df.copy()
+    if df.shape[1] >= len(dataset_headers):
+        df = df.iloc[:, : len(dataset_headers)]
+    df.columns = dataset_headers[: df.shape[1]]
+
+    for col in dataset_headers:
+        if col not in df.columns:
+            df[col] = np.nan
+
+    df["class"] = df["class"].astype(str)
+    df["text"] = df["text"].fillna("").astype(str)
+    return df[dataset_headers]
+
+
+def _encode_labels(series: pd.Series) -> np.ndarray:
+    mapped = series.map({"Neg": 0, "Pos": 1})
+    return mapped.fillna(-1).astype(np.int8).to_numpy()
 
 
 def main() -> None:
     np.random.seed(RANDOM_SEED)
 
-    expected_headers = ("class", "text")
-    train_df = _read_csv_robust("movie_review_train.csv", expected_headers)
-    test_df = _read_csv_robust("movie_review_test.csv", expected_headers)
+    dataset_headers = ["class", "text"]
+    train_path = "movie_review_train.csv"
+    test_path = "movie_review_test.csv"
 
-    train_df["label"] = _map_labels(train_df["class"])
-    test_df["label"] = _map_labels(test_df["class"])
+    train_raw = _read_csv_robust(train_path, expected_cols=len(dataset_headers))
+    test_raw = _read_csv_robust(test_path, expected_cols=len(dataset_headers))
 
-    X_train = train_df["text"].astype(str, copy=False)
-    y_train = train_df["label"].to_numpy(copy=False)
-    X_test = test_df["text"].astype(str, copy=False)
-    y_test = test_df["label"].to_numpy(copy=False)
+    train_df = _standardize_schema(train_raw, dataset_headers)
+    test_df = _standardize_schema(test_raw, dataset_headers)
+
+    y_train = _encode_labels(train_df["class"])
+    y_test = _encode_labels(test_df["class"])
+
+    valid_train = y_train != -1
+    valid_test = y_test != -1
+
+    X_train = train_df.loc[valid_train, "text"].to_numpy(dtype=object, copy=False)
+    y_train = y_train[valid_train]
+
+    X_test = test_df.loc[valid_test, "text"].to_numpy(dtype=object, copy=False)
+    y_test = y_test[valid_test]
 
     vect = CountVectorizer(stop_words="english", min_df=0.03, max_df=0.8)
     X_train_vec = vect.fit_transform(X_train)
     X_test_vec = vect.transform(X_test)
 
-    clf = MultinomialNB()
-    clf.fit(X_train_vec, y_train)
+    mnb = MultinomialNB()
+    mnb.fit(X_train_vec, y_train)
+    y_pred = mnb.predict(X_test_vec)
 
-    y_pred = clf.predict(X_test_vec)
-    accuracy = accuracy_score(y_test, y_pred)
+    accuracy = float(accuracy_score(y_test, y_pred))
     print(f"ACCURACY={accuracy:.6f}")
 
 
@@ -59,10 +80,10 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed unused exploratory steps (head(), value_counts(), vocabulary inspection) to avoid redundant computation.
-# - Dropped probability prediction, ROC computation, confusion-matrix-derived metrics, and plotting to eliminate unnecessary heavy operations and dependencies.
-# - Used a single end-to-end pipeline of fit_transform/transform/predict focused only on the required evaluation intent (accuracy).
-# - Ensured robust CSV parsing with a fallback strategy to reduce reruns and failures due to delimiter/decimal mismatches.
-# - Reduced memory footprint by storing labels as int8 and using NumPy views (to_numpy(copy=False)) where possible.
-# - Avoided unnecessary intermediate variables and repeated metric calculations to minimize overhead.
-# - Set a fixed random seed to ensure reproducibility (even though this model path is deterministic in practice).
+# - Removed exploratory/unused computations (value_counts, vocabulary inspection, probability predictions, ROC/AUC, confusion-matrix-derived metrics, extra word counts) to cut CPU work and memory.
+# - Eliminated plotting and all intermediate DataFrame constructions for thresholds/ROC to avoid heavy dependencies and unnecessary data movement.
+# - Vectorized label encoding and used compact dtype (int8) to reduce memory footprint.
+# - Avoided redundant transforms/prints; computed only what is required for final accuracy output.
+# - Implemented robust CSV parsing fallback (default read, then retry with sep=';' and decimal=',') to prevent costly downstream failures/retries.
+# - Standardized schema by deriving from provided DATASET_HEADERS and actual df columns without assuming exact source column names beyond order.
+# - Ensured reproducibility by setting a fixed random seed (even though the pipeline is deterministic, this stabilizes any implicit randomness).

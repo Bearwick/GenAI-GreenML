@@ -12,8 +12,8 @@ try:
     df = pd.read_csv('Cancer_Data.csv')
     if df.shape[1] <= 2:
         df = pd.read_csv('Cancer_Data.csv', sep=';', decimal=',')
-except FileNotFoundError:
-    exit()
+except Exception:
+    df = pd.read_csv('Cancer_Data.csv', sep=';', decimal=',')
 
 df['diagnosis'] = df['diagnosis'].map({'M': 1, 'B': 0})
 y = df['diagnosis']
@@ -31,7 +31,7 @@ feature_names = [
     "fractal_dimension_se"
 ]
 
-X = df[feature_names]
+X = df[feature_names].values
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
@@ -48,9 +48,10 @@ accuracy = accuracy_score(y_test, y_pred)
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Removed joblib imports and model/scaler saving to avoid unnecessary disk I/O and side effects.
-# Removed matplotlib/seaborn imports and confusion matrix visualization to eliminate heavy unused dependencies and rendering overhead.
-# Removed classification_report computation and all intermediate print/logging statements.
-# Added robust CSV fallback: retries with sep=';' and decimal=',' if initial parse yields too few columns.
-# Preserved identical ML pipeline: same features, same split, same scaler, same model with same random_state for reproducibility.
-# Kept code minimal and modular with no redundant data structures or loops.
+# Removed joblib import and model/scaler saving to avoid unnecessary I/O side effects.
+# Removed matplotlib and seaborn imports and confusion matrix visualization to eliminate plotting overhead.
+# Removed classification_report computation and all intermediate print statements.
+# Used .values on DataFrame selection to pass numpy array directly, avoiding DataFrame overhead in sklearn.
+# Added robust CSV parsing fallback (sep=';', decimal=',') for input reliability.
+# Set random_state for reproducibility in both train_test_split and LogisticRegression.
+# Kept the same model, features, split ratio, and preprocessing to preserve original behavior.

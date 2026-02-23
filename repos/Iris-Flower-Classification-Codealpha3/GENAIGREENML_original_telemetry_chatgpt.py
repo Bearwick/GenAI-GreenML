@@ -29,9 +29,9 @@ model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
 
 accuracy = accuracy_score(y_test, y_pred)
+
+classification_report(y_test, y_pred)
+confusion_matrix(y_test, y_pred)
+cross_val_score(model, X, y, cv=5)
+
 print(f"ACCURACY={accuracy:.6f}")
-
-cm = confusion_matrix(y_test, y_pred)
-_ = classification_report(y_test, y_pred)
-
-scores = cross_val_score(model, X, y, cv=5)

@@ -5,16 +5,14 @@
 import os
 import json
 import csv
+from typing import List, Optional, Any
 from transformers import pipeline, set_seed
 
-os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
-SEED = 42
-set_seed(SEED)
-
+set_seed(42)
 
 class IntentDetector:
-    def __init__(self, intent_options=None):
-        self.intent_options = intent_options if intent_options is not None else [
+    def __init__(self):
+        self.intent_options = [
             "Book Appointment",
             "Product Inquiry",
             "Pricing Negotiation",
@@ -26,95 +24,150 @@ class IntentDetector:
             model="cross-encoder/nli-distilroberta-base"
         )
 
-    def classify_batch(self, dialogues):
-        return self.intent_pipeline(dialogues, self.intent_options) if dialogues else []
+    def classify_batch(self, dialogues: List[str]) -> List[dict]:
+        if not dialogues:
+            return []
+        results = self.intent_pipeline(dialogues, self.intent_options)
+        if isinstance(results, dict):
+            results = [results]
+        template = "Based on the conversation, the customer is likely interested in '{intent}'."
+        output = []
+        for res in results:
+            top_intent = res["labels"][0]
+            output.append({
+                "predicted_intent": top_intent,
+                "rationale": template.format(intent=top_intent.lower())
+            })
+        return output
 
+intent_model = IntentDetector()
 
-def create_conversation(messages, max_messages=None):
+def create_conversation(messages: List[dict], max_messages: Optional[int] = None) -> str:
+    if not messages:
+        return ""
     if max_messages is not None:
         messages = messages[-max_messages:]
     return "\n".join(
-        f"{(m.get('sender') or '').capitalize()}: {m.get('text') or ''}"
+        f"{str(m.get('sender', '')).capitalize()}: {str(m.get('text', ''))}"
         for m in messages
     )
 
+def load_conversations(path: str) -> List[dict]:
+    with open(path, "r") as infile:
+        data = json.load(infile)
+    if isinstance(data, dict):
+        for key in ("conversations", "data", "items"):
+            value = data.get(key)
+            if isinstance(value, list):
+                return value
+        if "messages" in data:
+            return [data]
+    return data if isinstance(data, list) else []
 
-def detect_label_key(entries):
-    for entry in entries:
+def detect_label_key(conversations: List[dict]) -> Optional[str]:
+    if not conversations:
+        return None
+    keys = set()
+    for entry in conversations:
         if isinstance(entry, dict):
-            for key in entry.keys():
-                if isinstance(key, str):
-                    key_lower = key.lower()
-                    if "intent" in key_lower and key_lower not in ("predicted_intent", "rationale"):
-                        return key
+            keys.update(entry.keys())
+    if not keys:
+        return None
+    def priority(key: str) -> tuple:
+        lk = key.lower()
+        if "pred" in lk:
+            return (9, key)
+        if "true" in lk or "gold" in lk:
+            return (0, key)
+        if "label" in lk:
+            return (1, key)
+        if "intent" in lk:
+            return (2, key)
+        return (3, key)
+    candidates = [k for k in keys if ("intent" in k.lower() or "label" in k.lower()) and "pred" not in k.lower()]
+    if candidates:
+        return sorted(candidates, key=priority)[0]
+    remaining = [k for k in keys if k not in {"conversation_id", "messages"}]
+    if len(remaining) == 1:
+        return remaining[0]
     return None
 
-
-def predict_intents(input_file, json_output, csv_output, model):
-    with open(input_file, "r") as infile:
-        conversations = json.load(infile)
-
-    formatted_texts = [create_conversation(entry.get("messages", [])) for entry in conversations]
-    classifications = model.classify_batch(formatted_texts)
-
-    label_key = detect_label_key(conversations)
+def process_batch(ids: List[Any], results: List[dict], labels: Optional[List[Any]], output_data: List[dict]) -> tuple:
     correct = 0
     total = 0
-
-    output_data = []
-    for entry, classification in zip(conversations, classifications):
-        labels = classification.get("labels") if isinstance(classification, dict) else []
-        top_intent = labels[0] if labels else None
-        top_intent_lower = top_intent.lower() if isinstance(top_intent, str) else ""
-        explanation = f"Based on the conversation, the customer is likely interested in '{top_intent_lower}'."
-        output_record = {
-            "conversation_id": entry.get("conversation_id"),
-            "predicted_intent": top_intent,
-            "rationale": explanation
-        }
-        output_data.append(output_record)
-
-        if label_key is not None:
-            true_label = entry.get(label_key)
-            if true_label is not None:
+    if labels is None:
+        for cid, res in zip(ids, results):
+            output_data.append({
+                "conversation_id": cid,
+                "predicted_intent": res["predicted_intent"],
+                "rationale": res["rationale"]
+            })
+    else:
+        for cid, res, lbl in zip(ids, results, labels):
+            output_data.append({
+                "conversation_id": cid,
+                "predicted_intent": res["predicted_intent"],
+                "rationale": res["rationale"]
+            })
+            if lbl is not None:
                 total += 1
-                if str(true_label).strip().lower() == top_intent_lower:
+                if str(res["predicted_intent"]).lower() == str(lbl).lower():
                     correct += 1
+    return correct, total
 
-    for path in (json_output, csv_output):
-        dir_path = os.path.dirname(path)
-        if dir_path:
-            os.makedirs(dir_path, exist_ok=True)
-
+def write_outputs(output_data: List[dict], json_output: str, csv_output: str) -> None:
     with open(json_output, "w") as json_file:
         json.dump(output_data, json_file, indent=2)
-
     with open(csv_output, "w", newline="") as csv_file:
         fieldnames = ["conversation_id", "predicted_intent", "rationale"]
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(output_data)
 
+def predict_intents(input_file: str, json_output: str, csv_output: str, batch_size: int = 8) -> float:
+    conversations = load_conversations(input_file)
+    label_key = detect_label_key(conversations)
+    output_data = []
+    correct = 0
+    total = 0
+    batch_dialogues = []
+    batch_ids = []
+    batch_labels = [] if label_key else None
+    for entry in conversations:
+        if not isinstance(entry, dict):
+            continue
+        batch_ids.append(entry.get("conversation_id"))
+        batch_dialogues.append(create_conversation(entry.get("messages", [])))
+        if batch_labels is not None:
+            batch_labels.append(entry.get(label_key))
+        if len(batch_dialogues) >= batch_size:
+            results = intent_model.classify_batch(batch_dialogues)
+            batch_correct, batch_total = process_batch(batch_ids, results, batch_labels, output_data)
+            correct += batch_correct
+            total += batch_total
+            batch_dialogues.clear()
+            batch_ids.clear()
+            if batch_labels is not None:
+                batch_labels.clear()
+    if batch_dialogues:
+        results = intent_model.classify_batch(batch_dialogues)
+        batch_correct, batch_total = process_batch(batch_ids, results, batch_labels, output_data)
+        correct += batch_correct
+        total += batch_total
+    write_outputs(output_data, json_output, csv_output)
     return correct / total if total else 0.0
 
-
-def main():
-    intent_model = IntentDetector()
+if __name__ == "__main__":
+    os.makedirs("data/output", exist_ok=True)
     accuracy = predict_intents(
         input_file="data/input.json",
         json_output="data/output/predictions.json",
-        csv_output="data/output/predictions.csv",
-        model=intent_model
+        csv_output="data/output/predictions.csv"
     )
     print(f"ACCURACY={accuracy:.6f}")
 
-
-if __name__ == "__main__":
-    main()
-
 # Optimization Summary
-# - Batched zero-shot classification to reduce repeated model invocation overhead.
-# - Used generator-based joining to avoid intermediate message lists.
-# - Removed unused preprocessing and dependencies to cut import and runtime overhead.
-# - Computed accuracy during output creation to avoid extra passes and storage.
-# - Fixed random seed and disabled tokenizer parallelism for reproducibility and reduced CPU contention.
+# - Removed unused preprocessing and imports to reduce runtime and memory footprint.
+# - Batched inference to lower pipeline call overhead and improve throughput.
+# - Incremental batch processing minimizes intermediate data storage.
+# - Added deterministic seeding for reproducible, stable results.

@@ -5,96 +5,95 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
-import os
 
-# Robust CSV loading
-filepath = 'xgboost_on _binary.csv'
-if not os.path.exists(filepath):
-    candidates = [f for f in os.listdir('.') if f.endswith('.csv')]
-    if candidates:
-        filepath = candidates[0]
+# --- Robust CSV Loading ---
+dataset_path = "xgboost_on _binary.csv"
 
 try:
-    df = pd.read_csv(filepath)
+    df = pd.read_csv(dataset_path)
     if df.shape[1] < 2:
-        df = pd.read_csv(filepath, sep=';', decimal=',')
+        raise ValueError("Too few columns, retry with sep=';'")
 except Exception:
-    df = pd.read_csv(filepath, sep=';', decimal=',')
+    try:
+        df = pd.read_csv(dataset_path, sep=';', decimal=',')
+    except Exception:
+        df = pd.read_csv(dataset_path, engine='python', sep=None)
 
-# Normalize column names
+# --- Column Name Normalization ---
 df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
-df = df[[c for c in df.columns if not c.startswith('Unnamed')]]
+df = df[[c for c in df.columns if not c.lower().startswith('unnamed')]]
 
-# Expected schema: admit, gre, gpa, rank
-expected_cols = ['admit', 'gre', 'gpa', 'rank']
-available_cols = [c for c in expected_cols if c in df.columns]
+# --- Schema Detection ---
+expected_target = 'admit'
+expected_features = ['gre', 'gpa', 'rank']
 
-if 'admit' in df.columns:
-    target_col = 'admit'
-    feature_cols = [c for c in available_cols if c != target_col]
+available_cols = list(df.columns)
+
+if expected_target in available_cols:
+    target_col = expected_target
 else:
-    # Fallback: use last column as target
-    target_col = df.columns[-1]
-    feature_cols = [c for c in df.columns if c != target_col]
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    non_constant = [c for c in numeric_cols if df[c].nunique() > 1]
+    if non_constant:
+        target_col = non_constant[0]
+    else:
+        target_col = available_cols[0]
 
-# Coerce numeric columns
-for c in df.columns:
+feature_cols = [c for c in expected_features if c in available_cols and c != target_col]
+if not feature_cols:
+    feature_cols = [c for c in available_cols if c != target_col]
+
+# --- Coerce Numeric ---
+for c in [target_col] + feature_cols:
     df[c] = pd.to_numeric(df[c], errors='coerce')
 
-# Drop rows with NaN/inf
-df.replace([np.inf, -np.inf], np.nan, inplace=True)
-df.dropna(subset=[target_col], inplace=True)
-df.dropna(subset=feature_cols, inplace=True)
+df = df.dropna(subset=[target_col])
+df = df.replace([np.inf, -np.inf], np.nan)
+df = df.dropna(subset=feature_cols, how='all')
 
 assert df.shape[0] > 0, "Dataset is empty after preprocessing"
 
+# --- Determine Task Type ---
+n_classes = df[target_col].nunique()
+is_classification = n_classes >= 2 and n_classes <= 20
+
+# --- Feature Type Detection ---
+numeric_features = []
+categorical_features = []
+
+for c in feature_cols:
+    if df[c].nunique() <= 10 and df[c].dtype in [np.int64, np.float64, np.int32, np.float32]:
+        categorical_features.append(c)
+    else:
+        numeric_features.append(c)
+
+# For this dataset, 'rank' is ordinal/categorical with few values
+# gre, gpa are continuous
+
+# --- Build X, y ---
 X = df[list(feature_cols)].copy()
 y = df[target_col].copy()
 
-# Determine if classification or regression
-n_unique = y.nunique()
-is_classification = n_unique < 20 and n_unique >= 2
+# Impute remaining NaNs
+for c in numeric_features:
+    if X[c].isna().any():
+        X[c] = X[c].fillna(X[c].median())
+for c in categorical_features:
+    if X[c].isna().any():
+        X[c] = X[c].fillna(X[c].mode().iloc[0] if not X[c].mode().empty else 0)
 
-if n_unique < 2:
-    # Trivial baseline: predict the single class
-    accuracy = 1.0
-    print(f"ACCURACY={accuracy:.6f}")
-    import sys
-    sys.exit(0)
-
-# Identify numeric vs categorical features
-# Treat 'rank' as categorical if present (ordinal with few levels)
-cat_features = []
-num_features = []
-for c in feature_cols:
-    if c == 'rank' or X[c].nunique() <= 5:
-        cat_features.append(c)
-        X[c] = X[c].astype(str)
-    else:
-        num_features.append(c)
-
-# Build preprocessing
-transformers = []
-if num_features:
-    transformers.append(('num', StandardScaler(), num_features))
-if cat_features:
-    transformers.append(('cat', OneHotEncoder(drop='first', sparse_output=False, handle_unknown='infrequent_if_exist'), cat_features))
-
-preprocessor = ColumnTransformer(transformers=transformers, remainder='drop')
-
-# Use logistic regression for energy efficiency
-model = Pipeline([
-    ('preprocess', preprocessor),
-    ('clf', LogisticRegression(max_iter=500, solver='lbfgs', random_state=42))
-])
-
+# --- Train/Test Split ---
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y if is_classification else None
 )
 
-assert X_train.shape[0] > 0 and X_test.
+assert X_train.shape[0] > 0, "Training set is empty"
+assert X_test.shape[0] > 0, "Test set is empty"
+
+# --- Preprocessing Pipeline ---
+transformers =

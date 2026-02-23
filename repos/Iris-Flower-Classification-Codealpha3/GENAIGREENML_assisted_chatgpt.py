@@ -2,87 +2,68 @@
 # LLM: chatgpt
 # Mode: assisted
 
+import numpy as np
 import pandas as pd
 
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 
 
-RANDOM_SEED = 42
+SEED = 42
 DATASET_PATH = "Iris.csv"
 DATASET_HEADERS = ["Id", "SepalLengthCm", "SepalWidthCm", "PetalLengthCm", "PetalWidthCm", "Species"]
 
 
-def _read_csv_robust(path: str) -> pd.DataFrame:
+def _read_csv_with_fallback(path: str, expected_cols: int) -> pd.DataFrame:
     df = pd.read_csv(path)
-    looks_wrong = (
-        df.shape[1] == 1
-        or any((isinstance(c, str) and (";" in c)) for c in df.columns)
-        or (len(df.columns) > 0 and str(df.columns[0]).strip().lower() == "unnamed: 0")
-    )
-    if looks_wrong:
+    if df.shape[1] != expected_cols:
         df = pd.read_csv(path, sep=";", decimal=",")
     return df
 
 
-def _select_label_column(df: pd.DataFrame) -> str:
-    lower_map = {c.lower(): c for c in df.columns}
-    for candidate in ("species", "target", "label", "class"):
-        if candidate in lower_map:
-            return lower_map[candidate]
-    if "Species" in DATASET_HEADERS and "Species" in df.columns:
-        return "Species"
-    raise ValueError(f"Could not infer label column from columns: {list(df.columns)}")
+def load_and_prepare_data(path: str) -> tuple[pd.DataFrame, np.ndarray]:
+    df = _read_csv_with_fallback(path, expected_cols=len(DATASET_HEADERS))
 
-
-def load_and_prepare(path: str) -> tuple[pd.DataFrame, pd.Series]:
-    df = _read_csv_robust(path)
-
-    if "Id" in df.columns:
+    cols = df.columns
+    if "Id" in cols:
         df = df.drop(columns=["Id"])
 
-    label_col = _select_label_column(df)
-    df = df.dropna(subset=[label_col])
+    if "Species" not in df.columns:
+        raise ValueError("Target column 'Species' not found in dataset.")
 
-    y_raw = df[label_col]
-    X = df.drop(columns=[label_col])
-
-    for c in X.columns:
-        if X[c].dtype == "object":
-            X[c] = pd.to_numeric(X[c], errors="coerce")
-    X = X.dropna(axis=0)
-    y_raw = y_raw.loc[X.index]
-
+    df = df.copy()
     le = LabelEncoder()
-    y = pd.Series(le.fit_transform(y_raw), index=y_raw.index, name=label_col)
+    y = le.fit_transform(df["Species"].to_numpy())
+    X = df.drop(columns=["Species"])
 
     return X, y
 
 
-def train_and_evaluate(X: pd.DataFrame, y: pd.Series) -> float:
+def train_and_evaluate(X: pd.DataFrame, y: np.ndarray) -> float:
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=RANDOM_SEED, stratify=y
+        X,
+        y,
+        test_size=0.2,
+        random_state=SEED,
+        stratify=y,
     )
 
     model = RandomForestClassifier(
         n_estimators=100,
-        random_state=RANDOM_SEED,
+        random_state=SEED,
         n_jobs=-1,
     )
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-
-    _ = cross_val_score(model, X, y, cv=5, n_jobs=-1)
-
-    return float(accuracy)
+    return float(accuracy_score(y_test, y_pred))
 
 
 def main() -> None:
-    X, y = load_and_prepare(DATASET_PATH)
+    np.random.seed(SEED)
+    X, y = load_and_prepare_data(DATASET_PATH)
     accuracy = train_and_evaluate(X, y)
     print(f"ACCURACY={accuracy:.6f}")
 
@@ -91,10 +72,9 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed plotting/visualization and all non-required prints to cut unnecessary CPU/GPU work and I/O overhead.
-# - Implemented robust CSV parsing with a quick "looks wrong" heuristic and a single fallback read, avoiding repeated parsing.
-# - Dropped columns and filtered rows using vectorized pandas operations to minimize Python-level loops and intermediate copies.
-# - Inferred the label column from df.columns (case-insensitive) to avoid brittle assumptions and prevent rework on schema mismatch.
-# - Limited preprocessing to essential steps (Id drop, label encoding, numeric coercion for object features, NA alignment) to reduce compute.
-# - Enabled parallelism in RandomForest and cross-validation via n_jobs=-1 to reduce wall-clock time/energy on multicore machines.
-# - Centralized constants and set a fixed random seed for reproducibility and stable results across runs.
+# - Removed plotting/visualization and all non-required logging to reduce runtime and avoid extra compute.
+# - Added robust CSV parsing fallback (default read_csv, then retry with sep=';' and decimal=',') to prevent costly failures/retries outside the script.
+# - Avoided in-place dataframe mutation patterns that can create hidden copies; performed a single explicit copy only where needed for encoding.
+# - Reduced unnecessary data movement by converting the target column directly to a NumPy array before label encoding.
+# - Enabled parallelism for RandomForest with n_jobs=-1 to reduce wall-clock time (often lowering energy by finishing sooner for the same work).
+# - Centralized seed control (NumPy + model/train_test_split random_state) to ensure reproducible, stable results.

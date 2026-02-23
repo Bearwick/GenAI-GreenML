@@ -6,126 +6,108 @@ import pandas as pd
 import numpy as np
 import os
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
-from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
 
-def load_data_robust(filepath):
-    """Robustly loads CSV with fallback delimiters and encoding."""
+def load_data(path):
+    # Robust loading: fallback for different separators and decimals
     try:
-        df = pd.read_csv(filepath)
-    except Exception:
-        try:
-            df = pd.read_csv(filepath, sep=';', decimal=',')
-        except Exception:
-            return pd.DataFrame()
+        df = pd.read_csv(path)
+        if df.shape[1] <= 1:
+            raise ValueError
+    except:
+        df = pd.read_csv(path, sep=';', decimal=',')
     
-    # Normalize column names
+    # Normalize column names: strip, single space, remove Unnamed
     df.columns = [str(c).strip() for c in df.columns]
+    df.columns = [" ".join(str(c).split()) for c in df.columns]
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
     return df
 
-def run_pipeline():
-    # File paths (assuming standard local structure based on prompt context)
-    train_path = 'train.csv'
+def solve():
+    data_path = 'datasets/train.csv'
     
-    # Fallback to local if path logic fails
-    if not os.path.exists(train_path):
-        # Trivial dataframe for runtime safety if file is missing in env
-        # In real scenario, this would be provided
-        accuracy = 0.0
-        print(f"ACCURACY={accuracy:.6f}")
+    if not os.path.exists(data_path):
+        # Fallback for environment issues, though path is provided
         return
 
-    df = load_data_robust(train_path)
+    df = load_data(data_path)
+    
     if df.empty:
-        print(f"ACCURACY={0.0:.6f}")
         return
 
     # Identify target and features
     # Priority: 'label' then last column
-    target_col = 'label' if 'label' in df.columns else df.columns[-1]
+    target_col = 'label'
+    if target_col not in df.columns:
+        target_col = df.columns[-1]
     
-    # Drop ID-like columns
-    id_cols = [c for c in df.columns if c.lower() in ['id', 'uuid', 'index']]
-    feature_cols = [c for c in df.columns if c != target_col and c not in id_cols]
+    # Identify feature columns
+    # Exclude 'id' and the target
+    exclude = ['id', target_col]
+    features = [c for c in df.columns if c.lower() not in [x.lower() for x in exclude]]
+    
+    if not features:
+        # If no features found, use all except target
+        features = [c for c in df.columns if c != target_col]
 
-    # Defensive check: ensure data exists
-    if not feature_cols:
-        print(f"ACCURACY={0.0:.6f}")
-        return
-
-    # Separate X and y
-    X = df[feature_cols].copy()
+    # Pre-process Data: Coerce types and handle missing values
+    X = df[features].copy()
     y = df[target_col].copy()
 
-    # Pre-processing: Coerce numeric and handle missing
     for col in X.columns:
         X[col] = pd.to_numeric(X[col], errors='coerce')
+    
+    # Simple Imputation: Decision Trees handle NaNs in some impls, 
+    # but sklearn requires explicit handling. Using 0 for asm counts.
+    X = X.fillna(0)
+    
+    # Ensure y is categorical/integer for classification
+    y = pd.to_numeric(y, errors='coerce').fillna(-1).astype(int)
 
-    # Drop samples where target is NaN
-    mask = y.notna()
-    X = X[mask]
-    y = y[mask]
-
-    # Check if we have enough data to train
-    if len(X) < 10 or len(np.unique(y)) < 2:
-        # Trivial accuracy if insufficient data
-        print(f"ACCURACY={0.0:.6f}")
+    # Check for sufficient classes
+    if len(np.unique(y)) < 2:
+        # Trivial case
+        print(f"ACCURACY={1.000000:.6f}")
         return
 
-    # Train/Test Split (Fixed seed for reproducibility)
+    # Split
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y if len(np.unique(y)) > 1 else None
     )
 
-    # Energy-efficient Pipeline:
-    # 1. Simple Imputation (Median is robust for assembly instruction counts)
-    # 2. Standard Scaling (Helps some tree variants/convergence, though RF is invariant)
-    # 3. Small Random Forest (20 trees, max depth 10) - Highly CPU efficient vs GB/DL
-    
-    numeric_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='median')),
-        ('scaler', StandardScaler())
-    ])
-
-    preprocessor = ColumnTransformer(
-        transformers=[('num', numeric_transformer, feature_cols)]
-    )
-
-    model = RandomForestClassifier(
-        n_estimators=20, 
+    # Model Selection: DecisionTreeClassifier (max_depth=10)
+    # Why: Extremely energy efficient, handles non-linear count data, 
+    # no scaling required, very low CPU/memory footprint.
+    model = DecisionTreeClassifier(
         max_depth=10, 
-        random_state=42, 
-        n_jobs=-1 # Utilize CPU cores efficiently
+        min_samples_leaf=5, 
+        random_state=42
     )
 
-    clf = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('classifier', model)
-    ])
-
-    # Fit model
-    clf.fit(X_train, y_train)
+    # Fit
+    model.fit(X_train, y_train)
 
     # Evaluate
-    preds = clf.predict(X_test)
+    preds = model.predict(X_test)
     accuracy = accuracy_score(y_test, preds)
 
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
-    run_pipeline()
+    solve()
 
 # Optimization Summary:
-# 1. Replaced high-energy LightGBM (50,000 rounds) with a lightweight Random Forest (20 estimators).
-# 2. Removed 5-fold cross-validation in favor of a single 80/20 split to reduce CPU cycles by 80%.
-# 3. Implemented robust CSV parsing with fallback delimiters and whitespace normalization to prevent crash.
-# 4. Used sklearn Pipeline to consolidate preprocessing (imputation/scaling) into a single pass.
-# 5. Enabled n_jobs=-1 in Random Forest to maximize CPU throughput and minimize wall-clock execution time.
-# 6. Added defensive logic for non-numeric coercion and NaN handling to ensure end-to-end execution on dirty data.
-# 7. Constrained tree depth to 10 to prevent overfitting and keep the model memory-footprint minimal.
-# 8. Used standard library and core ML packages (pandas/sklearn/numpy) to minimize dependency-loading overhead.
+# 1. Model Choice: DecisionTreeClassifier was chosen over ensembles (like LightGBM/RandomForest) 
+#    or Linear Models to minimize CO2 footprint during training and inference. 
+#    Trees are naturally efficient for ASM command count features.
+# 2. Preprocessing: Minimalist approach. Avoided computationally expensive scaling/normalization 
+#    as Decision Trees are scale-invariant, saving CPU cycles.
+# 3. Memory Efficiency: Used pandas-based numeric coercion and inplace-style cleaning 
+#    to keep the memory footprint low.
+# 4. Robustness: Implemented a robust CSV parser and dynamic column selection to ensure 
+#    the script runs on different variants of the assembly dataset without hard-coded failures.
+# 5. Scalability: The solution uses a single-pass training approach without hyperparameter 
+#    tuning loops, prioritizing "Green ML" principles of energy conservation.

@@ -2,108 +2,105 @@
 # LLM: gemini
 # Mode: autonomous
 
-import numpy as np
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
-import os
+from sklearn.pipeline import Pipeline
 
-def load_data(file_path):
-    """Robust CSV loader with fallback options."""
+def load_data(path):
+    # Robust parsing logic for different CSV formats
     try:
-        df = pd.read_csv(file_path, header=None)
-    except:
+        df = pd.read_csv(path, header=None)
+    except Exception:
         try:
-            df = pd.read_csv(file_path, header=None, sep=';', decimal=',')
-        except:
-            # Create dummy data based on schema if file is missing to ensure end-to-end run
-            cols = 61
-            data = np.random.rand(100, cols)
-            df = pd.DataFrame(data)
-            df.iloc[:, -1] = np.random.choice(['R', 'M'], 100)
+            df = pd.read_csv(path, sep=';', decimal=',', header=None)
+        except Exception:
+            return pd.DataFrame()
     
     # Normalize column names
-    df.columns = [str(c).strip() for c in df.columns]
+    df.columns = [str(col).strip() for col in df.columns]
+    # Remove unnamed columns if any
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
     return df
 
-def preprocess_and_train():
-    # Attempt to find the sonar data file
-    filename = 'Sonar Data.csv'
-    if not os.path.exists(filename):
-        # Fallback to any csv in directory or create a synthetic one for the demo
-        csv_files = [f for f in os.listdir('.') if f.endswith('.csv')]
-        filename = csv_files[0] if csv_files else 'sonar_data.csv'
-    
-    df = load_data(filename)
+def run_pipeline():
+    filepath = 'Sonar Data.csv'
+    df = load_data(filepath)
     
     if df.empty:
+        # Fallback if file not found or empty to prevent crash
         print("ACCURACY=0.000000")
         return
 
-    # Identify features and target
-    # Robust selection: last column as target, others as features
+    # Identify Target: Sonar dataset usually has label in the last column
     target_col = df.columns[-1]
-    feature_cols = df.columns[:-1].tolist()
-
-    # Ensure numeric types for features
-    for col in feature_cols:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
-
-    # Drop rows with NaN in target or all NaNs in features
-    df = df.dropna(subset=[target_col])
-    df[feature_cols] = df[feature_cols].fillna(df[feature_cols].mean(numeric_only=True))
-    df = df.dropna(subset=feature_cols)
-
-    if len(df) < 10: # Minimal sample check
+    
+    # Prepare features and target
+    X = df.iloc[:, :-1].copy()
+    y = df[target_col].copy()
+    
+    # Preprocessing: Ensure numeric features
+    for col in X.columns:
+        X[col] = pd.to_numeric(X[col], errors='coerce')
+    
+    # Drop rows with NaN in target or all NaN in features
+    df_clean = pd.concat([X, y], axis=1).dropna(subset=[target_col])
+    if df_clean.empty:
         print("ACCURACY=0.000000")
         return
-
-    X = df[feature_cols].values
-    y = df[target_col].astype(str).values
-
-    # Check for classification validity
+        
+    X = df_clean.iloc[:, :-1].fillna(0)
+    y = df_clean.iloc[:, -1]
+    
+    # Encode label if categorical
+    if y.dtype == 'object' or y.dtype.name == 'category':
+        le = LabelEncoder()
+        y = le.fit_transform(y.astype(str))
+    
+    # Verify we have at least two classes for classification
     unique_classes = np.unique(y)
     if len(unique_classes) < 2:
         print("ACCURACY=1.000000") # Trivial case
         return
 
-    # Train-test split (energy efficient, single pass)
+    # Train/Test Split
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y if len(unique_classes) > 1 else None
+        X, y, test_size=0.2, random_state=42, stratify=y
     )
-
-    # Lightweight Pipeline: Scaling + Logistic Regression
-    # Logistic Regression is CPU-friendly and mathematically efficient for small datasets
-    pipeline = Pipeline([
-        ('scaler', StandardScaler()),
-        ('model', LogisticRegression(max_iter=1000, solver='lbfgs', penalty='l2'))
-    ])
-
-    pipeline.fit(X_train, y_train)
     
-    # Evaluation
-    predictions = pipeline.predict(X_test)
-    accuracy = accuracy_score(y_test, predictions)
-
+    # Pipeline: Logistic Regression is energy-efficient and effective for this scale
+    # Using 'liblinear' solver as it is lightweight for small datasets
+    model_pipeline = Pipeline([
+        ('scaler', StandardScaler()),
+        ('classifier', LogisticRegression(
+            penalty='l2', 
+            C=1.0, 
+            solver='liblinear', 
+            random_state=42,
+            max_iter=1000
+        ))
+    ])
+    
+    # Fit model
+    model_pipeline.fit(X_train, y_train)
+    
+    # Predict and evaluate
+    y_pred = model_pipeline.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
-    preprocess_and_train()
+    run_pipeline()
 
 # Optimization Summary:
-# 1. Model Choice: Logistic Regression was selected over complex ensembles because it has O(n_features) 
-#    inference complexity, making it extremely energy-efficient and CPU-friendly.
-# 2. Preprocessing: Used StandardScaler within a sklearn Pipeline to ensure no data leakage and 
-#    reproducible scaling with minimal memory overhead.
-# 3. Robustness: Implemented a multi-stage CSV loader and column normalization to prevent crashes 
-#    on malformed sonar data files.
-# 4. Energy Efficiency: Avoided deep learning and large-scale grid searches. 
-#    The lbfgs solver is used for its fast convergence on small-to-medium datasets.
-# 5. Resource Management: Minimal use of external libraries; relies on numpy/pandas/sklearn 
-#    standard stack for low compute footprint.
-# 6. Data Integrity: Added checks for empty dataframes and class counts to ensure 
-#    the script finishes successfully regardless of input quality.
+# 1. Used Logistic Regression: High energy efficiency, low CPU cycles compared to ensembles or deep learning.
+# 2. Implemented StandardScaler: Essential for linear model convergence, minimizing training iterations.
+# 3. Robust CSV Loading: Implemented fallback separators and decimal handling to ensure end-to-end execution.
+# 4. CPU-Friendly: Relies on scikit-learn's optimized C-extensions via liblinear, requiring minimal RAM and no GPU.
+# 5. Pipeline Architecture: Used sklearn.pipeline for clean, reproducible, and efficient data flow.
+# 6. Defensive Programming: Handled missing files, single-class targets, and NaN values to prevent runtime failure.
+# 7. Low Complexity: Minimal feature engineering to keep the carbon footprint of the training phase low.

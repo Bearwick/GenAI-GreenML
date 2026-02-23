@@ -3,9 +3,6 @@
 # Mode: assisted
 
 import os
-import random
-from typing import Tuple, Optional
-
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
@@ -14,31 +11,34 @@ from xgboost import XGBClassifier
 
 from src.preprocessing import preprocess_data
 
-
-SEED = 42
-
-
-def _set_reproducible(seed: int = SEED) -> None:
-    os.environ["PYTHONHASHSEED"] = str(seed)
-    random.seed(seed)
-    np.random.seed(seed)
+RANDOM_SEED = 42
 
 
 def _read_csv_robust(path: str) -> pd.DataFrame:
     df = pd.read_csv(path, header=None)
-    if df.shape[1] <= 1:
-        df = pd.read_csv(path, header=None, sep=";", decimal=",")
+    if df.shape[1] <= 2:
+        df2 = pd.read_csv(path, header=None, sep=";", decimal=",")
+        if df2.shape[1] > df.shape[1]:
+            df = df2
     return df
 
 
-def _fit_pca(X_train: np.ndarray, X_test: np.ndarray, seed: int = SEED) -> Tuple[np.ndarray, np.ndarray, PCA]:
-    pca = PCA(n_components=0.95, random_state=seed, svd_solver="full")
-    X_train_pca = pca.fit_transform(X_train)
-    X_test_pca = pca.transform(X_test)
-    return X_train_pca, X_test_pca, pca
+def main() -> None:
+    np.random.seed(RANDOM_SEED)
 
+    train_path = os.path.join("data", "raw", "Train.txt")
+    test_path = os.path.join("data", "raw", "Test.txt")
 
-def _train_model(X: np.ndarray, y: np.ndarray, seed: int = SEED) -> XGBClassifier:
+    train_df = _read_csv_robust(train_path)
+    test_df = _read_csv_robust(test_path)
+
+    X_train_scaled, y_train, scaler, train_columns = preprocess_data(train_df, fit=True)
+    X_test_scaled, y_test = preprocess_data(test_df, fit=False, scaler=scaler, columns=train_columns)
+
+    pca = PCA(n_components=0.95, random_state=RANDOM_SEED, svd_solver="full")
+    X_train_pca = pca.fit_transform(X_train_scaled)
+    X_test_pca = pca.transform(X_test_scaled)
+
     model = XGBClassifier(
         n_estimators=200,
         max_depth=6,
@@ -46,30 +46,15 @@ def _train_model(X: np.ndarray, y: np.ndarray, seed: int = SEED) -> XGBClassifie
         subsample=0.8,
         colsample_bytree=0.8,
         eval_metric="logloss",
-        random_state=seed,
+        random_state=RANDOM_SEED,
         n_jobs=1,
         tree_method="hist",
         verbosity=0,
     )
-    model.fit(X, y)
-    return model
-
-
-def main() -> None:
-    _set_reproducible(SEED)
-
-    train_df = _read_csv_robust("data/raw/Train.txt")
-    test_df = _read_csv_robust("data/raw/Test.txt")
-
-    X_train_scaled, y_train, scaler, train_columns = preprocess_data(train_df, fit=True)
-    X_test_scaled, y_test = preprocess_data(test_df, fit=False, scaler=scaler, columns=train_columns)
-
-    X_train_pca, X_test_pca, _ = _fit_pca(X_train_scaled, X_test_scaled, seed=SEED)
-
-    model = _train_model(X_train_pca, y_train, seed=SEED)
+    model.fit(X_train_pca, y_train)
 
     y_pred = model.predict(X_test_pca)
-    accuracy = float(accuracy_score(y_test, y_pred))
+    accuracy = accuracy_score(y_test, y_pred)
     print(f"ACCURACY={accuracy:.6f}")
 
 
@@ -77,9 +62,9 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed artifact saving (joblib.dump) and all plotting/extra metrics to eliminate I/O and visualization overhead while keeping the ML task intact.
-# - Avoided predict_proba/ROC computations since only final accuracy output is required, reducing unnecessary inference and memory use.
-# - Added robust CSV parsing fallback (default read_csv, then retry with sep=';' and decimal=',') to prevent costly downstream failures.
-# - Enforced reproducibility with fixed seeds (PYTHONHASHSEED, random, numpy) and deterministic single-thread settings (n_jobs=1) to stabilize results.
-# - Used XGBoost 'hist' tree_method (same model family/behavior intent) to reduce training energy/runtime on CPU without changing inputs/outputs.
-# - Modularized into small functions to minimize repeated work and keep data flow explicit, reducing accidental redundant computation/data movement.
+# - Removed artifact saving (joblib.dump) and all plotting/extra metrics to eliminate unnecessary I/O and rendering overhead.
+# - Added robust CSV parsing with a fallback delimiter/decimal strategy to avoid repeated manual fixes and ensure correct schema ingestion.
+# - Ensured reproducibility by fixing a global seed and using deterministic model parameters where feasible (random_state, n_jobs=1).
+# - Set XGBoost to use the histogram tree method for faster, more energy-efficient training while keeping model intent/behavior intact.
+# - Avoided redundant computations by computing only what is required for the final accuracy output (skipped predict_proba/ROC pipeline).
+# - Reduced overhead from logging by disabling XGBoost verbosity and removing all intermediate prints.

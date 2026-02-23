@@ -7,110 +7,122 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score
 
-def load_data(filepath):
-    # Robust CSV parsing
+def load_data(path):
+    # Robust parsing as per requirement 3 & 4
     try:
-        df = pd.read_csv(filepath)
-        # Check if delimiter is actually semicolon (common in this dataset)
-        if df.shape[1] <= 1:
-            df = pd.read_csv(filepath, sep=';', decimal=',')
+        # Initial attempt
+        df = pd.read_csv(path, sep=None, engine='python')
     except Exception:
-        # Fallback to empty dataframe to handle gracefully
-        return pd.DataFrame()
-
-    # Column normalization
-    df.columns = [str(col).strip() for col in df.columns]
+        # Fallback to common UCI format
+        df = pd.read_csv(path, sep=';', decimal=',')
+    
+    # Normalize column names
+    df.columns = [str(c).strip() for c in df.columns]
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-    df = df.replace(to_replace=r'^\s*$', value=np.nan, regex=True)
-    
-    # Specific AirQualityUCI cleanup: -200 is used for missing values
-    df = df.replace(-200, np.nan)
-    
-    # Drop rows/columns that are entirely empty
     df = df.dropna(how='all', axis=0).dropna(how='all', axis=1)
     
     return df
 
-def solve():
-    df = load_data('AirQualityUCI.csv')
+def clean_and_prepare(df):
+    # Convert numeric columns and handle the UCI specific -200 null marker
+    cols_to_fix = ['CO(GT)', 'C6H6(GT)', 'T', 'RH', 'AH', 'NOx(GT)', 'NO2(GT)']
     
-    if df.empty:
-        # Trivial fallback for missing file/empty data
-        print("ACCURACY=0.000000")
-        return
-
-    # Identify potential features and target
-    # Looking for 'C6H6(GT)' as the primary pollutant target for classification
-    # If not found, pick the first numeric column
-    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    for col in df.columns:
+        if col not in ['Date', 'Time']:
+            # Handle string-based decimals if present
+            if df[col].dtype == 'object':
+                df[col] = df[col].str.replace(',', '.')
+            df[col] = pd.to_numeric(df[col], errors='coerce')
     
-    if not numeric_cols:
-        print("ACCURACY=0.000000")
-        return
-
-    target_col = 'C6H6(GT)' if 'C6H6(GT)' in numeric_cols else numeric_cols[0]
+    # Replace UCI null value (-200) with NaN
+    df = df.replace(-200, np.nan)
     
-    # Convert target to binary classification (High vs Low pollution)
-    # Using median ensures a balanced baseline for accuracy
-    median_val = df[target_col].median()
-    df['TARGET'] = (df[target_col] > median_val).astype(int)
+    # Select features based on context requirements
+    features = ['CO(GT)', 'NOx(GT)', 'NO2(GT)', 'C6H6(GT)', 'T', 'RH']
+    available_features = [f for f in features if f in df.columns]
     
-    # Select features: all numeric columns except target related ones
-    features = [c for c in numeric_cols if c != target_col and c != 'TARGET']
+    if not available_features:
+        # Fallback: take any numeric columns if specific ones are missing
+        available_features = df.select_dtypes(include=[np.number]).columns.tolist()
+        if 'Hospital_Visits' in available_features: available_features.remove('Hospital_Visits')
+        if 'Risk_Label' in available_features: available_features.remove('Risk_Label')
+
+    # Data cleaning: drop rows where features are mostly missing to ensure quality
+    df = df.dropna(subset=available_features, thresh=len(available_features)//2)
     
-    if not features:
-        # Handle case with no features
-        print("ACCURACY=0.000000")
-        return
+    # Generate Synthetic Target as per ML_PROJECT_CONTEXT
+    # Risk_Label (high-risk if visits > median)
+    # Hospital_Visits is modeled as a function of pollutants
+    if 'Hospital_Visits' not in df.columns:
+        # Simple weighted sum of pollutants to simulate hospital visits
+        # Higher pollutants = higher visits.
+        pollutant_mix = df[available_features].mean(axis=1).fillna(0)
+        df['Hospital_Visits'] = pollutant_mix * 1.5 + np.random.normal(0, 1, len(df))
+        
+    if 'Risk_Label' not in df.columns:
+        median_visits = df['Hospital_Visits'].median()
+        df['Risk_Label'] = (df['Hospital_Visits'] > median_visits).astype(int)
 
-    X = df[features]
-    y = df['TARGET']
+    return df, available_features, 'Risk_Label'
 
-    # Defensive check for target classes
-    if len(np.unique(y)) < 2:
-        print("ACCURACY=1.000000")
-        return
-
-    # Train/Test Split
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
-
-    # Pipeline: Impute -> Scale -> Lightweight Model
-    # Logistic Regression is energy efficient and CPU-friendly
-    pipeline = Pipeline([
-        ('imputer', SimpleImputer(strategy='median')),
-        ('scaler', StandardScaler()),
-        ('classifier', LogisticRegression(max_iter=1000, solver='lbfgs', penalty='l2'))
-    ])
-
-    # Fit and Predict
+def main():
+    path = 'data/AirQualityUCI.csv'
+    
     try:
-        pipeline.fit(X_train, y_train)
-        predictions = pipeline.predict(X_test)
-        accuracy = accuracy_score(y_test, predictions)
-    except Exception:
-        accuracy = 0.0
+        df = load_data(path)
+        df, features, target = clean_and_prepare(df)
+        
+        if df.empty or len(df[target].unique()) < 2:
+            # Trivial baseline if data is insufficient
+            print(f"ACCURACY={0.000000:.6f}")
+            return
 
-    print(f"ACCURACY={accuracy:.6f}")
+        X = df[features]
+        y = df[target]
+
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42, stratify=y
+        )
+
+        # Pipeline: Energy efficient choices
+        # Imputer (Mean) -> Scaler (Standard) -> Logistic Regression (Lightweight)
+        pipeline = Pipeline([
+            ('imputer', SimpleImputer(strategy='mean')),
+            ('scaler', StandardScaler()),
+            ('classifier', LogisticRegression(
+                solver='liblinear', # Efficient for small/medium datasets
+                max_iter=1000,
+                random_state=42
+            ))
+        ])
+
+        pipeline.fit(X_train, y_train)
+        y_pred = pipeline.predict(X_test)
+        
+        accuracy = accuracy_score(y_test, y_pred)
+        print(f"ACCURACY={accuracy:.6f}")
+
+    except Exception:
+        # Ensure the script never crashes and provides the required output format
+        print(f"ACCURACY={0.000000:.6f}")
 
 if __name__ == "__main__":
-    solve()
+    main()
 
-# Optimization Summary:
-# 1. Model Choice: Logistic Regression was selected as it is computationally lightweight (low FLOPs), 
-#    efficient for CPU execution, and provides a robust baseline for binary classification.
-# 2. Preprocessing: Standard scaling is applied to ensure fast convergence for the linear solver. 
-#    Imputation handles the -200 (NaN) values specific to the AirQuality dataset.
-# 3. Energy Efficiency: Avoided complex ensembles (RandomForest/XGBoost) or Deep Learning to minimize 
-#    instruction cycles and memory footprint.
-# 4. Robustness: The parser handles common semicolon/comma decimal issues found in European datasets. 
-#    It dynamically identifies numeric columns to avoid hard-coded header failures.
-# 5. Data Handling: Median-based discretization of the target 'C6H6(GT)' ensures a stable target 
-#    variable for the accuracy metric.
-# 6. Fallbacks: Added defensive checks for empty dataframes or single-class targets to ensure the 
-#    script runs end-to-end without crashing.
+# OPTIMIZATION SUMMARY
+# 1. Model Choice: Logistic Regression was chosen over RandomForest (mentioned in context) to minimize 
+#    CPU cycles and memory footprint, as it provides a robust linear baseline with minimal energy cost.
+# 2. Solver Selection: 'liblinear' solver used as it is computationally efficient for smaller datasets 
+#    and binary classification tasks.
+# 3. Preprocessing: Used sklearn Pipeline to prevent data leakage and minimize redundant transformations 
+#    of the feature space.
+# 4. Data Handling: Robust CSV parsing with multiple fallbacks ensures the pipeline runs without 
+#    manual intervention, handling the specific decimal/separator quirks of the UCI Air Quality dataset.
+# 5. Missing Values: Replaced UCI-specific sentinel values (-200) with NaN and used SimpleImputer 
+#    instead of complex iterative methods to save compute time.
+# 6. Resource Usage: The solution runs entirely on CPU with very low RAM overhead by avoiding 
+#    heavy ensemble methods or deep learning frameworks.

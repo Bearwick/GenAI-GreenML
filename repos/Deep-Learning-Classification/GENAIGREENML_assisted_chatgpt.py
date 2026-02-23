@@ -4,41 +4,24 @@
 
 import os
 import random
-from typing import List, Tuple
-
 import numpy as np
 import pandas as pd
-from sklearn.compose import ColumnTransformer
-from sklearn.metrics import accuracy_score
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
-from tensorflow.keras.layers import Dense, InputLayer
+from sklearn.compose import ColumnTransformer
 from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, InputLayer
 from tensorflow.keras.utils import to_categorical
 import tensorflow as tf
 
-DATASET_PATH = "heart_failure.csv"
-DATASET_HEADERS = [
-    "",
-    "age",
-    "anaemia",
-    "creatinine_phosphokinase",
-    "diabetes",
-    "ejection_fraction",
-    "high_blood_pressure",
-    "platelets",
-    "serum_creatinine",
-    "serum_sodium",
-    "sex",
-    "smoking",
-    "time",
-    "DEATH_EVENT",
-    "death_event",
-]
+
+SEED = 0
 
 
-def set_reproducible(seed: int = 0) -> None:
+def set_reproducibility(seed: int = SEED) -> None:
     os.environ["PYTHONHASHSEED"] = str(seed)
+    os.environ["TF_DETERMINISTIC_OPS"] = "1"
     random.seed(seed)
     np.random.seed(seed)
     tf.random.set_seed(seed)
@@ -48,111 +31,98 @@ def set_reproducible(seed: int = 0) -> None:
         pass
 
 
-def _read_csv_with_fallback(path: str) -> pd.DataFrame:
+def read_csv_robust(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
-    if df.shape[1] <= 1:
+    if df.shape[1] <= 2:
         df = pd.read_csv(path, sep=";", decimal=",")
     return df
 
 
-def _resolve_target_column(df: pd.DataFrame, headers: List[str]) -> str:
-    candidates = [c for c in ["death_event", "DEATH_EVENT"] if c in df.columns]
-    if candidates:
-        return candidates[0]
+def resolve_target_column(df: pd.DataFrame, headers: str) -> str:
+    possible = [c for c in df.columns if c in ("death_event", "DEATH_EVENT")]
+    if possible:
+        if "death_event" in possible:
+            return "death_event"
+        return possible[0]
 
-    lowered = {c.lower(): c for c in df.columns}
-    for c in ["death_event", "death event", "death-event", "death"]:
-        if c in lowered:
-            return lowered[c]
+    header_tokens = [h.strip() for h in headers.split(",") if h.strip()]
+    for cand in ("death_event", "DEATH_EVENT"):
+        if cand in header_tokens and cand in df.columns:
+            return cand
 
-    header_candidates = [h for h in headers if h and h in df.columns]
-    for h in header_candidates[::-1]:
-        if "death" in h.lower():
-            return h
-
-    raise ValueError(f"Could not resolve target column. Available columns: {list(df.columns)}")
+    raise ValueError("Target column not found (expected 'death_event' or 'DEATH_EVENT').")
 
 
-def _resolve_feature_columns(df: pd.DataFrame, target_col: str, headers: List[str]) -> List[str]:
-    preferred = [
+def build_feature_frame(df: pd.DataFrame, target_col: str, headers: str) -> tuple[pd.DataFrame, pd.Series]:
+    header_tokens = [h.strip() for h in headers.split(",") if h.strip()]
+    candidate_features = [h for h in header_tokens if h not in (target_col, "DEATH_EVENT", "death_event")]
+    feature_cols = [c for c in candidate_features if c in df.columns]
+
+    if not feature_cols:
+        feature_cols = [c for c in df.columns if c != target_col]
+
+    x = df[feature_cols].copy()
+    y = df[target_col]
+    return x, y
+
+
+def main() -> None:
+    set_reproducibility(SEED)
+
+    dataset_path = "heart_failure.csv"
+    dataset_headers = ",age,anaemia,creatinine_phosphokinase,diabetes,ejection_fraction,high_blood_pressure,platelets,serum_creatinine,serum_sodium,sex,smoking,time,DEATH_EVENT,death_event"
+
+    data = read_csv_robust(dataset_path)
+    target_col = resolve_target_column(data, dataset_headers)
+    x, y = build_feature_frame(data, target_col, dataset_headers)
+
+    x = pd.get_dummies(x, dummy_na=False)
+
+    X_train, X_test, Y_train, Y_test = train_test_split(
+        x, y, test_size=0.3, random_state=SEED
+    )
+
+    numeric_candidates = [
         "age",
-        "anaemia",
         "creatinine_phosphokinase",
-        "diabetes",
         "ejection_fraction",
-        "high_blood_pressure",
         "platelets",
         "serum_creatinine",
         "serum_sodium",
-        "sex",
-        "smoking",
         "time",
     ]
-    features = [c for c in preferred if c in df.columns and c != target_col]
-    if features:
-        return features
+    numeric_cols = [c for c in numeric_candidates if c in X_train.columns]
 
-    header_features = [h for h in headers if h and h in df.columns and h != target_col and "death" not in h.lower()]
-    if header_features:
-        return header_features
+    if numeric_cols:
+        ct = ColumnTransformer(
+            transformers=[("numeric", StandardScaler(), numeric_cols)],
+            remainder="passthrough",
+            sparse_threshold=0.0,
+        )
+        X_train = ct.fit_transform(X_train)
+        X_test = ct.transform(X_test)
+    else:
+        X_train = X_train.to_numpy(dtype=np.float32, copy=False)
+        X_test = X_test.to_numpy(dtype=np.float32, copy=False)
 
-    return [c for c in df.columns if c != target_col]
+    le = LabelEncoder()
+    y_train_enc = le.fit_transform(Y_train.astype(str))
+    y_test_enc = le.transform(Y_test.astype(str))
+    Y_train_cat = to_categorical(y_train_enc)
+    Y_test_cat = to_categorical(y_test_enc)
 
-
-def _make_preprocessor(numeric_features: List[str]) -> ColumnTransformer:
-    return ColumnTransformer(
-        transformers=[("numeric", StandardScaler(), numeric_features)],
-        remainder="drop",
-        sparse_threshold=0.0,
-    )
-
-
-def build_model(input_dim: int) -> Sequential:
     model = Sequential(
         [
-            InputLayer(shape=(input_dim,)),
+            InputLayer(shape=(X_train.shape[1],)),
             Dense(12, activation="relu"),
             Dense(2, activation="softmax"),
         ]
     )
     model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
-    return model
 
+    model.fit(X_train, Y_train_cat, epochs=100, batch_size=16, verbose=0)
+    _, accuracy = model.evaluate(X_test, Y_test_cat, verbose=0)
 
-def main() -> None:
-    set_reproducible(seed=0)
-
-    df = _read_csv_with_fallback(DATASET_PATH)
-    target_col = _resolve_target_column(df, DATASET_HEADERS)
-    feature_cols = _resolve_feature_columns(df, target_col, DATASET_HEADERS)
-
-    X = df.loc[:, feature_cols]
-    y = df[target_col]
-
-    X_train_raw, X_test_raw, y_train_raw, y_test_raw = train_test_split(
-        X, y, test_size=0.3, random_state=0
-    )
-
-    numeric_features = [c for c in ["age", "creatinine_phosphokinase", "ejection_fraction", "platelets", "serum_creatinine", "serum_sodium", "time"] if c in X_train_raw.columns]
-    preprocessor = _make_preprocessor(numeric_features)
-
-    X_train = preprocessor.fit_transform(X_train_raw)
-    X_test = preprocessor.transform(X_test_raw)
-
-    le = LabelEncoder()
-    y_train_enc = le.fit_transform(y_train_raw.astype(str))
-    y_test_enc = le.transform(y_test_raw.astype(str))
-    y_train = to_categorical(y_train_enc, num_classes=2)
-    y_test = to_categorical(y_test_enc, num_classes=2)
-
-    model = build_model(input_dim=X_train.shape[1])
-    model.fit(X_train, y_train, epochs=100, batch_size=16, verbose=0)
-
-    y_prob = model.predict(X_test, verbose=0)
-    y_pred = np.argmax(y_prob, axis=1)
-    y_true = np.argmax(y_test, axis=1)
-
-    accuracy = accuracy_score(y_true, y_pred)
     print(f"ACCURACY={accuracy:.6f}")
 
 
@@ -160,9 +130,10 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed all non-essential prints, reports, and verbose training output to reduce I/O overhead and runtime noise.
-# - Dropped pd.get_dummies because selected features are already numeric/binary; avoids unnecessary data expansion and memory use while preserving outputs.
-# - Used ColumnTransformer with sparse_threshold=0.0 to return dense arrays directly, avoiding extra conversions and potential sparse overhead for small dense data.
-# - Limited preprocessing to the required numeric subset (derived from available columns) to prevent redundant computation on irrelevant/missing columns.
-# - Enforced reproducibility via fixed seeds and deterministic TensorFlow ops when available for stable results across runs.
-# - Computed only accuracy (the required final output) to avoid generating large intermediate text artifacts (classification_report).
+# - Removed non-essential prints and the classification report to reduce I/O and post-processing overhead; kept required final accuracy print only.
+# - Added robust CSV parsing fallback (default read_csv, then retry with sep=';' and decimal=',') to avoid wasted runs due to mis-parsing.
+# - Derived target/feature columns from provided headers and df.columns to prevent schema assumptions and avoid errors/re-runs.
+# - Used ColumnTransformer with remainder='passthrough' to avoid dropping non-scaled one-hot columns (preserves intended behavior while reducing manual column handling).
+# - Avoided extra intermediate arrays by transforming labels once, then one-hot encoding; used copy=False where safe to reduce memory movement.
+# - Enforced reproducibility via fixed seeds and deterministic TensorFlow settings to stabilize results and avoid repeated experimentation runs.
+# - Set training verbose=0 to reduce runtime overhead from console logging.

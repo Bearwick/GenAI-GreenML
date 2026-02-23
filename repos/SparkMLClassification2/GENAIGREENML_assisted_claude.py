@@ -9,20 +9,24 @@ from pyspark.ml.feature import VectorAssembler, StandardScaler
 from pyspark.ml.classification import RandomForestClassifier
 from pyspark.ml.evaluation import BinaryClassificationEvaluator
 
-def main():
-    spark = SparkSession.builder \
-        .master("local[*]") \
-        .appName("HeartDisease") \
-        .config("spark.ui.showConsoleProgress", "false") \
-        .config("spark.sql.shuffle.partitions", "4") \
-        .getOrCreate()
+def isSick(x):
+    if x in (3, 7):
+        return 0
+    else:
+        return 1
+
+def classify():
+    spark = (SparkSession.builder
+             .master("local[*]")
+             .appName("HeartClassification")
+             .config("spark.ui.showConsoleProgress", "false")
+             .config("spark.sql.shuffle.partitions", "4")
+             .getOrCreate())
     spark.sparkContext.setLogLevel("ERROR")
 
-    cols = [
-        'age', 'sex', 'chest_pain', 'resting_bp', 'serum_chol',
-        'fasting_bs', 'rest_ecg', 'max_hr', 'exercise_angina',
-        'st_depression', 'slope', 'num_vessels', 'thal', 'last'
-    ]
+    cols = ['age', 'sex', 'chest_pain', 'resting_bp', 'serum_chol',
+            'fasting_bs', 'resting_ecg', 'max_hr', 'exercise_angina',
+            'st_depression', 'st_slope', 'num_vessels', 'thal', 'last']
 
     try:
         data = pd.read_csv('heart.csv', delimiter=' ', header=None, names=cols)
@@ -31,57 +35,51 @@ def main():
     except Exception:
         data = pd.read_csv('heart.csv', sep=';', decimal=',', header=None, names=cols)
 
-    data = data.iloc[:, :13].copy()
-    data['label'] = (data['thal'].apply(lambda x: 0 if x in (3, 7) else 1)).astype(int)
+    data = data.iloc[:, 0:13]
+    data['label'] = data['thal'].apply(isSick)
 
-    feature_cols = [
-        'age', 'sex', 'chest_pain', 'resting_bp', 'serum_chol',
-        'fasting_bs', 'rest_ecg', 'max_hr', 'exercise_angina',
-        'st_depression', 'slope', 'num_vessels'
-    ]
+    features = ['age', 'sex', 'chest_pain', 'resting_bp', 'serum_chol',
+                'fasting_bs', 'resting_ecg', 'max_hr', 'exercise_angina',
+                'st_depression', 'st_slope', 'num_vessels']
 
-    df = spark.createDataFrame(data[feature_cols + ['label']])
+    df = spark.createDataFrame(data)
 
-    assembler = VectorAssembler(inputCols=feature_cols, outputCol="features")
+    assembler = VectorAssembler(inputCols=features, outputCol="features")
     raw_data = assembler.transform(df)
 
     scaler = StandardScaler(inputCol="features", outputCol="Scaled_features")
     raw_data = scaler.fit(raw_data).transform(raw_data)
 
-    training, test = raw_data.randomSplit([0.5, 0.5], seed=12345)
-    training.cache()
-    test.cache()
+    raw_data = raw_data.select("Scaled_features", "label").cache()
 
-    rf = RandomForestClassifier(
-        labelCol="label",
-        featuresCol="Scaled_features",
-        numTrees=200,
-        seed=42
-    )
+    training, test = raw_data.randomSplit([0.5, 0.5], seed=12345)
+
+    rf = RandomForestClassifier(labelCol="label", featuresCol="Scaled_features",
+                                numTrees=200, seed=42)
     model = rf.fit(training)
     predict_test = model.transform(test)
 
-    evaluator = BinaryClassificationEvaluator(
-        labelCol="label",
-        rawPredictionCol="rawPrediction",
-        metricName="areaUnderROC"
-    )
-    accuracy = evaluator.evaluate(predict_test)
-
-    print(f"ACCURACY={accuracy:.6f}")
+    evaluator = BinaryClassificationEvaluator(labelCol="label",
+                                              rawPredictionCol="rawPrediction",
+                                              metricName="areaUnderROC")
+    auc = evaluator.evaluate(predict_test)
 
     spark.stop()
+    return auc
+
+def main():
+    accuracy = classify()
+    print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed all unused imports (matplotlib, unused pyspark modules, etc.) to reduce load time.
-# - Removed all print statements, plots, visualizations, and .show() calls.
-# - Removed commented-out logistic regression code block entirely.
-# - Replaced isSick function with inline lambda to avoid function call overhead.
-# - Used .copy() on sliced DataFrame to avoid SettingWithCopyWarning and unnecessary chaining.
-# - Renamed columns to avoid spaces, reducing quoting overhead in Spark SQL internals.
-# - Only select necessary columns when creating Spark DataFrame (feature_cols + label) instead of all 14.
-# - Added .cache() on training and test sets to avoid recomputation during fit and transform.
-# - Reduced shuffle partitions from default 200 to 4 for local
+# 1. Removed all unused imports (matplotlib, unused pyspark modules, etc.) to reduce import overhead.
+# 2. Removed all print statements, .show() calls, and visualization code to eliminate unnecessary I/O and computation.
+# 3. Created SparkSession explicitly with minimal config and reduced shuffle partitions (4) for small dataset efficiency.
+# 4. Simplified column names to avoid spaces, reducing potential issues and improving readability.
+# 5. Used .select() to keep only needed columns before cache(), reducing memory footprint in Spark.
+# 6. Called .cache() on the dataset before the train/test split to avoid recomputation of assembly and scaling.
+# 7. Added robust CSV parsing fallback (try default delimiter, then sep=';' with decimal=',').
+#

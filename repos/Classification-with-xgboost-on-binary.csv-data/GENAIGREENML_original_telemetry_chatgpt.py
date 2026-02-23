@@ -10,36 +10,42 @@ import xgboost as xgb
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 
 
-df = pd.read_csv("xgboost_on _binary.csv")
+def main():
+    df = pd.read_csv("xgboost_on _binary.csv")
 
-le_admit = LabelEncoder()
-le_rank = LabelEncoder()
+    le_admit = LabelEncoder()
+    le_rank = LabelEncoder()
 
-df["admit"] = le_admit.fit_transform(df["admit"])
-df["rank"] = le_rank.fit_transform(df["rank"])
+    df["admit"] = le_admit.fit_transform(df["admit"])
+    df["rank"] = le_rank.fit_transform(df["rank"])
 
-df_encoded = pd.get_dummies(df, columns=["admit", "rank"], drop_first=True)
+    df_encoded = pd.get_dummies(df, columns=["admit", "rank"], drop_first=True)
 
-X = df_encoded.drop(["admit_1"], axis=1)
-y = df_encoded["admit_1"]
+    X = df_encoded.drop(["admit_1"], axis=1)
+    y = df_encoded["admit_1"]
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
 
-model = xgb.XGBClassifier()
-model.fit(X_train, y_train)
+    model = xgb.XGBClassifier()
+    model.fit(X_train, y_train)
 
-y_pred = model.predict(X_test)
+    y_pred = model.predict(X_test)
 
-accuracy = accuracy_score(y_test, y_pred)
-precision = precision_score(y_test, y_pred)
-recall = recall_score(y_test, y_pred)
-f1 = f1_score(y_test, y_pred)
-roc_auc = roc_auc_score(y_test, y_pred)
-cm = confusion_matrix(y_test, y_pred)
+    accuracy = accuracy_score(y_test, y_pred)
 
-y_pred_prob = model.predict_proba(X_test)[:, 1]
-roc_auc_prob = roc_auc_score(y_test, y_pred_prob)
+    _ = precision_score(y_test, y_pred)
+    _ = recall_score(y_test, y_pred)
+    _ = f1_score(y_test, y_pred)
+    _ = roc_auc_score(y_test, y_pred)
+    _ = confusion_matrix(y_test, y_pred)
 
-print(f"ACCURACY={accuracy:.6f}")
+    y_pred_prob = model.predict_proba(X_test)[:, 1]
+    _ = roc_auc_score(y_test, y_pred_prob)
+
+    print(f"ACCURACY={accuracy:.6f}")
+
+
+if __name__ == "__main__":
+    main()

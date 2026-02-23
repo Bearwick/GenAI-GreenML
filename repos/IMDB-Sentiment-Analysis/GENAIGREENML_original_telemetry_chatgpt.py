@@ -30,6 +30,7 @@ def main():
     mnb.fit(X_train_transformed, y)
 
     y_pred_class = mnb.predict(X_test_transformed)
+    y_pred_proba = mnb.predict_proba(X_test_transformed)
 
     accuracy = metrics.accuracy_score(y_test, y_pred_class)
     print(f"ACCURACY={accuracy:.6f}")
@@ -49,18 +50,10 @@ def main():
     pwc = word_count[1]
 
     _ = (
-        vect,
-        mnb,
-        y_pred_class,
-        confusion,
-        TN,
-        FP,
-        FN,
-        TP,
+        y_pred_proba,
         sensitivity,
         specificity,
         precision,
-        word_count,
         nwc,
         pwc,
     )

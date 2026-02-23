@@ -2,123 +2,118 @@
 # LLM: codex
 # Mode: assisted
 
-import pandas as pd
-import numpy as np
 import random
-from pyspark.sql import SparkSession, functions as F
+import numpy as np
+import pandas as pd
+from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
+from pyspark.sql.types import StructType, StructField, DoubleType
 from pyspark.ml.feature import VectorAssembler, StandardScaler
 from pyspark.ml.classification import RandomForestClassifier
+from pyspark.ml.evaluation import BinaryClassificationEvaluator
 
+DATASET_PATH = "heart.csv"
 DATASET_HEADERS = "70.0 1.0 4.0 130.0 322.0 0.0 2.0 109.0 0.0 2.4 2.0 3.0 3.0 2"
-DATA_PATH = "heart.csv"
 SEED = 12345
 
-
-def _is_number(x):
-    try:
-        float(str(x))
-        return True
-    except Exception:
-        return False
-
-
 def parse_header_tokens(header_str):
-    return [h for h in str(header_str).strip().replace(",", " ").split() if h]
+    return [t for t in header_str.replace(",", " ").split() if t]
 
-
-def parsing_wrong(df, expected_cols, header_tokens):
-    if df.shape[1] != expected_cols:
+def is_parsing_wrong(df, expected_cols, header_tokens):
+    if df is None or df.empty:
         return True
-    col_names = [str(c).strip() for c in df.columns]
-    if col_names == header_tokens:
+    if expected_cols is not None and df.shape[1] != expected_cols:
         return True
-    if not isinstance(df.columns, pd.RangeIndex) and all(_is_number(c) for c in df.columns):
+    if header_tokens and [str(c) for c in df.columns] == header_tokens:
         return True
     return False
 
-
-def normalize_columns(df, expected_cols):
-    if df.shape[1] > expected_cols:
-        df = df.iloc[:, :expected_cols]
-    if df.shape[1] < expected_cols:
-        raise ValueError("Unexpected number of columns")
-    col_names = list(df.columns)
-    needs_rename = isinstance(df.columns, pd.RangeIndex) or df.columns.duplicated().any()
-    if not needs_rename and all(_is_number(c) for c in col_names):
-        needs_rename = True
-    if needs_rename:
-        df.columns = [f"col_{i}" for i in range(df.shape[1])]
-    else:
-        df.columns = [str(c) for c in col_names]
+def read_csv_robust(path, expected_cols, header_tokens):
+    try:
+        df = pd.read_csv(path)
+    except Exception:
+        df = None
+    if is_parsing_wrong(df, expected_cols, header_tokens):
+        try:
+            df = pd.read_csv(path, sep=";", decimal=",", header=None)
+        except Exception:
+            df = None
+        if is_parsing_wrong(df, expected_cols, header_tokens):
+            try:
+                with open(path, "r") as f:
+                    first_line = f.readline()
+            except Exception:
+                first_line = ""
+            if "," in first_line:
+                df = pd.read_csv(path, header=None)
+            else:
+                df = pd.read_csv(path, sep=r"\s+", header=None, engine="python")
     return df
 
-
-def read_dataset(path, header_str):
+def load_and_prepare_data(path, header_str):
     header_tokens = parse_header_tokens(header_str)
-    expected_cols = len(header_tokens)
-    df = pd.read_csv(path)
-    if parsing_wrong(df, expected_cols, header_tokens):
-        df = pd.read_csv(path, sep=';', decimal=',')
-        if parsing_wrong(df, expected_cols, header_tokens):
-            df = pd.read_csv(path, sep=r'\s+', header=None, engine='python')
-    df = normalize_columns(df, expected_cols)
-    return df
-
-
-def prepare_dataframe(df):
-    df = df.iloc[:, :-1].copy()
-    label_source = df.columns[-1]
-    label_values = pd.to_numeric(df[label_source], errors='coerce')
-    df = df.drop(columns=[label_source])
-    df = df.apply(pd.to_numeric, errors='coerce')
-    feature_cols = df.columns.tolist()
-    df['label'] = (~label_values.isin([3, 7])).astype(int)
+    expected_cols = len(header_tokens) if header_tokens else None
+    df = read_csv_robust(path, expected_cols, header_tokens)
+    if df is None or df.empty:
+        raise ValueError("Failed to read dataset.")
+    n_cols = df.shape[1]
+    if n_cols < 13:
+        raise ValueError("Dataset must have at least 13 columns.")
+    df = df.copy()
+    df.columns = [f"c{i}" for i in range(n_cols)]
+    if not all(pd.api.types.is_numeric_dtype(t) for t in df.dtypes):
+        df = df.apply(pd.to_numeric, errors="coerce")
+    if df.isnull().values.any():
+        df = df.dropna()
+    df = df.iloc[:, :13]
+    feature_cols = df.columns[:12].tolist()
+    thal_col = df.columns[12]
+    df["label"] = np.where(df[thal_col].isin([3.0, 7.0]), 0.0, 1.0)
+    df = df.drop(columns=[thal_col])
+    df["label"] = df["label"].astype(float)
     return df, feature_cols
 
-
-def init_spark():
-    spark = (SparkSession.builder
-             .appName("HeartRF")
-             .master("local[*]")
-             .config("spark.sql.shuffle.partitions", "1")
-             .config("spark.default.parallelism", "1")
-             .config("spark.ui.showConsoleProgress", "false")
-             .getOrCreate())
+def create_spark_session():
+    spark = SparkSession.builder.appName("HeartClassification").config("spark.sql.shuffle.partitions", "4").getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
     return spark
 
+def pandas_to_spark(spark, df):
+    schema = StructType([StructField(c, DoubleType(), True) for c in df.columns])
+    return spark.createDataFrame(df, schema=schema)
 
-def train_and_evaluate(df, feature_cols, seed):
-    spark = init_spark()
-    spark_df = spark.createDataFrame(df)
-    spark_df = spark_df.withColumn("label", F.col("label").cast("double"))
+def train_and_evaluate(spark_df, feature_cols, seed):
     assembler = VectorAssembler(inputCols=feature_cols, outputCol="features")
-    assembled = assembler.transform(spark_df.select(*feature_cols, "label"))
-    scaler = StandardScaler(inputCol="features", outputCol="scaled_features", withStd=True, withMean=False)
-    scaled = scaler.fit(assembled).transform(assembled).select("scaled_features", "label")
-    train, test = scaled.randomSplit([0.5, 0.5], seed=seed)
-    rf = RandomForestClassifier(labelCol="label", featuresCol="scaled_features", numTrees=200, seed=seed)
-    model = rf.fit(train)
-    predictions = model.transform(test).select("label", "prediction")
-    accuracy = predictions.select((F.col("label") == F.col("prediction")).cast("double").alias("correct")) \
-        .agg(F.avg("correct").alias("accuracy")).collect()[0]["accuracy"]
-    spark.stop()
-    return accuracy
-
+    assembled = assembler.transform(spark_df).select("label", "features")
+    scaler = StandardScaler(inputCol="features", outputCol="Scaled_features", withStd=True, withMean=False)
+    scaled = scaler.fit(assembled).transform(assembled).select("label", "Scaled_features")
+    training, test = scaled.randomSplit([0.5, 0.5], seed=seed)
+    rf = RandomForestClassifier(labelCol="label", featuresCol="Scaled_features", numTrees=200, seed=seed)
+    model = rf.fit(training)
+    predictions = model.transform(test).select("label", "prediction", "rawPrediction").cache()
+    evaluator = BinaryClassificationEvaluator(labelCol="label", rawPredictionCol="rawPrediction", metricName="areaUnderROC")
+    _ = evaluator.evaluate(predictions)
+    accuracy_row = predictions.select((F.col("label") == F.col("prediction")).cast("double").alias("correct")).agg(F.avg("correct")).first()
+    accuracy = accuracy_row[0] if accuracy_row and accuracy_row[0] is not None else 0.0
+    predictions.unpersist()
+    return float(accuracy)
 
 def main():
     random.seed(SEED)
     np.random.seed(SEED)
-    df = read_dataset(DATA_PATH, DATASET_HEADERS)
-    df, feature_cols = prepare_dataframe(df)
-    accuracy = train_and_evaluate(df, feature_cols, SEED)
+    spark = create_spark_session()
+    df, feature_cols = load_and_prepare_data(DATASET_PATH, DATASET_HEADERS)
+    spark_df = pandas_to_spark(spark, df)
+    accuracy = train_and_evaluate(spark_df, feature_cols, SEED)
     print(f"ACCURACY={accuracy:.6f}")
-
+    spark.stop()
 
 if __name__ == "__main__":
     main()
+
 # Optimization Summary
-# Reduced data movement by trimming unused columns early and selecting only feature/label columns in Spark.
-# Vectorized label generation and numeric conversion to avoid row-wise Python loops.
-# Minimized Spark workload with low shuffle partitions and eliminated unnecessary actions.
-# Ensured reproducibility with fixed seeds and deterministic splitting/model initialization.
+# - Removed unused imports, plotting, and display actions to eliminate unnecessary computation and I/O.
+# - Used vectorized label creation and dropped the unused thal column to reduce data size and memory footprint.
+# - Selected only required columns during transformations and cached predictions once to avoid recomputation for metrics.
+# - Set fixed seeds and reduced Spark shuffle partitions to improve reproducibility and lower overhead.
+# - Added robust CSV parsing with minimal re-reads and an explicit schema to avoid costly type inference.

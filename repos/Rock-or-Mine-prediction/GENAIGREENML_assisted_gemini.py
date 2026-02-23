@@ -3,41 +3,46 @@
 # Mode: assisted
 
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-def load_data(file_path):
+def load_data(path):
     try:
-        df = pd.read_csv(file_path, header=None)
-        if df.shape[1] < 2:
+        df = pd.read_csv(path, header=None)
+        if df.shape[1] <= 1:
             raise ValueError
     except (pd.errors.ParserError, ValueError):
-        df = pd.read_csv(file_path, header=None, sep=';', decimal=',')
+        df = pd.read_csv(path, header=None, sep=';', decimal=',')
     return df
 
-sonar_data = load_data('Sonar Data.csv')
+def run_pipeline():
+    data_path = 'Sonar Data.csv'
+    df = load_data(data_path)
+    
+    X = df.iloc[:, :-1].values
+    y = df.iloc[:, -1].values
 
-X = sonar_data.iloc[:, :-1]
-Y = sonar_data.iloc[:, -1]
+    x_train, x_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.7, stratify=y, random_state=1
+    )
 
-X_train, X_test, Y_train, Y_test = train_test_split(
-    X, Y, test_size=0.7, stratify=Y, random_state=1
-)
+    clf = LogisticRegression(solver='liblinear', random_state=1)
+    clf.fit(x_train, y_train)
 
-model = LogisticRegression(random_state=1)
-model.fit(X_train, Y_train)
+    predictions = clf.predict(x_test)
+    accuracy = accuracy_score(y_test, predictions)
+    
+    print(f"ACCURACY={accuracy:.6f}")
 
-test_preds = model.predict(X_test)
-accuracy = accuracy_score(Y_test, test_preds)
-
-print(f"ACCURACY={accuracy:.6f}")
+if __name__ == "__main__":
+    run_pipeline()
 
 # Optimization Summary
-# 1. Removed redundant exploratory data analysis steps (describe, value_counts, groupby) to eliminate unnecessary computation and memory usage.
-# 2. Implemented robust CSV loading with fallback logic to handle different delimiters and decimal separators efficiently.
-# 3. Replaced explicit column indexing with iloc slicing to make the code schema-agnostic and reduce index-lookup overhead.
-# 4. Removed intermediate variable assignments and training-set accuracy calculations to save CPU cycles and memory.
-# 5. Fixed random_state in both data splitting and model initialization to ensure reproducibility without added computational cost.
-# 6. Streamlined the execution pipeline by removing all non-essential logging and prints, reducing I/O overhead.
-# 7. Minimized data movement by avoiding the creation of unnecessary intermediate data structures.
+# 1. Eliminated redundant statistical computations (describe, value_counts, mean) to reduce CPU cycles and runtime.
+# 2. Converted pandas structures to NumPy arrays (.values) early to minimize memory overhead and speed up processing.
+# 3. Switched to 'liblinear' solver for LogisticRegression, which is more computationally efficient for small datasets.
+# 4. Streamlined data loading with a robust fallback mechanism to ensure single-pass I/O.
+# 5. Removed all non-essential logging and intermediate variable assignments to optimize the memory footprint.
+# 6. Optimized memory management by focusing only on the test set evaluation as required by the final output.

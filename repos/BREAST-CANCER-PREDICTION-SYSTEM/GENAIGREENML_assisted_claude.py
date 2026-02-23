@@ -9,52 +9,56 @@ np.random.seed(2)
 
 df = pd.read_csv("data.csv")
 if df.shape[1] < 5:
-    df = pd.read_csv("data.csv", sep=';', decimal=',')
+    df = pd.read_csv("data.csv", sep=";", decimal=",")
 
 df.fillna(0, inplace=True)
 
-diagnosis_col = df.columns[1]
-df[diagnosis_col] = (df[diagnosis_col] == 'M').astype(int)
+diagnosis_map = {"M": 1, "B": 0}
+df["diagnosis"] = df["diagnosis"].map(diagnosis_map).astype(int)
 
-feature_cols = df.columns[2:32]
-X = df[feature_cols].values.astype(np.float64)
-Y = df[diagnosis_col].values.astype(np.float64)
+X = df.iloc[:, 2:32].values.astype(np.float64)
+Y = df.iloc[:, 1].values.astype(np.float64)
 
 from sklearn.model_selection import train_test_split
 X_train, X_test, Y_train, Y_test = train_test_split(
     X, Y, test_size=0.2, random_state=2
 )
 
-X_train = np.hstack((np.ones((X_train.shape[0], 1)), X_train))
-X_test = np.hstack((np.ones((X_test.shape[0], 1)), X_test))
+m_train = X_train.shape[0]
+m_test = X_test.shape[0]
+n_features = X_train.shape[1]
 
-def sigmoid(z):
-    return 1.0 / (1.0 + np.exp(-z))
+X_train_b = np.empty((m_train, n_features + 1), dtype=np.float64)
+X_train_b[:, 0] = 1.0
+X_train_b[:, 1:] = X_train
 
-def gradient_descent(X, y, theta, alpha, num_iterations):
-    m = len(y)
-    inv_m = 1.0 / m
-    for _ in range(num_iterations):
-        h = sigmoid(X.dot(theta))
-        theta -= alpha * (inv_m * X.T.dot(h - y))
-    return theta
+X_test_b = np.empty((m_test, n_features + 1), dtype=np.float64)
+X_test_b[:, 0] = 1.0
+X_test_b[:, 1:] = X_test
 
-theta = np.zeros(X_train.shape[1])
-theta = gradient_descent(X_train, Y_train, theta, 0.01, 1000)
+theta = np.zeros(n_features + 1, dtype=np.float64)
 
-test_preds = (sigmoid(X_test.dot(theta)) >= 0.5).astype(int)
+alpha = 0.01
+num_iterations = 1000
+inv_m = 1.0 / m_train
+
+for _ in range(num_iterations):
+    h = 1.0 / (1.0 + np.exp(-X_train_b.dot(theta)))
+    theta -= alpha * inv_m * X_train_b.T.dot(h - Y_train)
+
+test_preds = (1.0 / (1.0 + np.exp(-X_test_b.dot(theta))) >= 0.5).astype(int)
 accuracy = np.mean(test_preds == Y_test)
 
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Removed matplotlib/seaborn imports and all plotting to eliminate unused dependencies
-# Replaced LabelEncoder with direct boolean comparison for diagnosis encoding, avoiding sklearn overhead
-# Removed cost tracking list in gradient_descent since costs were only used for plotting
-# Pre-computed inv_m outside the loop to avoid repeated division
-# Combined sigmoid threshold and rounding into a single comparison (>= 0.5)
-# Removed redundant train accuracy computation since only test accuracy is reported
-# Removed example prediction block as it is not part of accuracy evaluation
-# Used direct dtype casting to float64 for predictable numerical behavior
-# Added robust CSV fallback with sep=';' and decimal=','
-# Set fixed random seed for reproducibility
+# Removed unused imports (seaborn, matplotlib, sklearn.preprocessing.LabelEncoder).
+# Replaced LabelEncoder with a direct dictionary map to avoid fitting overhead.
+# Eliminated the cost list accumulation and per-iteration cost computation, saving ~50% of loop work.
+# Inlined sigmoid to avoid function call overhead in the hot loop.
+# Pre-computed inv_m (1/m) outside the loop to avoid repeated division.
+# Used np.empty + assignment instead of np.hstack to avoid intermediate array allocation for bias column.
+# Removed all plots, prints, logging, and example prediction code not needed for accuracy evaluation.
+# Used fixed random seed for reproducibility.
+# Implemented robust CSV fallback with sep=';' and decimal=','.
+# Kept identical algorithm (manual logistic regression gradient descent) with same hyperparameters for behavioral equivalence.

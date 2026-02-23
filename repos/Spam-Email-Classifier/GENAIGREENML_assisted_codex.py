@@ -3,75 +3,80 @@
 # Mode: assisted
 
 import pandas as pd
-import numpy as np
-import random
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import accuracy_score
 from nltk import PorterStemmer
-from functools import lru_cache
 
+DATASET_PATH = "spam.csv"
+DATASET_HEADERS = "Category,Message"
 SEED = 42
-random.seed(SEED)
-np.random.seed(SEED)
-
-DATASET_HEADERS = ["Category", "Message"]
-
-def read_csv_with_encoding(path, **kwargs):
-    try:
-        return pd.read_csv(path, **kwargs)
-    except UnicodeDecodeError:
-        return pd.read_csv(path, encoding="latin-1", **kwargs)
-
-def load_dataset(path, expected_headers):
-    df = read_csv_with_encoding(path)
-    if df.shape[1] < len(expected_headers):
-        df = read_csv_with_encoding(path, sep=";", decimal=",")
-    return df
-
-def resolve_columns(df, expected_headers):
-    cols_lower = {str(c).strip().lower(): c for c in df.columns}
-    resolved = [cols_lower.get(str(h).strip().lower()) for h in expected_headers]
-    if all(resolved):
-        return resolved
-    return list(df.columns[:len(expected_headers)])
 
 ps = PorterStemmer()
 
-@lru_cache(maxsize=10000)
-def stem_token(token):
-    return ps.stem(token)
 
 def convert(text):
-    return " ".join(stem_token(t) for t in text.split())
+    if not isinstance(text, str):
+        text = "" if text is None else str(text)
+    return " ".join(ps.stem(token) for token in text.split(" "))
 
-def main():
-    df = load_dataset("spam.csv", DATASET_HEADERS)
-    cat_col, msg_col = resolve_columns(df, DATASET_HEADERS)
-    categories = df[cat_col].fillna("").astype(str)
-    messages_raw = df[msg_col].fillna("").astype(str)
-    le = LabelEncoder()
-    labels = le.fit_transform(categories)
-    messages = [convert(m) for m in messages_raw]
-    X_train, X_test, y_train, y_test = train_test_split(
-        messages, labels, test_size=0.2, random_state=SEED
-    )
-    cv = CountVectorizer(stop_words="english")
-    X_train_count = cv.fit_transform(X_train)
-    X_test_count = cv.transform(X_test)
-    model = MultinomialNB()
-    model.fit(X_train_count, y_train)
-    accuracy = accuracy_score(y_test, model.predict(X_test_count))
-    print(f"ACCURACY={accuracy:.6f}")
 
-if __name__ == "__main__":
-    main()
+def preprocess(text):
+    return convert(text).lower()
+
+
+def read_csv_robust(path):
+    try:
+        df = pd.read_csv(path)
+    except UnicodeDecodeError:
+        df = pd.read_csv(path, encoding="latin-1")
+    if df.shape[1] == 1:
+        try:
+            df = pd.read_csv(path, sep=";", decimal=",")
+        except UnicodeDecodeError:
+            df = pd.read_csv(path, sep=";", decimal=",", encoding="latin-1")
+    return df
+
+
+def align_columns(df, expected_headers):
+    cols_lower = {c.lower(): c for c in df.columns}
+    selected = [cols_lower.get(h.lower()) for h in expected_headers]
+    if any(c is None for c in selected) or len(df.columns) < len(expected_headers):
+        df = df.iloc[:, :len(expected_headers)].copy()
+        df.columns = expected_headers
+    else:
+        df = df[selected].copy()
+        df.columns = expected_headers
+    return df
+
+
+expected_headers = [h.strip() for h in DATASET_HEADERS.split(",") if h.strip()]
+df = read_csv_robust(DATASET_PATH)
+df = align_columns(df, expected_headers)
+
+label_col, text_col = expected_headers[0], expected_headers[1]
+df[label_col] = df[label_col].fillna("").astype(str)
+df[text_col] = df[text_col].fillna("").astype(str)
+
+le = LabelEncoder()
+y = le.fit_transform(df[label_col])
+X = df[text_col]
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=SEED
+)
+
+cv = CountVectorizer(stop_words="english", preprocessor=preprocess)
+X_train_count = cv.fit_transform(X_train)
+model = MultinomialNB()
+model.fit(X_train_count, y_train)
+accuracy = model.score(cv.transform(X_test), y_test)
+
+print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# - Added cached stemming to avoid repeated token processing across messages.
-# - Processed only required columns and avoided DataFrame mutation to reduce memory use.
-# - Used list comprehensions and direct transformations to minimize intermediate data movement.
-# - Added deterministic seeds and fixed split for reproducible training/evaluation.
-# - Implemented robust CSV loading with fallback parsing to prevent reprocessing errors.
+# - Integrated stemming into the vectorizer preprocessor to avoid storing a separate transformed column.
+# - Limited the dataframe to required columns only to reduce memory usage and data movement.
+# - Scored directly on transformed test data to minimize intermediate variables.
+# - Fixed the train-test split seed for reproducible results.

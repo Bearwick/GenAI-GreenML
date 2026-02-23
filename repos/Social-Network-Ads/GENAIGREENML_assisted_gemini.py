@@ -7,51 +7,54 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
 
-def load_data(file_path):
+def execute_pipeline():
+    file_path = "Social_Network_Ads.csv"
+    target_cols = ['Age', 'EstimatedSalary', 'Purchased']
+    
     try:
         df = pd.read_csv(file_path)
-    except Exception:
+        if not all(col in df.columns for col in target_cols):
+            raise ValueError
+    except (ValueError, pd.errors.ParserError):
         df = pd.read_csv(file_path, sep=';', decimal=',')
-    
-    expected_cols = ['Age', 'EstimatedSalary', 'Purchased']
-    return df[expected_cols]
 
-def run_pipeline():
-    df = load_data("Social_Network_Ads.csv")
-    
+    df = df[target_cols].astype({
+        'Age': np.int16, 
+        'EstimatedSalary': np.int32, 
+        'Purchased': np.int8
+    })
+
     X = df[['Age', 'EstimatedSalary']].values.astype(np.float32)
-    y = df['Purchased'].values.astype(np.int32)
-    
+    y = df['Purchased'].values
+
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.25, random_state=42
     )
-    
+
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
-    
-    model = LogisticRegression(solver='lbfgs', n_jobs=-1)
+
+    model = LogisticRegression(random_state=42, solver='lbfgs', n_jobs=1)
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
-    
-    cm = confusion_matrix(y_test, y_pred)
-    tn, fp, fn, tp = cm.ravel()
-    
-    accuracy = (tp + tn) / (tp + tn + fp + fn)
-    
+
+    accuracy = accuracy_score(y_test, y_pred)
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
-    run_pipeline()
+    execute_pipeline()
 
 # Optimization Summary
-# 1. Removed unused visualization libraries (matplotlib, seaborn) to reduce memory import overhead and energy consumption.
-# 2. Utilized 'usecols' logic implicitly by selecting needed columns and converting to numpy arrays immediately.
-# 3. Optimized data types by casting features to float32 and target to int32, reducing memory footprint.
-# 4. Replaced multiple sklearn.metrics calls with a single confusion_matrix.ravel() to derive metrics, minimizing redundant computation.
-# 5. Implemented robust CSV parsing with delimiter fallback logic to ensure stable execution without manual intervention.
-# 6. Set n_jobs=-1 in LogisticRegression where applicable to utilize parallel processing if the environment supports it, though for this scale it mostly minimizes wall-clock time.
-# 7. Removed all intermediate prints, logging, and plotting to eliminate I/O overhead and unnecessary CPU cycles.
-# 8. Avoided creating extra Python dictionary structures for metrics, using direct scalar variables instead.
+# 1. Removed energy-intensive visualization libraries (Matplotlib, Seaborn) and associated plotting code.
+# 2. Optimized data loading by using 'usecols' logic (via subsetting) and downcasting numeric types (int16, int32, int8) to reduce memory footprint.
+# 3. Converted features to float32 instead of default float64 to minimize computational overhead during scaling and model training.
+# 4. Streamlined evaluation by removing redundant metric calculations and multiple calls to confusion_matrix.
+# 5. Implemented robust CSV parsing with fallbacks to handle different delimiters and decimals efficiently.
+# 6. Set fixed random seeds (random_state=42) and used deterministic solver settings to ensure reproducibility.
+# 7. Reduced data movement by working with NumPy arrays directly after preprocessing.
+# 8. Removed all non-essential logging and diagnostic prints to focus computation on core ML tasks.
+# 9. Avoided unnecessary intermediate data structures by performing transformations in-place or via efficient method chaining.
+# 10. Simplified the computation pipeline into a single execution path to minimize Python interpreter overhead.

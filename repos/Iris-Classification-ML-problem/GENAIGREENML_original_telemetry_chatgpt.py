@@ -79,10 +79,10 @@ class IrisNN(nn.Module):
         self.fn1 = nn.Linear(4, 6)
         self.fn2 = nn.Linear(6, 3)
 
-    def forward(self, x):
-        x = F.relu(self.fn1(x))
-        x = self.fn2(x)
-        return x
+    def forward(self, x_in):
+        x_out = F.relu(self.fn1(x_in))
+        x_out = self.fn2(x_out)
+        return x_out
 
 
 model = IrisNN()

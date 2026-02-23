@@ -2,69 +2,74 @@
 # LLM: chatgpt
 # Mode: assisted
 
+import os
+import random
+import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 
 
-RANDOM_SEED = 1000
+SEED = 1000
 
 
-def _read_csv_robust(path: str, expected_headers):
+def _set_reproducible(seed: int) -> None:
+    random.seed(seed)
+    np.random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+
+
+def _read_csv_robust(path: str, expected_headers: tuple[str, ...]) -> pd.DataFrame:
     df = pd.read_csv(path)
-    cols = [c.strip() for c in df.columns.astype(str)]
-    df.columns = cols
-
-    expected = {h.strip() for h in expected_headers}
-    if not expected.issubset(set(df.columns)):
+    if not set(expected_headers).issubset(df.columns):
         df = pd.read_csv(path, sep=";", decimal=",")
-        df.columns = [c.strip() for c in df.columns.astype(str)]
+    if not set(expected_headers).issubset(df.columns):
+        raise ValueError(
+            f"CSV schema mismatch. Expected columns {expected_headers}, got {tuple(df.columns)}"
+        )
     return df
 
 
-def _get_required_columns(df: pd.DataFrame, expected_headers):
-    cols = {c.strip(): c for c in df.columns.astype(str)}
-    required = []
-    for h in expected_headers:
-        hs = h.strip()
-        if hs not in cols:
-            raise KeyError(f"Missing required column: {hs}. Found columns: {list(df.columns)}")
-        required.append(cols[hs])
-    return required
-
-
-def main():
-    DATASET_HEADERS = ["text", "spam"]
-    df = _read_csv_robust("emails.csv", DATASET_HEADERS)
-    text_col, label_col = _get_required_columns(df, DATASET_HEADERS)
-
-    X = df[text_col].astype(str)
+def _prepare_xy(df: pd.DataFrame, text_col: str, label_col: str):
+    x = df[text_col].astype(str)
     y = df[label_col]
+    return x, y
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=RANDOM_SEED
+
+def train_and_evaluate(dataset_path: str = "emails.csv") -> float:
+    _set_reproducible(SEED)
+
+    df = _read_csv_robust(dataset_path, expected_headers=("text", "spam"))
+
+    text_col = "text" if "text" in df.columns else df.columns[0]
+    label_col = "spam" if "spam" in df.columns else df.columns[1]
+
+    x, y = _prepare_xy(df, text_col, label_col)
+
+    x_train, x_test, y_train, y_test = train_test_split(
+        x, y, test_size=0.2, random_state=SEED
     )
 
-    vectorizer = CountVectorizer()
-    X_train_features = vectorizer.fit_transform(X_train)
+    vectorizer = CountVectorizer(dtype=np.int32)
+    x_train_vec = vectorizer.fit_transform(x_train)
 
     model = SVC()
-    model.fit(X_train_features, y_train)
+    model.fit(x_train_vec, y_train)
 
-    X_test_features = vectorizer.transform(X_test)
-    accuracy = model.score(X_test_features, y_test)
+    x_test_vec = vectorizer.transform(x_test)
+    accuracy = float(model.score(x_test_vec, y_test))
 
     print(f"ACCURACY={accuracy:.6f}")
+    return accuracy
 
 
 if __name__ == "__main__":
-    main()
+    train_and_evaluate()
 
 # Optimization Summary
-# - Removed all intermediate prints and head()/shape calls to avoid extra CPU work and I/O overhead.
-# - Eliminated unused predict_email and other non-essential code paths to reduce runtime and memory.
-# - Loaded only required columns logically (derived via DATASET_HEADERS/df.columns) and cast text to str once to prevent repeated conversions.
-# - Kept sparse matrices from CountVectorizer end-to-end to minimize memory footprint and data movement.
-# - Ensured reproducibility with a fixed random seed in train_test_split.
-# - Added robust CSV parsing fallback (default, then sep=';' and decimal=',') to avoid costly manual fixes and reruns.
+# - Removed all exploratory prints and interactive prediction to avoid unnecessary I/O and runtime overhead.
+# - Added robust CSV parsing with a fallback delimiter/decimal strategy to prevent wasted computation on mis-parsed data.
+# - Ensured reproducibility by setting fixed seeds (random, numpy, PYTHONHASHSEED) and using the original split seed.
+# - Vectorized text with CountVectorizer using int32 counts to reduce memory footprint with identical feature values.
+# - Avoided storing redundant intermediate objects and eliminated unused functions/outputs to reduce data movement and memory use.

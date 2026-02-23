@@ -6,98 +6,67 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
 import warnings
 warnings.filterwarnings("ignore")
 
-# --- Robust CSV Loading ---
-def load_csv_robust(path):
-    try:
-        df = pd.read_csv(path, header=None)
-        if df.shape[1] < 3:
-            df = pd.read_csv(path, header=None, sep=';', decimal=',')
-    except Exception:
-        df = pd.read_csv(path, header=None, sep=';', decimal=',')
-    return df
+# NSL-KDD column names based on the dataset specification
+nsl_kdd_columns = [
+    'duration', 'protocol_type', 'service', 'flag', 'src_bytes', 'dst_bytes',
+    'land', 'wrong_fragment', 'urgent', 'hot', 'num_failed_logins', 'logged_in',
+    'num_compromised', 'root_shell', 'su_attempted', 'num_root',
+    'num_file_creations', 'num_shells', 'num_access_files', 'num_outbound_cmds',
+    'is_host_login', 'is_guest_login', 'count', 'srv_count', 'serror_rate',
+    'srv_serror_rate', 'rerror_rate', 'srv_rerror_rate', 'same_srv_rate',
+    'diff_srv_rate', 'srv_diff_host_rate', 'dst_host_count', 'dst_host_srv_count',
+    'dst_host_same_srv_rate', 'dst_host_diff_srv_rate', 'dst_host_same_src_port_rate',
+    'dst_host_srv_diff_host_rate', 'dst_host_serror_rate', 'dst_host_srv_serror_rate',
+    'dst_host_rerror_rate', 'dst_host_srv_rerror_rate', 'attack_type', 'difficulty_level'
+]
 
-# Try multiple possible paths
-data = None
-for path in ["data/raw/Train.txt", "Train.txt", "data/Train.txt", "train.txt", "data/raw/train.txt"]:
-    try:
-        data = load_csv_robust(path)
-        break
-    except FileNotFoundError:
-        continue
+# Robust CSV loading
+df = None
+try:
+    df = pd.read_csv('data/raw/Train.txt', header=None)
+    if df.shape[1] == 1:
+        df = pd.read_csv('data/raw/Train.txt', header=None, sep=';', decimal=',')
+except Exception:
+    df = pd.read_csv('data/raw/Train.txt', header=None, sep=';', decimal=',')
 
-if data is None:
-    for path in ["data/raw/Test.txt", "Test.txt", "data/Test.txt", "test.txt", "data/raw/test.txt"]:
-        try:
-            data = load_csv_robust(path)
+# Assign column names if the number of columns matches or is close
+if df.shape[1] == len(nsl_kdd_columns):
+    df.columns = nsl_kdd_columns
+elif df.shape[1] == len(nsl_kdd_columns) - 1:
+    # Some versions of NSL-KDD don't have difficulty_level
+    df.columns = nsl_kdd_columns[:-1]
+else:
+    # Fallback: use generic column names
+    df.columns = [f'col_{i}' for i in range(df.shape[1])]
+
+# Strip/normalize column names
+df.columns = [str(c).strip().replace('  ', ' ') for c in df.columns]
+df = df[[c for c in df.columns if not c.startswith('Unnamed')]]
+
+# Identify target column
+target_col = None
+if 'attack_type' in df.columns:
+    target_col = 'attack_type'
+else:
+    # Try to find a likely categorical target in the last few columns
+    for c in reversed(df.columns):
+        if df[c].dtype == object and df[c].nunique() > 1 and df[c].nunique() < 200:
+            target_col = c
             break
-        except FileNotFoundError:
-            continue
 
-if data is None:
-    import glob
-    txt_files = glob.glob("**/*.txt", recursive=True)
-    csv_files = glob.glob("**/*.csv", recursive=True)
-    all_files = txt_files + csv_files
-    for f in all_files:
-        try:
-            data = load_csv_robust(f)
-            if data.shape[0] > 10 and data.shape[1] > 5:
-                break
-        except Exception:
-            continue
+if target_col is None:
+    # Fallback: use last column
+    target_col = df.columns[-1]
 
-assert data is not None and data.shape[0] > 0, "Could not load dataset"
+# Drop difficulty_level if present (it's metadata, not a feature)
+if 'difficulty_level' in df.columns and target_col != 'difficulty_level':
+    df = df.drop(columns=['difficulty_level'])
 
-# --- Determine schema from DATASET_HEADERS ---
-# Headers suggest: KDD Cup / NSL-KDD style intrusion detection dataset
-# 42 columns: features + label + difficulty_level(last col)
-# Columns: duration, protocol_type, service, flag, src_bytes, ..., label, difficulty
-
-ncols = data.shape[1]
-
-# KDD-style dataset typically has 41 features + label (+ optional difficulty)
-# The header sample: 0,tcp,ftp_data,SF,491,0,...,normal,20
-# Last column appears to be difficulty level, second-to-last is the label
-
-if ncols >= 42:
-    target_col = ncols - 2  # 'normal' or attack type
-    # Drop the difficulty column
-    difficulty_col = ncols - 1
-    data = data.drop(columns=[difficulty_col])
-    ncols = data.shape[1]
-elif ncols >= 2:
-    target_col = ncols - 1
-else:
-    target_col = 0
-
-# --- Strip whitespace from string columns ---
-for c in data.columns:
-    if data[c].dtype == object:
-        data[c] = data[c].astype(str).str.strip()
-
-# --- Separate features and target ---
-y_raw = data[target_col].copy()
-X = data.drop(columns=[target_col]).copy()
-
-# --- Encode target ---
-# For intrusion detection: binary classification (normal vs attack)
-# Map all non-'normal' labels to 'attack' for simplicity and efficiency
-le = LabelEncoder()
-
-# Binary classification: normal=0, attack=1
-y_binary = y_raw.apply(lambda x: 0 if str(x).strip().lower() == 'normal' else 1)
-
-# Check if we have at least 2 classes
-n_classes = y_binary.nunique()
-if n_classes < 2:
-    # Try multiclass instead
-    y_encoded = le.fit_transform(y_raw.astype(str))
-    n_classes = len(le.classes_)
-    use_binary = False
-else:
-    y_encoded = y_binary.values
+# Create binary target: normal vs attack
+df['label'] = df[target_col].apply(lambda x: 0 if str(x).strip().lower() == 'normal' else 1)

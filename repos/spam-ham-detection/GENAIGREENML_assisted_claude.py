@@ -5,40 +5,39 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.svm import LinearSVC
-from sklearn.metrics import accuracy_score
+from sklearn import svm
 
-try:
-    email = pd.read_csv('emails.csv')
-    if email.shape[1] < 2:
-        raise ValueError
-except (ValueError, Exception):
-    email = pd.read_csv('emails.csv', sep=';', decimal=',')
+df = pd.read_csv("emails.csv")
+if df.shape[1] < 2:
+    df = pd.read_csv("emails.csv", sep=";", decimal=",")
 
-text_col = email.columns[0]
-label_col = email.columns[1]
+text_col = df.columns[0]
+label_col = df.columns[1]
 
-x = email[text_col]
-y = email[label_col]
+x = df[text_col]
+y = df[label_col]
 
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=1000)
 
-cv = CountVectorizer(dtype='float32')
+cv = CountVectorizer()
 features = cv.fit_transform(x_train)
-feature_test = cv.transform(x_test)
 
-model = LinearSVC(random_state=42, max_iter=1000)
+model = svm.SVC()
 model.fit(features, y_train)
 
-predictions = model.predict(feature_test)
-accuracy = accuracy_score(y_test, predictions)
+feature_test = cv.transform(x_test)
+accuracy = model.score(feature_test, y_test)
 
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Replaced svm.SVC (RBF kernel, O(n^2)-O(n^3)) with LinearSVC which is much faster for text classification with sparse features.
-# Used dtype='float32' in CountVectorizer to reduce memory footprint of the feature matrix.
-# Removed all print statements, plots, and unused helper functions to eliminate unnecessary I/O and dead code.
-# Derived column names from actual dataframe columns instead of hardcoding, with robust CSV parsing fallback.
-# Computed predictions once and reused for accuracy calculation, avoiding redundant computation.
-# Set fixed random seeds for reproducibility.
+# Removed all print statements except the required accuracy output.
+# Removed interactive user input loop (predict_email + exit loop).
+# Removed plots and visualizations (none present originally).
+# No artifacts saved to disk.
+# Robust CSV fallback: tries default separator, falls back to sep=';' and decimal=','.
+# Column names derived from df.columns instead of hardcoded strings.
+# Eliminated unused predict_email function to reduce code footprint.
+# Fixed random_state for reproducibility.
+# Kept same dataset, task, model (SVM with default RBF kernel), and CountVectorizer.
+# Removed redundant intermediate variables and duplicate head/shape prints.

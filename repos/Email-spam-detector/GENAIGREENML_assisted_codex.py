@@ -2,180 +2,84 @@
 # LLM: codex
 # Mode: assisted
 
-import os
-import re
-import email
-import random
-from email import policy
-
-import numpy as np
 import pandas as pd
+import numpy as np
+import random
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import accuracy_score
 
-DATASET_HEADERS = [h.strip() for h in "sender,subject,body,urls,filename,label,text".split(",")]
-HEADER_LOOKUP = {h.lower(): h for h in DATASET_HEADERS}
-URL_PATTERN = re.compile(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
+DATASET_PATH = "email_analysis.csv"
+DATASET_HEADERS = "sender,subject,body,urls,filename,label,text"
+RANDOM_SEED = 42
 
-try:
-    from bs4 import BeautifulSoup
-    def html_to_text(html):
-        return BeautifulSoup(html, "html.parser").get_text()
-except Exception:
-    TAG_RE = re.compile(r"<[^>]+>")
-    def html_to_text(html):
-        return TAG_RE.sub("", html)
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
 
+def needs_fallback(df, expected_headers):
+    if df is None or df.shape[1] <= 1:
+        return True
+    cols = {str(c).strip().lower() for c in df.columns}
+    matches = sum(1 for h in expected_headers if h.lower() in cols)
+    return matches == 0
 
-def extract_email_content(filepath):
+def read_dataset(path, expected_headers):
     try:
-        with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
-            msg = email.message_from_file(f, policy=policy.default)
-        sender = msg["From"] or ""
-        subject = msg["Subject"] or ""
-        body_parts = []
-        if msg.is_multipart():
-            for part in msg.walk():
-                ctype = part.get_content_type()
-                if ctype == "text/plain" or ctype == "text/html":
-                    payload = part.get_payload(decode=True)
-                    if not payload:
-                        continue
-                    text = payload.decode("utf-8", errors="ignore")
-                    if ctype == "text/html":
-                        text = html_to_text(text)
-                    body_parts.append(text)
-        else:
-            payload = msg.get_payload(decode=True)
-            if payload:
-                body_parts.append(payload.decode("utf-8", errors="ignore"))
-        body = "".join(body_parts)
-        urls = URL_PATTERN.findall(body) if body else []
-        return {"sender": sender, "subject": subject, "body": body, "urls": urls}
+        df = pd.read_csv(path, dtype=str)
     except Exception:
-        return None
-
-
-def read_csv_with_fallback(path, headers):
-    df = pd.read_csv(path)
-    if df.shape[1] == 1 or not set(headers).intersection(df.columns):
-        df_alt = pd.read_csv(path, sep=";", decimal=",")
-        if df_alt.shape[1] > df.shape[1] or set(headers).intersection(df_alt.columns):
-            df = df_alt
+        df = pd.read_csv(path, sep=';', decimal=',', dtype=str)
+        return df
+    if needs_fallback(df, expected_headers):
+        df = pd.read_csv(path, sep=';', decimal=',', dtype=str)
     return df
 
+def prepare_text_and_labels(df):
+    cols = {str(c).strip().lower(): c for c in df.columns}
+    label_col = cols.get('label')
+    if label_col is None:
+        raise ValueError("Label column not found in dataset.")
+    subject_col = cols.get('subject')
+    body_col = cols.get('body')
+    text_col = cols.get('text')
+    if subject_col is not None and body_col is not None:
+        subject = df[subject_col].fillna('')
+        body = df[body_col].fillna('')
+        text = subject.astype(str) + ' ' + body.astype(str)
+    elif text_col is not None:
+        text = df[text_col].fillna('').astype(str)
+    elif body_col is not None:
+        text = df[body_col].fillna('').astype(str)
+    elif subject_col is not None:
+        text = df[subject_col].fillna('').astype(str)
+    else:
+        raise ValueError("No suitable text columns found in dataset.")
+    labels = df[label_col].fillna('').astype(str)
+    return text, labels
 
-def load_from_csv(headers):
-    for entry in os.scandir("."):
-        if entry.is_file() and entry.name.lower().endswith(".csv"):
-            try:
-                df = read_csv_with_fallback(entry.path, headers)
-            except Exception:
-                continue
-            if set(headers).intersection(df.columns):
-                return df
-    return None
-
-
-def iter_eml_files(directory):
-    if not os.path.isdir(directory):
-        return []
-    with os.scandir(directory) as it:
-        entries = [(e.path, e.name) for e in it if e.is_file() and e.name.endswith(".eml")]
-    entries.sort(key=lambda x: x[1])
-    return entries
-
-
-def align_dataframe(df, headers):
-    for col in headers:
-        if col not in df.columns:
-            df[col] = pd.NA
-    ordered = [c for c in headers if c in df.columns] + [c for c in df.columns if c not in headers]
-    if ordered != list(df.columns):
-        df = df[ordered]
-    return df
-
-
-def load_emails(spam_dir, good_dir):
-    data = []
-    for directory, label in ((spam_dir, "spam"), (good_dir, "good")):
-        for path, name in iter_eml_files(directory):
-            email_data = extract_email_content(path)
-            if email_data is not None:
-                email_data["filename"] = name
-                email_data["label"] = label
-                data.append(email_data)
-    if data:
-        df = pd.DataFrame(data)
-        return align_dataframe(df, DATASET_HEADERS)
-    df = load_from_csv(DATASET_HEADERS)
-    if df is not None:
-        return align_dataframe(df, DATASET_HEADERS)
-    return pd.DataFrame(columns=DATASET_HEADERS)
-
-
-def resolve_column(df, key):
-    if key in df.columns:
-        return key
-    normalized = {c.strip().lower(): c for c in df.columns}
-    return normalized.get(key.strip().lower())
-
-
-def train_spam_classifier(df, random_state=42):
-    if df.empty:
-        return None, None, 0.0
-    subject_key = HEADER_LOOKUP.get("subject", "subject")
-    body_key = HEADER_LOOKUP.get("body", "body")
-    label_key = HEADER_LOOKUP.get("label", "label")
-    subject_col = resolve_column(df, subject_key)
-    body_col = resolve_column(df, body_key)
-    label_col = resolve_column(df, label_key)
-    if subject_col is None or body_col is None or label_col is None:
-        return None, None, 0.0
-    df["text"] = df[subject_col] + " " + df[body_col]
-    vectorizer = TfidfVectorizer(stop_words="english", max_features=5000)
-    X = vectorizer.fit_transform(df["text"])
-    y = df[label_col]
-    if len(df) < 2:
-        model = MultinomialNB()
-        model.fit(X, y)
-        return model, vectorizer, 0.0
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=random_state
-    )
+def train_and_evaluate(texts, labels, seed):
+    vectorizer = TfidfVectorizer(stop_words='english', max_features=5000)
+    X = vectorizer.fit_transform(texts)
+    X_train, X_test, y_train, y_test = train_test_split(X, labels, test_size=0.2, random_state=seed)
     model = MultinomialNB()
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    return model, vectorizer, accuracy
-
+    return accuracy_score(y_test, y_pred)
 
 def main():
-    random.seed(42)
-    np.random.seed(42)
-    spam_dir = os.path.join("emails", "spam")
-    good_dir = os.path.join("emails", "good")
-    df = load_emails(spam_dir, good_dir)
-    model, vectorizer, accuracy = train_spam_classifier(df)
-    if model is not None and vectorizer is not None and not df.empty:
-        text_key = HEADER_LOOKUP.get("text", "text")
-        text_col = resolve_column(df, text_key)
-        if text_col is not None:
-            sample_text = df[text_col].iat[0]
-            if sample_text is not None:
-                _ = model.predict(vectorizer.transform([sample_text]))
-    df.to_csv("email_analysis.csv", index=False)
+    set_seed(RANDOM_SEED)
+    expected_headers = [h.strip() for h in DATASET_HEADERS.split(',') if h.strip()]
+    df = read_dataset(DATASET_PATH, expected_headers)
+    texts, labels = prepare_text_and_labels(df)
+    accuracy = train_and_evaluate(texts, labels, RANDOM_SEED)
     print(f"ACCURACY={accuracy:.6f}")
-
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# Precompiled and reused the URL regex to avoid repeated compilation costs.
-# Built email bodies via list accumulation and a single join to reduce string concatenation overhead.
-# Used os.scandir with sorted entries for efficient file iteration and deterministic ordering.
-# Removed classification report generation and all nonessential I/O to cut runtime work.
-# Added conditional URL extraction and minimal CSV fallback parsing to avoid redundant processing.
+# - Streamlined the workflow to use the provided CSV directly, eliminating costly .eml parsing and extra I/O.
+# - Added robust CSV loading with delimiter fallback and string dtypes to reduce parsing overhead and ensure reliability.
+# - Built text features only from necessary columns and removed redundant report/prediction steps to save computation.
+# - Fixed random seeds and deterministic split for stable, reproducible results.

@@ -2,81 +2,103 @@
 # LLM: claude
 # Mode: autonomous
 
-import numpy as np
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
 
-# --- Robust CSV loading ---
-def load_csv_robust(path):
-    try:
-        df = pd.read_csv(path)
-        if df.shape[1] <= 1:
-            df = pd.read_csv(path, sep=';', decimal=',')
-        return df
-    except Exception:
-        try:
-            df = pd.read_csv(path, sep=';', decimal=',')
-            return df
-        except Exception:
-            return pd.DataFrame()
+DATASET_PATH = "cancer_data.csv"
 
-# --- Attempt to load data files ---
-# The source code references four CSV files; we try to load them
-# and fall back to sklearn's breast cancer dataset if files are missing.
-
+# Robust CSV loading
+df = None
 try:
-    train_x_df = load_csv_robust("cancer_data.csv")
-    train_y_df = load_csv_robust("cancer_data_y.csv")
-    test_x_df = load_csv_robust("test_cancer_data.csv")
-    test_y_df = load_csv_robust("test_cancer_data_y.csv")
-
-    assert train_x_df.shape[0] > 0 and train_y_df.shape[0] > 0
-
-    # Clean column names
-    for d in [train_x_df, train_y_df, test_x_df, test_y_df]:
-        d.columns = [c.strip() for c in d.columns]
-        drop_cols = [c for c in d.columns if c.startswith('Unnamed')]
-        d.drop(columns=drop_cols, inplace=True, errors='ignore')
-
-    # Coerce all to numeric
-    train_x_df = train_x_df.apply(pd.to_numeric, errors='coerce')
-    train_y_df = train_y_df.apply(pd.to_numeric, errors='coerce')
-
-    train_x_df.dropna(axis=0, how='all', inplace=True)
-    train_x_df.fillna(train_x_df.median(), inplace=True)
-    train_y_df.dropna(axis=0, how='all', inplace=True)
-    train_y_df.fillna(0, inplace=True)
-
-    X_train = train_x_df.values
-    y_train = train_y_df.values.ravel()
-
-    if test_x_df.shape[0] > 0 and test_y_df.shape[0] > 0:
-        test_x_df = test_x_df.apply(pd.to_numeric, errors='coerce')
-        test_y_df = test_y_df.apply(pd.to_numeric, errors='coerce')
-        test_x_df.dropna(axis=0, how='all', inplace=True)
-        test_x_df.fillna(test_x_df.median(), inplace=True)
-        test_y_df.dropna(axis=0, how='all', inplace=True)
-        test_y_df.fillna(0, inplace=True)
-        X_test = test_x_df.values
-        y_test = test_y_df.values.ravel()
-    else:
-        X_train, X_test, y_train, y_test = train_test_split(
-            X_train, y_train, test_size=0.2, random_state=42, stratify=y_train
-        )
-
-    files_loaded = True
+    df = pd.read_csv(DATASET_PATH)
 except Exception:
-    files_loaded = False
+    pass
 
-if not files_loaded:
-    # Fallback: use sklearn breast cancer dataset (same domain)
-    from sklearn.datasets import load_breast_cancer
-    data = load_breast_cancer()
-    X_all = data.data
-    y_all = data.target
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_all, y_
+if df is None or df.shape[1] < 2:
+    try:
+        df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
+    except Exception:
+        pass
+
+if df is None:
+    raise RuntimeError("Could not load dataset")
+
+# The breast cancer dataset from UCI ML (Wisconsin) has 30 features + 1 target (diagnosis).
+# The provided headers look like raw numeric values, meaning the CSV likely has NO header row.
+# The standard Wisconsin Breast Cancer dataset has 32 columns: id, diagnosis, 30 features
+# OR 31 columns: diagnosis + 30 features, depending on version.
+# From context: the header row shown is all numeric (30 values), so data has no header.
+
+# Check if all column names look numeric (no header scenario)
+all_numeric_headers = True
+for c in df.columns:
+    try:
+        float(str(c).strip())
+    except ValueError:
+        all_numeric_headers = False
+        break
+
+if all_numeric_headers:
+    # Reload without header
+    try:
+        df = pd.read_csv(DATASET_PATH, header=None)
+    except Exception:
+        df = pd.read_csv(DATASET_PATH, header=None, sep=';', decimal=',')
+
+# Strip/normalize column names
+df.columns = [str(c).strip() for c in df.columns]
+df = df[[c for c in df.columns if not c.startswith('Unnamed')]]
+
+# Try to detect the target column
+# UCI Breast Cancer Wisconsin (Diagnostic) has columns:
+# id, diagnosis (M/B), then 30 numeric features
+# OR just 30 features + diagnosis somewhere
+# From the readme: 0=benign, 1=malignant or 1=benign, 2=malignant
+# The example row has 30 numeric values, header has 30 numeric values -> 30 cols total
+# But the full dataset typically has 32 cols (id + diagnosis + 30 features)
+
+# Detect if there's a string/categorical column that could be diagnosis
+target_col = None
+target = None
+
+# Check for known column names first
+for col in df.columns:
+    if str(col).lower() in ['diagnosis', 'target', 'class', 'label']:
+        target_col = col
+        break
+
+if target_col is None:
+    # Look for a column with string values like 'M'/'B' or very few unique values
+    for col in df.columns:
+        if df[col].dtype == object:
+            unique_vals = df[col].dropna().unique()
+            if len(unique_vals) <= 5:
+                target_col = col
+                break
+
+if target_col is None:
+    # Look for integer column with exactly 2 or 3 unique values (could be 0/1 or 1/2)
+    for col in df.columns:
+        try:
+            vals = pd.to_numeric(df[col], errors='coerce').dropna()
+            unique_vals = vals.unique()
+            if len(unique_vals) in [2, 3] and all(v == int(v) for v in unique_vals):
+                # Check if this is likely a label column (small integers)
+                if set(unique_vals).issubset({0, 1, 2}):
+                    target_col = col
+                    break
+        except Exception:
+            continue
+
+# If still no target found, use last column as target (common convention)
+if target_col is None:
+    target_col = df.columns[-1]
+
+# Separate target
+target_series = df[target_col].copy()
+feature_cols = [c for c in df.

@@ -3,42 +3,46 @@
 # Mode: original_telemetry
 
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score
 
-df = pd.read_csv(r"Iris.csv")
 
-if "Id" in df.columns:
-    df.drop(columns=["Id"], inplace=True)
+def main() -> None:
+    df = pd.read_csv(r"Iris.csv")
 
-label_encoder = LabelEncoder()
-df["Species"] = label_encoder.fit_transform(df["Species"])
+    if "Id" in df.columns:
+        df.drop(columns=["Id"], inplace=True)
 
-X = df.drop("Species", axis=1)
-y = df["Species"]
+    label_encoder = LabelEncoder()
+    df["Species"] = label_encoder.fit_transform(df["Species"])
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
+    X = df.drop("Species", axis=1)
+    y = df["Species"]
 
-pipeline = Pipeline(
-    [
-        ("scaler", StandardScaler()),
-        ("model", SVC(kernel="linear")),
-    ]
-)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
 
-pipeline.fit(X_train, y_train)
-y_pred = pipeline.predict(X_test)
+    pipeline = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            ("model", SVC(kernel="linear")),
+        ]
+    )
 
-accuracy = accuracy_score(y_test, y_pred)
+    pipeline.fit(X_train, y_train)
+    y_pred = pipeline.predict(X_test)
 
-scores = cross_val_score(pipeline, X, y, cv=5)
+    accuracy = accuracy_score(y_test, y_pred)
 
-print(f"ACCURACY={accuracy:.6f}")
+    cross_val_score(pipeline, X, y, cv=5)
+
+    print(f"ACCURACY={accuracy:.6f}")
+
+
+if __name__ == "__main__":
+    main()

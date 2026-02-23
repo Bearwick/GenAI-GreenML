@@ -6,46 +6,46 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import ExtraTreesClassifier
 
-def main():
+def execute_pipeline():
     path = "data/wine_dataset.csv"
     try:
         df = pd.read_csv(path)
-        if len(df.columns) < 2:
+        if 'style' not in df.columns or len(df.columns) < 2:
             raise ValueError
     except Exception:
         df = pd.read_csv(path, sep=';', decimal=',')
 
-    target_col = next((c for c in df.columns if c.lower() == 'style'), 'style')
-    
-    df[target_col] = df[target_col].astype(str).str.strip().str.lower()
-    df = df[df[target_col].isin(['red', 'white'])]
-    mapping = {'red': 0, 'white': 1}
-    df[target_col] = df[target_col].map(mapping).astype('int8')
+    df['style'] = df['style'].astype(str).str.strip().str.lower()
+    df = df[df['style'].isin(['red', 'white'])].copy()
+    df['style'] = df['style'].map({'red': 0, 'white': 1}).astype('int8')
 
-    features = [c for c in df.columns if c != target_col]
-    X = df[features].apply(pd.to_numeric, errors='coerce')
-    
-    valid_mask = X.notna().all(axis=1)
-    X = X[valid_mask].astype('float32')
-    y = df.loc[valid_mask, target_col]
+    for col in df.columns:
+        if col != 'style':
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+
+    df.dropna(inplace=True)
+
+    X = df.drop(columns=['style']).astype('float32')
+    y = df['style']
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.3, random_state=42, stratify=y
     )
 
-    model = ExtraTreesClassifier(n_estimators=100, random_state=42)
+    model = ExtraTreesClassifier(n_estimators=100, random_state=42, n_jobs=-1)
     model.fit(X_train, y_train)
 
     accuracy = model.score(X_test, y_test)
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
-    main()
+    execute_pipeline()
 
 # Optimization Summary
-# 1. Memory Reduction: Downcasted numeric features from float64 to float32 and target labels to int8.
-# 2. Computational Efficiency: Removed redundant prediction slice and multiple print calls to minimize I/O and CPU overhead.
-# 3. Streamlined Preprocessing: Optimized data filtering and mapping using vectorized pandas operations and avoided unnecessary DataFrame copies.
-# 4. Robust Data Loading: Implemented a fallback mechanism for CSV parsing (handling different separators and decimals) to prevent execution failure.
-# 5. Resource Management: Removed redundant numeric coercion masks and consolidated indexing to reduce memory fragmentation.
-# 6. Green Coding: Minimized runtime by eliminating intermediate data structures and keeping the model configuration focused on required metrics only.
+# 1. Implemented robust CSV loading with separator and decimal fallback logic to ensure successful parsing.
+# 2. Reduced memory footprint by downcasting features to float32 and target labels to int8.
+# 3. Minimized data movement by performing in-place row dropping and column-wise numeric conversion.
+# 4. Optimized runtime by enabling n_jobs=-1 in ExtraTreesClassifier to utilize parallel processing.
+# 5. Reduced computational overhead by eliminating redundant prediction slices and visualization code.
+# 6. Streamlined preprocessing by using vectorized mapping and filtering instead of complex mask assignments.
+# 7. Fixed random seeds (42) in both split and model initialization to ensure reproducibility.

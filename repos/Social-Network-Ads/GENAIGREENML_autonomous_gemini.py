@@ -7,130 +7,105 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
+from sklearn.pipeline import Pipeline
 
-def load_and_preprocess():
-    # Robust CSV loading
-    path = "Social_Network_Ads.csv"
-    try:
-        df = pd.read_csv(path)
-    except Exception:
-        try:
-            df = pd.read_csv(path, sep=';', decimal=',')
-        except Exception:
-            # Create a dummy dataframe if file is missing to ensure script doesn't hard-crash in unexpected envs
-            df = pd.DataFrame(columns=['User ID', 'Gender', 'Age', 'EstimatedSalary', 'Purchased'])
+# 1. Robust Data Loading
+dataset_path = "Social_Network_Ads.csv"
+try:
+    df = pd.read_csv(dataset_path)
+    if len(df.columns) < 2:
+        raise ValueError
+except Exception:
+    df = pd.read_csv(dataset_path, sep=';', decimal=',')
 
-    # Clean column names: strip whitespace and normalize internal spaces
-    df.columns = [str(col).strip() for col in df.columns]
-    df.columns = [" ".join(col.split()) for col in df.columns]
-    
-    # Drop completely empty columns or Unnamed ones
-    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+# 2. Schema Normalization
+df.columns = [str(c).strip() for c in df.columns]
+df.columns = [" ".join(str(c).split()) for c in df.columns]
+df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
-    if df.empty:
-        return None, None, 0.0
+# 3. Target and Feature Identification
+# Identify target: Prefer 'Purchased', otherwise the last column
+target_col = 'Purchased' if 'Purchased' in df.columns else df.columns[-1]
 
-    # Determine Target
-    target_candidates = ['Purchased', 'purchased', 'Target', 'target']
-    target_col = None
-    for cand in target_candidates:
-        if cand in df.columns:
-            target_col = cand
-            break
-    if not target_col:
-        target_col = df.columns[-1]
+# Drop ID columns and target from features
+id_patterns = ['id', 'user', 'index', 'timestamp']
+feature_cols = [c for c in df.columns if c != target_col and not any(p in c.lower() for p in id_patterns)]
 
-    # Pre-processing: Handle missing values and types
-    # Target must be numeric/categorical with no NaNs
-    df = df.dropna(subset=[target_col])
-    
-    # Identify feature types
-    # Exclude IDs if they look like unique counters
-    features = [c for c in df.columns if c != target_col and 'id' not in c.lower()]
-    
-    X = df[features].copy()
-    y = df[target_col].copy()
+# If no features left, use all columns except target
+if not feature_cols:
+    feature_cols = [c for c in df.columns if c != target_col]
 
-    # Coerce features to appropriate types
-    num_cols = []
-    cat_cols = []
-    for col in features:
-        # Try converting to numeric
-        converted = pd.to_numeric(X[col], errors='coerce')
-        if converted.isna().mean() < 0.5: # If mostly numeric
-            X[col] = converted
-            num_cols.append(col)
-        else:
-            X[col] = X[col].astype(str)
-            cat_cols.append(col)
+# 4. Data Cleaning and Type Coercion
+# Ensure target is discrete for classification
+df[target_col] = pd.to_numeric(df[target_col], errors='coerce')
+df = df.dropna(subset=[target_col])
 
-    # Final cleaning: Drop rows with NaN in features for simplicity/efficiency
-    valid_idx = X.notna().all(axis=1)
-    X = X[valid_idx]
-    y = y[valid_idx]
+# Coerce numeric features where possible, leave others as objects for encoding
+numeric_features = []
+categorical_features = []
 
-    if len(X) < 10: # Minimal data check
-        return None, None, 0.0
+for col in feature_cols:
+    # Attempt conversion to numeric
+    converted = pd.to_numeric(df[col], errors='coerce')
+    if not converted.isna().all():
+        df[col] = converted
+        numeric_features.append(col)
+    else:
+        categorical_features.append(col)
 
-    return X, y, (num_cols, cat_cols)
+# Handle NaNs in features
+for col in numeric_features:
+    df[col] = df[col].fillna(df[col].mean() if not df[col].isna().all() else 0)
+for col in categorical_features:
+    df[col] = df[col].fillna('Unknown')
 
-def run_pipeline():
-    X, y, col_types = load_and_preprocess()
-    
-    if X is None or len(np.unique(y)) < 2:
-        # Fallback for degenerate cases
-        print(f"ACCURACY={0.000000:.6f}")
-        return
+# 5. Defensive check for modeling
+if df.empty or df[target_col].nunique() < 2:
+    # Trivial baseline if data is insufficient or target is constant
+    accuracy = 1.0 if not df.empty else 0.0
+    print(f"ACCURACY={accuracy:.6f}")
+    exit()
 
-    num_cols, cat_cols = col_types
-    
-    # Split data
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.25, random_state=42, stratify=y if len(np.unique(y)) > 1 else None
-    )
-
-    # Lightweight Preprocessing Pipeline
-    # StandardScaler for numeric (essential for Logistic Regression)
-    # OneHotEncoder for categoricals
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ('num', StandardScaler(), num_cols),
-            ('cat', OneHotEncoder(handle_unknown='ignore'), cat_cols)
-        ],
-        remainder='drop'
-    )
-
-    # Model choice: Logistic Regression (extremely CPU efficient and low energy)
-    model = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('classifier', LogisticRegression(solver='lbfgs', max_iter=1000, random_state=42))
+# 6. Pipeline Construction
+# Use simple, energy-efficient transformations
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', StandardScaler(), numeric_features),
+        ('cat', OneHotEncoder(handle_unknown='ignore', sparse_output=False), categorical_features)
     ])
 
-    # Training
-    model.fit(X_train, y_train)
+# Logistic Regression is selected for its low computational overhead (CPU-friendly)
+clf = Pipeline(steps=[
+    ('preprocessor', preprocessor),
+    ('classifier', LogisticRegression(solver='liblinear', random_state=42))
+])
 
-    # Evaluation
-    y_pred = model.predict(X_test)
+# 7. Training and Evaluation
+X = df[feature_cols]
+y = df[target_col].astype(int)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+
+# Verify split is valid
+if len(X_train) == 0 or len(X_test) == 0:
+    accuracy = 0.0
+else:
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
 
-    print(f"ACCURACY={accuracy:.6f}")
-
-if __name__ == "__main__":
-    run_pipeline()
+print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary:
-# 1. Model Selection: Used Logistic Regression which is mathematically simple, 
-#    requiring minimal CPU cycles compared to ensembles or deep learning.
-# 2. Data Loading: Implemented robust CSV parsing with fallbacks and column 
-#    normalization to prevent crashes on varying environments.
-# 3. Preprocessing: Used sklearn Pipeline and ColumnTransformer to avoid 
-#    redundant data copies and ensure an efficient, single-pass transformation.
-# 4. Feature Engineering: Limited to standard scaling and one-hot encoding; 
-#    avoided expensive polynomial features or complex embeddings.
-# 5. Resource Management: Avoided large libraries like matplotlib or seaborn 
-#    during the inference/accuracy step to minimize memory footprint and power draw.
-# 6. Fallback Logic: Included checks for empty datasets or single-class targets 
-#    to ensure the script terminates gracefully without burning CPU on errors.
+# 1. Algorithm Selection: Logistic Regression was chosen as a "Green ML" baseline. It requires 
+#    minimal CPU cycles compared to ensembles or deep learning and scales linearly with feature count.
+# 2. Resource Efficiency: The pipeline uses 'liblinear' solver which is efficient for small datasets.
+# 3. Preprocessing: StandardScaler ensures faster convergence for the linear model, reducing 
+#    training iterations and energy consumption.
+# 4. Dimensionality: Irrelevant 'User ID' columns were automatically detected and excluded to 
+#    minimize the feature space and memory footprint.
+# 5. Robustness: The script handles CSV parsing variations and schema inconsistencies without 
+#    hard-failing, ensuring an end-to-end run on any variation of the Social Network Ads dataset.
+# 6. Evaluation: Used a standard 75/25 split to balance model validation with sample size.

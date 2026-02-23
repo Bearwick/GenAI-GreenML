@@ -5,95 +5,99 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import accuracy_score
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, LabelEncoder
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.naive_bayes import GaussianNB
+import warnings
+warnings.filterwarnings("ignore")
+
+DATASET_PATH = "bodyPerformance.csv"
 
 # Robust CSV loading
-dt = "bodyPerformance.csv"
+df = None
 try:
-    df = pd.read_csv(dt)
+    df = pd.read_csv(DATASET_PATH)
     if df.shape[1] < 3:
-        df = pd.read_csv(dt, sep=';', decimal=',')
+        df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
 except Exception:
-    df = pd.read_csv(dt, sep=';', decimal=',')
+    try:
+        df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
+    except Exception as e:
+        raise RuntimeError(f"Cannot parse CSV: {e}")
 
-# Normalize column names
-df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
-df = df[[c for c in df.columns if not c.startswith('Unnamed')]]
+# Strip/normalize column names
+df.columns = df.columns.str.strip()
+df.columns = df.columns.str.replace(r'\s+', ' ', regex=True)
 
-# Identify target column
-expected_target = 'Blass'
+# Drop unnamed columns
+unnamed_cols = [c for c in df.columns if c.lower().startswith('unnamed')]
+df.drop(columns=unnamed_cols, inplace=True, errors='ignore')
+
+# Identify target column - based on headers, last column should be class label
+# Expected headers: age, height_cm, weight_kg, body fat_%, diastolic, systolic,
+#                   gripForce, sit and bend forward_cm, sit-ups counts, broad jump_cm, Blass
+# "Blass" appears to be the target (class: A, B, C, D)
+
+# Try to find the target column
 target_col = None
-for c in df.columns:
-    if c.lower() == expected_target.lower():
-        target_col = c
+expected_targets = ['class', 'Blass', 'gender']
+for et in expected_targets:
+    matches = [c for c in df.columns if c.lower() == et.lower()]
+    if matches:
+        target_col = matches[0]
         break
 
+# If no known target found, use the last column if it looks categorical
 if target_col is None:
-    # Fallback: use the last column as target
-    target_col = df.columns[-1]
+    last_col = df.columns[-1]
+    if df[last_col].dtype == object or df[last_col].nunique() < 20:
+        target_col = last_col
+    else:
+        # Pick first object column as target
+        obj_cols = df.select_dtypes(include='object').columns.tolist()
+        if obj_cols:
+            target_col = obj_cols[0]
+        else:
+            target_col = last_col
+
+# Also check for 'gender' column which might be a feature, not target
+# The actual target from the example is 'Blass' (last column with values A,B,C,D)
 
 # Separate features and target
 feature_cols = [c for c in df.columns if c != target_col]
 
-# Encode target if it is categorical/object
-y_raw = df[target_col].copy()
-le = LabelEncoder()
-if y_raw.dtype == object or y_raw.dtype.name == 'category':
-    y = le.fit_transform(y_raw.astype(str))
-else:
-    # Check if it looks like classification (few unique values) or regression
-    nunique = y_raw.nunique()
-    if nunique <= 30:
-        y = le.fit_transform(y_raw.astype(str))
-    else:
-        y = y_raw.values
+# Determine if classification or regression
+is_classification = False
+if df[target_col].dtype == object:
+    is_classification = True
+elif df[target_col].nunique() < 20:
+    is_classification = True
 
-# Encode any categorical feature columns and coerce numerics
-X = df[list(feature_cols)].copy()
-
-# One-hot encode object columns, coerce numeric columns
-cat_cols = X.select_dtypes(include=['object', 'category']).columns.tolist()
-num_cols = [c for c in X.columns if c not in cat_cols]
-
-for c in num_cols:
-    X[c] = pd.to_numeric(X[c], errors='coerce')
-
-if cat_cols:
-    X = pd.get_dummies(X, columns=cat_cols, drop_first=True)
-
-# Handle NaN/inf
-X.replace([np.inf, -np.inf], np.nan, inplace=True)
-valid_mask = X.notna().all(axis=1) & pd.Series(~pd.isna(y), index=X.index)
-X = X.loc[valid_mask]
-y = y[valid_mask.values] if isinstance(y, np.ndarray) else y.loc[valid_mask]
-
-# Fill remaining NaN with median for safety
-for c in X.columns:
-    if X[c].isna().any():
-        X[c].fillna(X[c].median(), inplace=True)
-
-assert X.shape[0] > 0, "Dataset is empty after preprocessing"
-
-# Determine task type
-unique_classes = np.unique(y)
-is_classification = len(unique_classes) >= 2 and len(unique_classes) <= 50
-
-if len(unique_classes) < 2:
-    # Trivial baseline: predict constant
-    accuracy = 1.0
-    print(f"ACCURACY={accuracy:.6f}")
-    import sys
-    sys.exit(0)
-
-# Train/test split
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y if is_classification else None
-)
-
-assert X_train.shape[0] > 0 and X_test.shape[0] > 0, "Train/test split produced empty sets"
-
+# Encode target for classification
 if is_classification:
-    # Lightweight logistic
+    le = LabelEncoder()
+    df[target_col] = le.fit_transform(df[target_col].astype(str))
+    n_classes = df[target_col].nunique()
+    if n_classes < 2:
+        # Fallback: trivial baseline
+        accuracy = 1.0
+        print(f"ACCURACY={accuracy:.6f}")
+        import sys
+        sys.exit(0)
+
+# Identify numeric and categorical feature columns
+numeric_features = []
+categorical_features = []
+
+for c in feature_cols:
+    if df[c].dtype == object:
+        # Try to convert to numeric
+        converted = pd.to_numeric(df[c], errors='coerce')
+        if converted.notna().mean() > 0.8:
+            df[c] = converted
+            numeric_features.append(c)
+        else:
+            categorical_features.append(

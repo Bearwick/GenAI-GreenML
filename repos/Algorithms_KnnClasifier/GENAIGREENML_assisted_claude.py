@@ -5,46 +5,42 @@
 import numpy as np
 import pandas as pd
 
-def robust_read_csv(path):
+def read_csv_robust(path):
     df = pd.read_csv(path)
     if df.shape[1] < 2:
         df = pd.read_csv(path, sep=';', decimal=',')
     return df
 
 def algorithm():
+    np.random.seed(42)
     k_value = 1
 
-    data_train = robust_read_csv('Data/Diabetes-Training.csv')
-    data_test = robust_read_csv('Data/Diabetes-Clasification.csv')
+    data_train = read_csv_robust('Data/Diabetes-Training.csv')
+    data_test = read_csv_robust('Data/Diabetes-Clasification.csv')
 
-    feature_cols = [c for c in data_train.columns if c != 'class']
+    feature_cols = data_train.columns[:-1]
+    class_col = data_train.columns[-1]
 
     X_train_raw = data_train[feature_cols].values.astype(np.float64)
+    y_train = data_train[class_col].values
     X_test_raw = data_test[feature_cols].values.astype(np.float64)
+    y_test = data_test[class_col].values
 
     mean = X_train_raw.mean(axis=0)
     std = X_train_raw.std(axis=0)
     std[std == 0] = 1.0
 
-    X_train_raw = data_train[feature_cols].values.astype(np.float64)
-    train_mean = X_train_raw.mean(axis=0)
-    train_std = X_train_raw.std(axis=0)
-    train_std[train_std == 0] = 1.0
-    X_train = (X_train_raw - train_mean) / train_std
+    X_train = (X_train_raw - mean) / std
 
-    X_test_raw_vals = data_test[feature_cols].values.astype(np.float64)
-    test_mean = X_test_raw_vals.mean(axis=0)
-    test_std = X_test_raw_vals.std(axis=0)
-    test_std[test_std == 0] = 1.0
-    X_test = (X_test_raw_vals - test_mean) / test_std
-
-    y_train = data_train['class'].values
-    y_test = data_test['class'].values
+    mean_test = X_test_raw.mean(axis=0)
+    std_test = X_test_raw.std(axis=0)
+    std_test[std_test == 0] = 1.0
+    X_test = (X_test_raw - mean_test) / std_test
 
     train_sq = np.sum(X_train ** 2, axis=1)
     test_sq = np.sum(X_test ** 2, axis=1)
-    dist_matrix = test_sq[:, np.newaxis] + train_sq[np.newaxis, :] - 2.0 * X_test.dot(X_train.T)
-    np.maximum(dist_matrix, 0.0, out=dist_matrix)
+    cross = X_test @ X_train.T
+    dist_matrix = np.sqrt(np.maximum(test_sq[:, np.newaxis] + train_sq[np.newaxis, :] - 2.0 * cross, 0.0))
 
     if k_value == 1:
         nearest_indices = np.argmin(dist_matrix, axis=1)
@@ -52,11 +48,13 @@ def algorithm():
     else:
         nearest_indices = np.argpartition(dist_matrix, k_value, axis=1)[:, :k_value]
         predictions = np.empty(len(X_test), dtype=y_train.dtype)
+        positive_label = 'tested_positive'
+        negative_label = 'tested_negative'
         for i in range(len(X_test)):
             neighbors = y_train[nearest_indices[i]]
-            neg_count = np.sum(neighbors == 'tested_negative')
-            pos_count = np.sum(neighbors == 'tested_positive')
-            predictions[i] = 'tested_negative' if neg_count > pos_count else 'tested_positive'
+            pos_count = np.sum(neighbors == positive_label)
+            neg_count = k_value - pos_count
+            predictions[i] = negative_label if neg_count > pos_count else positive_label
 
     correct_counts = np.sum(predictions == y_test)
     accuracy = correct_counts / len(y_test)
@@ -66,9 +64,13 @@ def algorithm():
 algorithm()
 
 # Optimization Summary
-# 1. Replaced per-instance Python loop for distance computation with vectorized NumPy matrix operations (broadcast squared-distance), eliminating O(n*m) Python-level iterations.
-# 2. For k=1, used np.argmin instead of sorting, reducing complexity from O(n log n) per test instance to O(n).
-# 3. Preserved original normalization behavior: each dataset (train/test) is normalized by its own mean/std, matching the original code's normalize_data applied independently.
-# 4. Removed CSV file generation (generate_csv), prints, and visualizations per requirements.
-# 5. Removed unused imports (csv) to reduce overhead.
-# 6. Used robust CSV fallback with sep
+# 1. Replaced per-instance Euclidean distance loop with vectorized distance matrix computation using broadcasting, drastically reducing runtime and CPU cycles.
+# 2. For k=1, used np.argmin directly instead of sorting, reducing from O(n log n) to O(n) per test instance.
+# 3. Removed CSV file generation (artifact saving) as per requirements.
+# 4. Removed all print statements, plots, and interactive inputs as per requirements.
+# 5. Used robust CSV reading with semicolon/decimal fallback for input reliability.
+# 6. Pre-computed squared norms and used the identity ||a-b||^2 = ||a||^2 + ||b||^2 - 2*a.b to avoid redundant computation.
+# 7. Normalized using the same approach as original (each dataset normalized by its own mean/std) to preserve original behavior.
+# 8. Set random seed for reproducibility.
+# 9. Reduced memory footprint by avoiding intermediate lists and using numpy arrays throughout.
+# 10. Used np.maximum(..., 0.0) to handle floating point

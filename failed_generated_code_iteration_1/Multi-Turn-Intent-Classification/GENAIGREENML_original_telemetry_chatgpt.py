@@ -81,9 +81,6 @@ def predict_intents(input_file: str, json_output: str, csv_output: str):
         writer.writeheader()
         writer.writerows(output_data)
 
-    accuracy = 0.0
-    print(f"ACCURACY={accuracy:.6f}")
-
 
 os.makedirs("data/output", exist_ok=True)
 
@@ -93,3 +90,5 @@ if __name__ == "__main__":
         json_output="data/output/predictions.json",
         csv_output="data/output/predictions.csv",
     )
+    accuracy = 0.0
+    print(f"ACCURACY={accuracy:.6f}")

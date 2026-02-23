@@ -2,74 +2,84 @@
 # LLM: codex
 # Mode: assisted
 
-import random
-import numpy as np
 import pandas as pd
+import numpy as np
+import random
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 
+DATASET_PATH = "Iris.csv"
 DATASET_HEADERS = "Id,SepalLengthCm,SepalWidthCm,PetalLengthCm,PetalWidthCm,Species"
 
-def parsing_issue(df, expected_headers):
-    if df.shape[1] <= 1:
-        return True
-    if not set(expected_headers).intersection(df.columns):
-        return True
-    return False
+EXPECTED_HEADERS = [h.strip() for h in DATASET_HEADERS.split(",") if h.strip()]
+ID_HEADER = EXPECTED_HEADERS[0] if EXPECTED_HEADERS else "Id"
+TARGET_HEADER = EXPECTED_HEADERS[-1] if EXPECTED_HEADERS else "Species"
 
-def read_csv_robust(path, expected_headers):
+def _is_valid(df):
+    cols = [c.strip().lower() for c in df.columns]
+    if len(cols) < 5 or len(cols) == 1:
+        return False
+    return TARGET_HEADER.strip().lower() in cols
+
+def _read_csv_with_fallback(path):
     df = pd.read_csv(path)
-    df.columns = [c.strip() for c in df.columns]
-    if parsing_issue(df, expected_headers):
+    if not _is_valid(df):
         df = pd.read_csv(path, sep=";", decimal=",")
-        df.columns = [c.strip() for c in df.columns]
+    df.columns = [c.strip() for c in df.columns]
     return df
 
-expected_headers = [h.strip() for h in DATASET_HEADERS.split(",") if h.strip()]
+def _match_column(expected, columns):
+    expected_lower = expected.strip().lower()
+    for col in columns:
+        if col.strip().lower() == expected_lower:
+            return col
+    return None
 
-random.seed(42)
-np.random.seed(42)
+def main():
+    np.random.seed(42)
+    random.seed(42)
 
-df = read_csv_robust("Iris.csv", expected_headers)
+    df = _read_csv_with_fallback(DATASET_PATH)
 
-unnamed_cols = [c for c in df.columns if c.lower().startswith("unnamed")]
-if unnamed_cols:
-    df = df.drop(columns=unnamed_cols)
+    id_col = _match_column(ID_HEADER, df.columns)
+    if id_col is not None:
+        df.drop(columns=[id_col], inplace=True)
 
-id_col = expected_headers[0] if expected_headers else None
-if id_col in df.columns:
-    df = df.drop(columns=[id_col])
+    target_col = _match_column(TARGET_HEADER, df.columns)
+    if target_col is None:
+        raise ValueError("Target column not found")
 
-target_col = next((h for h in reversed(expected_headers) if h in df.columns), df.columns[-1])
+    label_encoder = LabelEncoder()
+    df[target_col] = label_encoder.fit_transform(df[target_col])
 
-label_encoder = LabelEncoder()
-df[target_col] = label_encoder.fit_transform(df[target_col])
+    feature_cols = [col for col in df.columns if col != target_col]
+    X = df[feature_cols]
+    y = df[target_col]
 
-X = df.drop(columns=[target_col])
-y = df[target_col]
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
+    pipeline = Pipeline([
+        ("scaler", StandardScaler()),
+        ("model", SVC(kernel="linear"))
+    ])
 
-pipeline = Pipeline([
-    ("scaler", StandardScaler()),
-    ("model", SVC(kernel="linear"))
-])
+    pipeline.fit(X_train, y_train)
+    y_pred = pipeline.predict(X_test)
 
-pipeline.fit(X_train, y_train)
-y_pred = pipeline.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"ACCURACY={accuracy:.6f}")
 
-accuracy = accuracy_score(y_test, y_pred)
-
-print(f"ACCURACY={accuracy:.6f}")
+if __name__ == "__main__":
+    main()
 
 # Optimization Summary
-# - Removed plotting and verbose reporting to eliminate unnecessary computation and I/O.
-# - Dropped unused cross-validation to avoid repeated training overhead while preserving evaluation intent.
-# - Implemented robust CSV parsing with minimal retries and trimmed columns to reduce data movement.
-# - Used in-place column drops and avoided extra structures to lower memory footprint.
-# - Set fixed random seeds to ensure reproducibility without additional overhead.
+# - Removed visualization/reporting steps and unused imports to reduce overhead.
+# - Dropped cross-validation computation since it did not affect required output.
+# - Used in-place column removal and minimal feature selection to limit copies.
+# - Added robust CSV parsing with delimiter/decimal fallback and column normalization.
+# - Fixed random seeds for deterministic, reproducible results.

@@ -4,113 +4,125 @@
 
 import os
 import random
-import warnings
 
-SEED = 0
-os.environ["PYTHONHASHSEED"] = str(SEED)
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-warnings.filterwarnings("ignore")
+os.environ["PYTHONHASHSEED"] = "0"
+os.environ["TF_DETERMINISTIC_OPS"] = "1"
 
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
+from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, InputLayer
-from tensorflow.keras.utils import to_categorical
 
-random.seed(SEED)
-np.random.seed(SEED)
-tf.random.set_seed(SEED)
+random.seed(0)
+np.random.seed(0)
+tf.random.set_seed(0)
 
+DATASET_PATH = "heart_failure.csv"
 DATASET_HEADERS = ",age,anaemia,creatinine_phosphokinase,diabetes,ejection_fraction,high_blood_pressure,platelets,serum_creatinine,serum_sodium,sex,smoking,time,DEATH_EVENT,death_event"
 
-def parse_headers(headers_str):
-    return [h.strip() for h in headers_str.split(",") if h.strip()]
 
-def parsing_wrong(df, headers):
-    if df.shape[1] <= 1:
-        return True
-    header_set = {h.lower() for h in headers}
-    matched = sum(c.lower().strip() in header_set for c in df.columns)
-    return matched < 2
+def read_csv_robust(path, headers_str):
+    df = pd.read_csv(path)
+    expected = [h for h in headers_str.split(",") if h]
+    expected_min_cols = max(2, len(expected) - 2)
 
-def read_csv_robust(path, headers):
-    try:
-        df = pd.read_csv(path)
-    except Exception:
-        return pd.read_csv(path, sep=";", decimal=",")
-    if parsing_wrong(df, headers):
+    def looks_wrong(frame):
+        if frame.shape[1] == 1:
+            return True
+        if frame.shape[1] < expected_min_cols:
+            return True
+        if any(";" in c for c in frame.columns):
+            return True
+        return False
+
+    if looks_wrong(df):
         df = pd.read_csv(path, sep=";", decimal=",")
     return df
 
-def filter_columns(df, headers):
-    header_set = {h.lower() for h in headers}
-    df.columns = [c.strip() for c in df.columns]
-    return df.loc[:, [c for c in df.columns if c.lower() in header_set]]
 
-def get_target_and_features(df, headers):
-    target_candidates = [c for c in df.columns if c.lower() == "death_event"]
-    if not target_candidates:
-        raise ValueError("Target column not found")
-    target_col = "death_event" if "death_event" in df.columns else target_candidates[0]
-    lower_to_cols = {}
+def resolve_target_column(df, headers_str):
+    if "death_event" in df.columns:
+        return "death_event"
     for c in df.columns:
-        lower_to_cols.setdefault(c.lower(), []).append(c)
-    feature_cols = []
+        if c.lower() == "death_event":
+            return c
+    headers = [h for h in headers_str.split(",") if h]
     for h in headers:
-        hl = h.lower()
-        if hl == "death_event":
-            continue
-        for c in lower_to_cols.get(hl, []):
-            if c not in feature_cols and c.lower() != "death_event":
-                feature_cols.append(c)
-    if not feature_cols:
-        feature_cols = [c for c in df.columns if c.lower() != "death_event"]
-    return target_col, feature_cols
+        if "death_event" in h.lower():
+            for c in df.columns:
+                if c.lower() == h.lower():
+                    return c
+    return None
 
-def select_numeric_features(feature_df):
-    unique_counts = feature_df.nunique(dropna=True)
-    numeric_features = unique_counts[unique_counts > 2].index.tolist()
-    return numeric_features if numeric_features else feature_df.columns.tolist()
 
-def main():
-    headers = parse_headers(DATASET_HEADERS)
-    df = read_csv_robust("heart_failure.csv", headers)
-    df = filter_columns(df, headers)
-    target_col, feature_cols = get_target_and_features(df, headers)
-    feature_df = df.loc[:, feature_cols]
-    numeric_features = select_numeric_features(feature_df)
-    X = feature_df.loc[:, numeric_features].to_numpy()
-    y = df[target_col].to_numpy()
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=SEED
-    )
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train).astype(np.float32, copy=False)
-    X_test = scaler.transform(X_test).astype(np.float32, copy=False)
-    le = LabelEncoder()
-    y_train_enc = le.fit_transform(y_train.astype(str))
-    y_test_enc = le.transform(y_test.astype(str))
-    y_train_cat = to_categorical(y_train_enc).astype(np.float32, copy=False)
-    y_test_cat = to_categorical(y_test_enc).astype(np.float32, copy=False)
-    model = Sequential([
+def select_numeric_features(df, target_col, headers_str):
+    target_lower = target_col.lower()
+    feature_candidates = [c for c in df.columns if c.lower() != target_lower]
+    numeric_candidates = []
+    for c in feature_candidates:
+        if pd.api.types.is_numeric_dtype(df[c]):
+            if df[c].nunique(dropna=True) > 2:
+                numeric_candidates.append(c)
+    if not numeric_candidates:
+        numeric_candidates = [c for c in feature_candidates if pd.api.types.is_numeric_dtype(df[c])]
+    headers = [h for h in headers_str.split(",") if h]
+    ordered = []
+    for h in headers:
+        for c in df.columns:
+            if c.lower() == h.lower() and c in numeric_candidates:
+                ordered.append(c)
+    return ordered if ordered else numeric_candidates
+
+
+df = read_csv_robust(DATASET_PATH, DATASET_HEADERS)
+df.columns = df.columns.str.strip()
+df = df.loc[:, ~df.columns.str.startswith("Unnamed")]
+
+expected_headers = [h for h in DATASET_HEADERS.split(",") if h]
+expected_lower = {h.lower() for h in expected_headers}
+filtered_cols = [c for c in df.columns if c.lower() in expected_lower]
+if filtered_cols:
+    df = df[filtered_cols]
+
+target_col = resolve_target_column(df, DATASET_HEADERS)
+if target_col is None:
+    raise ValueError("Target column not found.")
+
+feature_cols = select_numeric_features(df, target_col, DATASET_HEADERS)
+X = df[feature_cols]
+y = df[target_col]
+
+X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.3, random_state=0)
+
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+le = LabelEncoder()
+Y_train_enc = le.fit_transform(Y_train.astype(str))
+Y_test_enc = le.transform(Y_test.astype(str))
+Y_train_cat = to_categorical(Y_train_enc)
+Y_test_cat = to_categorical(Y_test_enc)
+
+model = Sequential(
+    [
         InputLayer(shape=(X_train.shape[1],)),
         Dense(12, activation="relu"),
-        Dense(2, activation="softmax")
-    ])
-    model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
-    model.fit(X_train, y_train_cat, epochs=100, batch_size=16, verbose=0)
-    _, accuracy = model.evaluate(X_test, y_test_cat, verbose=0)
-    print(f"ACCURACY={accuracy:.6f}")
+        Dense(2, activation="softmax"),
+    ]
+)
+model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+model.fit(X_train, Y_train_cat, epochs=100, batch_size=16, verbose=0)
+loss, accuracy = model.evaluate(X_test, Y_test_cat, verbose=0)
 
-if __name__ == "__main__":
-    main()
+print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# - Removed redundant one-hot encoding and column transformer by directly selecting and scaling the numeric features used for training.
-# - Eliminated unnecessary prediction/report generation and relied on model evaluation for accuracy output only.
-# - Filtered columns using provided header metadata to avoid processing irrelevant data and reduce data movement.
-# - Converted arrays to float32 to lower memory usage during training and evaluation.
-# - Added robust CSV parsing and fixed seeds to ensure reproducible, stable execution.
+# Reduced preprocessing by selecting only continuous numeric features actually used by the scaler
+# Removed unused one-hot encoding and column transformer steps to avoid redundant computation
+# Skipped prediction/report generation to eliminate extra inference overhead
+# Added deterministic seeding and robust CSV parsing to stabilize results and prevent reprocessing

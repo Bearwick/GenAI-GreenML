@@ -5,90 +5,122 @@
 import numpy as np
 import pandas as pd
 
-SEED = 42
-np.random.seed(SEED)
+DATASET_HEADERS = ["preg", "plas", "pres", "skin", "insu", "mass", "pedi", "age", "class"]
+TRAIN_PATH = "Data/Diabetes-Training.csv"
+TEST_PATH = "Data/Diabetes-Clasification.csv"
+K_VALUE = 1
+RANDOM_SEED = 0
 
-DATASET_HEADERS = "preg,plas,pres,skin,insu,mass,pedi,age,class"
-EXPECTED_HEADERS = [h.strip() for h in DATASET_HEADERS.split(",") if h.strip()]
+np.random.seed(RANDOM_SEED)
 
-def _parsing_wrong(df, expected_headers):
-    if df.shape[1] == 1:
+def _parse_score(df, expected_headers):
+    score = df.shape[1]
+    if expected_headers:
+        score += 10 * len(set(expected_headers).intersection(df.columns))
+    return score
+
+def _parsing_looks_wrong(df, expected_headers):
+    if df.shape[1] <= 1:
         return True
     if expected_headers:
-        cols = [str(c).strip() for c in df.columns]
-        if len(cols) != len(expected_headers):
+        overlap = len(set(expected_headers).intersection(df.columns))
+        if overlap < max(1, len(expected_headers) // 2):
             return True
-        if cols != expected_headers and set(cols) != set(expected_headers):
-            return True
+        feature_cols = [c for c in expected_headers[:-1] if c in df.columns]
+        if feature_cols:
+            obj_cols = [c for c in feature_cols if df[c].dtype == object]
+            if obj_cols:
+                sample = df[obj_cols].head(5).astype(str)
+                for col in obj_cols:
+                    if sample[col].str.contains(",").any():
+                        return True
     return False
 
-def read_csv_robust(path, expected_headers):
+def read_dataset(path, expected_headers):
     df = pd.read_csv(path)
-    if _parsing_wrong(df, expected_headers):
-        df = pd.read_csv(path, sep=";", decimal=",")
-    if expected_headers and set(expected_headers) == set(df.columns):
-        df = df[expected_headers]
+    if _parsing_looks_wrong(df, expected_headers):
+        df_alt = pd.read_csv(path, sep=";", decimal=",")
+        if _parse_score(df_alt, expected_headers) > _parse_score(df, expected_headers):
+            df = df_alt
+    if expected_headers and df.shape[1] == len(expected_headers):
+        if not set(expected_headers).issubset(df.columns):
+            df.columns = expected_headers
     return df
 
-def normalize_data(df):
-    values = df.iloc[:, :-1].to_numpy(dtype=float, copy=False)
-    mean = values.mean(axis=0)
-    std = values.std(axis=0, ddof=1)
-    return (values - mean) / std
+def extract_features_and_target(df, expected_headers):
+    target_col = None
+    if expected_headers:
+        for col in reversed(expected_headers):
+            if col in df.columns:
+                target_col = col
+                break
+    if target_col is None:
+        target_col = df.columns[-1]
+    feature_cols = [c for c in df.columns if c != target_col]
+    data = df[feature_cols]
+    if not all(pd.api.types.is_numeric_dtype(t) for t in data.dtypes):
+        data = data.apply(pd.to_numeric, errors="coerce")
+    X = data.to_numpy(dtype=float, copy=False)
+    y = df[target_col].to_numpy()
+    return X, y
 
-def knn_predict(X_train, y_train, X_test, k, neg_label, pos_label):
-    n_train = X_train.shape[0]
+def normalize_features(X):
+    mean = X.mean(axis=0)
+    std = X.std(axis=0, ddof=1)
+    return (X - mean) / std
+
+def knn_classification(X_train, y_train, X_test, y_test, k):
+    positive_label = "tested_positive"
+    negative_label = "tested_negative"
+    y_train_bin = (y_train == positive_label).astype(np.int8)
     n_test = X_test.shape[0]
-    if n_train == 0 or n_test == 0:
-        return np.array([], dtype=object), np.array([], dtype=int), np.array([], dtype=int)
-    train_sq = np.einsum("ij,ij->i", X_train, X_train)
-    test_sq = np.einsum("ij,ij->i", X_test, X_test)
-    dist_sq = test_sq[:, None] + train_sq[None, :] - 2.0 * X_test @ X_train.T
-    dist_sq = np.maximum(dist_sq, 0.0)
+    train_norms = np.einsum("ij,ij->i", X_train, X_train)
+    pos_counts = np.empty(n_test, dtype=np.int32)
+    neg_counts = np.empty(n_test, dtype=np.int32)
+
     if k == 1:
-        nearest_idx = np.argmin(dist_sq, axis=1)
-        pred = y_train[nearest_idx]
-        neg_count = (pred == neg_label).astype(int)
-        pos_count = (pred == pos_label).astype(int)
-        assigned = np.where(neg_count > pos_count, neg_label, pos_label)
-        return assigned, neg_count, pos_count
-    k_eff = min(k, n_train)
-    idx_sorted = np.argsort(dist_sq, axis=1)[:, :k_eff]
-    neighbor_labels = y_train[idx_sorted]
-    neg_count = np.sum(neighbor_labels == neg_label, axis=1).astype(int)
-    pos_count = np.sum(neighbor_labels == pos_label, axis=1).astype(int)
-    assigned = np.where(neg_count > pos_count, neg_label, pos_label)
-    return assigned, neg_count, pos_count
+        for i in range(n_test):
+            x = X_test[i]
+            dists = train_norms + np.dot(x, x) - 2.0 * X_train.dot(x)
+            idx = int(np.argmin(dists))
+            pos = int(y_train_bin[idx])
+            pos_counts[i] = pos
+            neg_counts[i] = 1 - pos
+    else:
+        for i in range(n_test):
+            x = X_test[i]
+            dists = train_norms + np.dot(x, x) - 2.0 * X_train.dot(x)
+            idx = np.argpartition(dists, k - 1)[:k]
+            pos = int(y_train_bin[idx].sum())
+            pos_counts[i] = pos
+            neg_counts[i] = k - pos
 
-def main():
-    k_value = 1
-    train_df = read_csv_robust("Data/Diabetes-Training.csv", EXPECTED_HEADERS)
-    test_df = read_csv_robust("Data/Diabetes-Clasification.csv", EXPECTED_HEADERS)
-    X_train = normalize_data(train_df)
-    X_test = normalize_data(test_df)
-    y_train = train_df.iloc[:, -1].to_numpy()
-    y_test = test_df.iloc[:, -1].to_numpy()
-    neg_label = "tested_negative"
-    pos_label = "tested_positive"
-    assigned, neg_count, pos_count = knn_predict(X_train, y_train, X_test, k_value, neg_label, pos_label)
-    n_test = X_test.shape[0]
-    instances = np.arange(1, n_test + 1)
-    output_df = pd.DataFrame({
-        "Instance": instances,
-        "tested_negative": neg_count,
-        "tested_positive": pos_count,
+    assigned = np.where(neg_counts > pos_counts, negative_label, positive_label)
+    accuracy = (assigned == y_test).mean() * 100.0
+    results = pd.DataFrame({
+        "Instance": np.arange(1, n_test + 1, dtype=np.int32),
+        "tested_negative": neg_counts,
+        "tested_positive": pos_counts,
         "Assigned class": assigned
     })
-    output_df.to_csv("result_count.csv", index=False)
-    accuracy = float(np.mean(assigned == y_test)) if n_test else 0.0
+    return results, accuracy
+
+def main():
+    train_df = read_dataset(TRAIN_PATH, DATASET_HEADERS)
+    test_df = read_dataset(TEST_PATH, DATASET_HEADERS)
+    X_train, y_train = extract_features_and_target(train_df, DATASET_HEADERS)
+    X_test, y_test = extract_features_and_target(test_df, DATASET_HEADERS)
+    X_train = normalize_features(X_train)
+    X_test = normalize_features(X_test)
+    results, accuracy = knn_classification(X_train, y_train, X_test, y_test, K_VALUE)
+    results.to_csv("result_count.csv", index=False)
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# Vectorized distance computation with precomputed norms reduced Python loops and avoided square roots.
-# Argmin-based k=1 selection eliminated full sorting and redundant work.
-# NumPy-based normalization and array handling reduced pandas overhead and copies.
-# Robust CSV parsing with header-based validation minimized misreads and unnecessary data movement.
-# Direct DataFrame construction for results avoided intermediate lists while preserving output.
+# - Consolidated CSV loading with a robust fallback and header correction to prevent repeated parsing.
+# - Converted feature data to NumPy arrays once and used vectorized normalization to reduce overhead.
+# - Removed square-root computation in distance calculations and reused precomputed norms.
+# - Built output results directly from NumPy arrays to avoid intermediate Python lists.

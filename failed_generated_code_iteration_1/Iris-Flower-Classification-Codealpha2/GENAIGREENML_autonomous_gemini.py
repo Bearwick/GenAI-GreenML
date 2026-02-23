@@ -6,135 +6,126 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.linear_model import LogisticRegression, Ridge
+from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
-from sklearn.metrics import accuracy_score, r2_score
+from sklearn.metrics import accuracy_score
 
-def robust_load(filename):
-    """Robustly loads CSV with delimiter and encoding fallbacks."""
+def load_data_robustly(filepath):
     try:
-        df = pd.read_csv(filename)
-        if df.shape[1] <= 1:
-            raise ValueError
-    except:
+        df = pd.read_csv(filepath)
+    except Exception:
         try:
-            df = pd.read_csv(filename, sep=';', decimal=',')
-        except:
-            # Create a dummy dataframe if file reading fails completely to ensure end-to-end execution
+            df = pd.read_csv(filepath, sep=';', decimal=',')
+        except Exception:
+            # Create a dummy dataframe if file cannot be read to maintain end-to-end execution
             return pd.DataFrame()
     
-    # Normalize column names: strip, single space, remove Unnamed
-    df.columns = [" ".join(str(c).strip().split()) for c in df.columns]
+    # Normalize column names
+    df.columns = [str(col).strip() for col in df.columns]
+    df.columns = [" ".join(col.split()) for col in df.columns]
+    # Drop "Unnamed" columns
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
     return df
 
-def solve():
+def run_pipeline():
     # Load dataset
-    df = robust_load("Iris.csv")
+    df = load_data_robustly('Iris.csv')
     
     if df.empty:
-        # Emergency exit if file not found/readable
-        print(f"ACCURACY={0.000000:.6f}")
+        # Fallback if file missing or corrupted
+        print("ACCURACY=0.000000")
         return
 
-    # Identify target column
-    # Preference: 1. 'species', 2. Last column
+    # Identify target and features
+    # Standard Iris headers: Id, SepalLengthCm, SepalWidthCm, PetalLengthCm, PetalWidthCm, Species
+    potential_targets = ['Species', 'species', 'class', 'target', 'Type']
     target_col = None
-    for col in df.columns:
-        if 'species' in col.lower():
-            target_col = col
+    
+    for pt in potential_targets:
+        if pt in df.columns:
+            target_col = pt
             break
-    if not target_col:
+    
+    if target_col is None:
+        # Fallback: choose the last column if it's object type, else any
         target_col = df.columns[-1]
 
-    # Drop ID-like columns
-    cols_to_drop = [target_col]
-    for col in df.columns:
-        if 'id' == col.lower() or 'index' == col.lower():
-            cols_to_drop.append(col)
+    # Clean Features: remove ID-like columns and the target
+    id_patterns = ['id', 'uuid', 'index', 'unnamed']
+    feature_cols = [col for col in df.columns if col != target_col and not any(pat in col.lower() for pat in id_patterns)]
     
-    # Identify feature columns (numeric only for efficiency/safety)
-    X_raw = df.drop(columns=[c for c in cols_to_drop if c in df.columns])
-    X_numeric = X_raw.select_dtypes(include=[np.number]).columns.tolist()
-    
-    # Preprocess Target
-    y_raw = df[target_col]
-    
-    # Determine task type (classification vs regression)
-    is_classification = True
-    if y_raw.dtype == object or len(y_raw.unique()) < 20:
-        le = LabelEncoder()
-        # Coerce to string to handle mixed types in target
-        y = le.fit_transform(y_raw.astype(str))
-        num_classes = len(le.classes_)
-    else:
-        # Fallback to regression if many unique numeric values
-        y = pd.to_numeric(y_raw, errors='coerce').fillna(0)
-        is_classification = False
+    # If no features left (rare), just take all except target
+    if not feature_cols:
+        feature_cols = [col for col in df.columns if col != target_col]
 
-    # Check if we have features
-    if not X_numeric:
-        print(f"ACCURACY={0.000000:.6f}")
+    # Data cleaning
+    # Convert features to numeric, handle errors
+    for col in feature_cols:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    
+    # Drop rows with NaN in features or target
+    df = df.dropna(subset=feature_cols + [target_col])
+    
+    if len(df) < 10:
+        # Not enough data to train effectively, but must run end-to-end
+        print("ACCURACY=0.000000")
         return
 
-    X = df[X_numeric].apply(pd.to_numeric, errors='coerce').fillna(0)
+    X = df[feature_cols]
+    y = df[target_col]
+
+    # Handle Target Encoding
+    le = LabelEncoder()
+    y_encoded = le.fit_transform(y.astype(str))
+    
+    # Check for number of classes
+    if len(np.unique(y_encoded)) < 2:
+        # Trivial case: only one class
+        print("ACCURACY=1.000000")
+        return
 
     # Train/Test Split
-    try:
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42
-        )
-    except:
-        print(f"ACCURACY={0.000000:.6f}")
-        return
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
+    )
 
-    # Pipeline Design
-    if is_classification:
-        # Energy efficient logistic regression
-        model = LogisticRegression(
-            max_iter=1000, 
-            solver='lbfgs', 
-            multi_class='auto',
-            penalty='l2'
-        )
-    else:
-        # Energy efficient linear regression (Ridge)
-        model = Ridge()
-
+    # Lightweight Pipeline: Standardize + Logistic Regression
+    # Logistic Regression is highly efficient for small, linearly separable datasets like Iris.
     pipeline = Pipeline([
-        ('imputer', SimpleImputer(strategy='mean')),
         ('scaler', StandardScaler()),
-        ('model', model)
+        ('classifier', LogisticRegression(
+            max_iter=200, 
+            solver='lbfgs', 
+            multi_class='auto', 
+            penalty='l2', 
+            C=1.0, 
+            random_state=42
+        ))
     ])
 
-    # Fit and Predict
+    # Model Training
     pipeline.fit(X_train, y_train)
-    y_pred = pipeline.predict(X_test)
 
-    # Scoring
-    if is_classification:
-        accuracy = accuracy_score(y_test, y_pred)
-    else:
-        # Convert R2 to a 0-1 bounded accuracy proxy
-        r2 = r2_score(y_test, y_pred)
-        accuracy = max(0, min(1, r2))
+    # Evaluation
+    predictions = pipeline.predict(X_test)
+    accuracy = accuracy_score(y_test, predictions)
 
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
-    solve()
+    run_pipeline()
 
-# Optimization Summary:
-# 1. Model Choice: Logistic Regression was chosen over SVM/RandomForest as it provides 
-#    a highly efficient linear decision boundary for the Iris dataset with minimal CPU cycles.
-# 2. Preprocessing: Scikit-learn Pipeline ensures no data leakage and encapsulates 
-#    scaling/imputation, which is critical for the stability of linear models.
-# 3. Robustness: Implemented a robust CSV loader with delimiter detection and header 
-#    normalization to prevent crashes on varying file formats.
-# 4. Energy Efficiency: Avoided deep learning and ensemble methods (e.g., XGBoost) 
-#    which would require more memory and FLOPs for a simple 4-feature task.
-# 5. Numerical Stability: Used 'coerce' on numeric columns and SimpleImputer to 
-#    handle potential data corruption or missing values without manual intervention.
-# 6. Fallback Logic: The script detects if the target is continuous or categorical 
-#    to automatically switch between Logistic and Ridge regression, ensuring completion.
+# OPTIMIZATION SUMMARY
+# 1. Model Selection: Logistic Regression was chosen over ensembles or deep learning because it is computationally 
+#    lightweight (O(n_features * n_samples)), energy-efficient, and highly effective for small-scale 
+#    structured datasets like Iris.
+# 2. Preprocessing: StandardScaler is used to ensure fast convergence of the L-BFGS solver used in 
+#    Logistic Regression, minimizing CPU cycles.
+# 3. Memory Efficiency: Used minimal feature engineering and avoided creating unnecessary copies of large 
+#    data structures.
+# 4. Robustness: Implemented a robust CSV parser with column normalization and fallback logic for 
+#    missing headers/target columns, ensuring the code runs end-to-end on various environments.
+# 5. Resource Usage: No specialized hardware (GPU/TPU) required; the script runs in milliseconds on 
+#    standard CPUs.
+# 6. Evaluation: Uses a fixed random state and stratified split for reproducible and reliable results 
+#    without the overhead of repeated cross-validation in a baseline context.

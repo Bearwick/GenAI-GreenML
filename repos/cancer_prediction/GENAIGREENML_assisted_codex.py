@@ -9,54 +9,42 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
 
-DATASET_HEADERS = '"id","diagnosis","radius_mean","texture_mean","perimeter_mean","area_mean","smoothness_mean","compactness_mean","concavity_mean","concave points_mean","symmetry_mean","fractal_dimension_mean","radius_se","texture_se","perimeter_se","area_se","smoothness_se","compactness_se","concavity_se","concave points_se","symmetry_se","fractal_dimension_se","radius_worst","texture_worst","perimeter_worst","area_worst","smoothness_worst","compactness_worst","concavity_worst","concave points_worst","symmetry_worst","fractal_dimension_worst",'
+SEED = 42
+np.random.seed(SEED)
 
-def parse_headers(header_str):
-    parts = header_str.replace("\n", "").split(",")
-    return [p.strip().strip('"') for p in parts if p.strip().strip('"')]
+DATASET_PATH = "Cancer_Data.csv"
+DATASET_HEADERS_RAW = (
+    '"id","diagnosis","radius_mean","texture_mean","perimeter_mean","area_mean",'
+    '"smoothness_mean","compactness_mean","concavity_mean","concave points_mean",'
+    '"symmetry_mean","fractal_dimension_mean","radius_se","texture_se","perimeter_se",'
+    '"area_se","smoothness_se","compactness_se","concavity_se","concave points_se",'
+    '"symmetry_se","fractal_dimension_se","radius_worst","texture_worst","perimeter_worst",'
+    '"area_worst","smoothness_worst","compactness_worst","concavity_worst",'
+    '"concave points_worst","symmetry_worst","fractal_dimension_worst",'
+)
 
-EXPECTED_HEADERS = parse_headers(DATASET_HEADERS)
+def parse_headers(raw):
+    headers = []
+    for part in raw.split(','):
+        part = part.strip()
+        if part:
+            part = part.strip('"').strip("'").strip()
+            if part:
+                headers.append(part)
+    return headers
 
-def parsing_suspect(df, expected_headers):
-    if df.shape[1] <= 1:
-        return True
-    if any(";" in str(c) for c in df.columns):
-        return True
-    if expected_headers:
-        matches = sum(1 for h in expected_headers if h in df.columns)
-        if matches < max(1, len(expected_headers) // 2):
-            return True
-        if "diagnosis" in expected_headers and "diagnosis" not in df.columns:
-            return True
-    return False
+def normalize(name):
+    return ''.join(ch for ch in str(name).lower() if ch.isalnum())
 
-def read_csv_robust(path, expected_headers):
-    df = pd.read_csv(path)
-    if parsing_suspect(df, expected_headers):
-        df = pd.read_csv(path, sep=";", decimal=",")
-    df = df.dropna(axis=1, how="all")
-    unnamed_cols = [c for c in df.columns if str(c).startswith("Unnamed")]
-    if unnamed_cols:
-        df = df.drop(columns=unnamed_cols)
-    df.columns = [c.strip() if isinstance(c, str) else c for c in df.columns]
-    return df
+EXPECTED_HEADERS = parse_headers(DATASET_HEADERS_RAW)
+EXPECTED_MAP = {}
+for h in EXPECTED_HEADERS:
+    key = normalize(h)
+    if key not in EXPECTED_MAP:
+        EXPECTED_MAP[key] = h
+EXPECTED_NORMS = set(EXPECTED_MAP.keys())
 
-RANDOM_STATE = 42
-np.random.seed(RANDOM_STATE)
-
-df = read_csv_robust("Cancer_Data.csv", EXPECTED_HEADERS)
-
-if "diagnosis" not in df.columns:
-    raise ValueError("diagnosis column not found")
-
-diagnosis_series = df["diagnosis"]
-if diagnosis_series.dtype.kind in ("O", "U", "S"):
-    y_series = diagnosis_series.astype(str).str.strip().map({"M": 1, "B": 0})
-else:
-    y_series = diagnosis_series
-y = y_series.astype("int8", copy=False).to_numpy(copy=False)
-
-feature_names = [
+TARGET_FEATURES_RAW = [
     "texture_worst",
     "radius_se",
     "symmetry_worst",
@@ -69,28 +57,87 @@ feature_names = [
     "fractal_dimension_se",
 ]
 
-available_features = [f for f in feature_names if f in df.columns]
-if not available_features:
-    raise ValueError("Required feature columns not found")
+TARGET_NORMS = [normalize(n) for n in TARGET_FEATURES_RAW]
+if any(n not in EXPECTED_MAP for n in TARGET_NORMS):
+    raise KeyError
 
-X = df[available_features].to_numpy(dtype=float, copy=False)
-del df
+def read_csv_robust(path, expected_norms):
+    try:
+        df = pd.read_csv(path)
+    except FileNotFoundError:
+        raise SystemExit(1)
+    def valid(d):
+        if d.shape[1] <= 1:
+            return False
+        if expected_norms:
+            norm_cols = {normalize(c) for c in d.columns}
+            if len(norm_cols & expected_norms) < max(1, len(expected_norms) // 2):
+                return False
+        obj_cols = d.select_dtypes(include=["object"]).columns
+        if len(obj_cols) > max(2, d.shape[1] // 3):
+            return False
+        return True
+    if not valid(df):
+        try:
+            df_alt = pd.read_csv(path, sep=';', decimal=',')
+            if valid(df_alt):
+                df = df_alt
+        except Exception:
+            pass
+    return df
+
+df = read_csv_robust(DATASET_PATH, EXPECTED_NORMS)
+df.columns = [str(c).strip() for c in df.columns]
+actual_map = {}
+for c in df.columns:
+    key = normalize(c)
+    if key not in actual_map:
+        actual_map[key] = c
+
+diag_key = normalize("diagnosis")
+if diag_key not in EXPECTED_MAP or diag_key not in actual_map:
+    raise KeyError
+diag_col = actual_map[diag_key]
+
+feature_cols = []
+for n in TARGET_NORMS:
+    if n not in actual_map:
+        raise KeyError
+    feature_cols.append(actual_map[n])
+
+df = df[[diag_col] + feature_cols]
+
+y_series = df[diag_col]
+if y_series.dtype == object or str(y_series.dtype).startswith("category"):
+    y_clean = y_series.astype(str).str.strip()
+    y_mapped = y_clean.map({'M': 1, 'B': 0, 'm': 1, 'b': 0, 'malignant': 1, 'benign': 0})
+    if y_mapped.isnull().any():
+        y = pd.to_numeric(y_series, errors='coerce')
+    else:
+        y = y_mapped
+else:
+    y = y_series
+
+y = y.astype(int).to_numpy()
+X = df[feature_cols].to_numpy(dtype=float, copy=False)
+
+del df, y_series
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.3, random_state=RANDOM_STATE
+    X, y, test_size=0.3, random_state=SEED
 )
 
 model = make_pipeline(
     StandardScaler(),
-    LogisticRegression(solver="liblinear", random_state=RANDOM_STATE)
+    LogisticRegression(solver="liblinear", random_state=SEED)
 )
 model.fit(X_train, y_train)
 accuracy = model.score(X_test, y_test)
-
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# - Added robust CSV parsing with delimiter/decimal fallback and column cleanup to prevent incorrect reads.
-# - Converted selected columns directly to NumPy arrays with minimal copying and removed unused columns to reduce memory.
-# - Used a pipeline to combine scaling and modeling without retaining extra intermediate datasets.
-# - Applied fixed random seeds and explicit random_state settings for reproducible results.
+# - Limited dependencies and removed visualization and artifact saving to cut unnecessary overhead.
+# - Added conditional CSV parsing fallback and normalized column mapping to avoid redundant data reads and mismatches.
+# - Selected only required columns and converted directly to NumPy arrays with copy=False to reduce memory use and data movement.
+# - Used a pipeline to combine scaling and modeling without storing extra scaled datasets.
+# - Cleared intermediate objects early to free memory during training.

@@ -5,116 +5,125 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-def load_data(filepath):
-    """Robustly loads CSV with delimiter and encoding fallback."""
+def load_data(path):
+    # Robust parsing: handle different separators and decimals
     try:
-        df = pd.read_csv(filepath)
+        df = pd.read_csv(path)
         if df.shape[1] <= 1:
             raise ValueError
-    except Exception:
-        df = pd.read_csv(filepath, sep=';', decimal=',')
+    except:
+        df = pd.read_csv(path, sep=';', decimal=',')
     
-    # Normalize column names
-    df.columns = [str(c).strip() for c in df.columns]
+    # Normalize column names: strip, collapse whitespace, drop Unnamed
+    df.columns = [" ".join(str(c).split()).strip() for c in df.columns]
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
     return df
 
-def run_pipeline():
-    # 1. Load Data
+def solve():
+    dataset_path = 'diabetes.csv'
     try:
-        df = load_data('diabetes.csv')
+        df = load_data(dataset_path)
     except Exception:
-        # Trivial fallback if file is missing/unreadable for script to run
-        return 0.0
-
-    # 2. Identify Target and Features
-    target_col = 'Outcome'
-    if target_col not in df.columns:
-        # Heuristic: pick the last column if 'Outcome' is missing
-        target_col = df.columns[-1]
-
-    # Clean non-numeric columns from features and ensure target is numeric
-    df[target_col] = pd.to_numeric(df[target_col], errors='coerce')
-    df = df.dropna(subset=[target_col])
-    
-    X = df.drop(columns=[target_col])
-    y = df[target_col].astype(int)
-
-    # 3. Robust Data Cleaning
-    # In the diabetes dataset, 0 in certain columns represents missing values
-    cols_to_fix = ['Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI']
-    existing_cols_to_fix = [c for c in cols_to_fix if c in X.columns]
-    
-    for col in X.columns:
-        X[col] = pd.to_numeric(X[col], errors='coerce')
-        if col in existing_cols_to_fix:
-            X[col] = X.loc[:, col].replace(0, np.nan)
-
-    # 4. Split Data
-    if len(df) < 10:
-        # Not enough data for a meaningful split
-        print(f"ACCURACY={0.0:.6f}")
+        # If file missing or unreadable, exit gracefully
         return
 
+    if df.empty:
+        return
+
+    # Identify target and features
+    # Priority: 'Outcome' (case-insensitive), then last column
+    target_col = None
+    for c in df.columns:
+        if c.lower() == 'outcome':
+            target_col = c
+            break
+    if target_col is None:
+        target_col = df.columns[-1]
+
+    X = df.drop(columns=[target_col])
+    y = df[target_col]
+
+    # Clean features: coerce to numeric where possible, handle types
+    numeric_features = []
+    categorical_features = []
+
+    for col in X.columns:
+        # Attempt to convert to numeric to identify its true nature
+        converted = pd.to_numeric(X[col], errors='coerce')
+        if converted.isna().sum() < (len(X) * 0.5): # If mostly numeric
+            X[col] = converted
+            numeric_features.append(col)
+        else:
+            X[col] = X[col].astype(str)
+            categorical_features.append(col)
+
+    # Ensure y is numeric/categorical for classification
+    y = pd.to_numeric(y, errors='coerce').fillna(0).astype(int)
+    
+    # Check if we have enough classes for classification
+    unique_classes = np.unique(y)
+    if len(unique_classes) < 2:
+        # If not enough classes, we print 0 and exit (or fallback)
+        print("ACCURACY=0.000000")
+        return
+
+    # Split data
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y if len(np.unique(y)) > 1 else None
+        X, y, test_size=0.2, random_state=42, stratify=y if len(unique_classes) > 1 else None
     )
 
-    # 5. Energy-Efficient Pipeline Design
-    # Numeric features only for this baseline
-    numeric_features = X.select_dtypes(include=[np.number]).columns.tolist()
-
-    # SimpleImputer and StandardScaler are computationally cheap
+    # Preprocessing Pipeline
     numeric_transformer = Pipeline(steps=[
         ('imputer', SimpleImputer(strategy='median')),
         ('scaler', StandardScaler())
     ])
 
+    categorical_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
+        ('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))
+    ])
+
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', numeric_transformer, numeric_features)
-        ]
+            ('num', numeric_transformer, numeric_features),
+            ('cat', categorical_transformer, categorical_features)
+        ],
+        remainder='drop'
     )
 
-    # Logistic Regression is one of the most energy-efficient models (low CPU/memory)
-    # compared to KNN (O(N) inference) or Ensembles.
-    clf = Pipeline(steps=[
+    # Energy-efficient model: Logistic Regression
+    # Fast convergence, low CPU cycles, minimal memory footprint
+    model = Pipeline(steps=[
         ('preprocessor', preprocessor),
         ('classifier', LogisticRegression(max_iter=1000, solver='lbfgs', random_state=42))
     ])
 
-    # 6. Training and Evaluation
-    if len(np.unique(y_train)) < 2:
-        # Trivial baseline if only one class present
-        accuracy = 1.0 if len(y_test) > 0 and (y_test == y_train.iloc[0]).all() else 0.0
-    else:
-        clf.fit(X_train, y_train)
-        y_pred = clf.predict(X_test)
-        accuracy = accuracy_score(y_test, y_pred)
-
+    # Fit and Predict
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    
+    accuracy = accuracy_score(y_test, y_pred)
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
-    run_pipeline()
+    solve()
 
-# Optimization Summary:
-# 1. Model Selection: Switched from KNN/RandomizedSearch to Logistic Regression. 
-#    LR has O(P) inference complexity (where P is feature count), whereas KNN is O(N*P).
-#    This significantly reduces CPU cycles and energy consumption during deployment.
-# 2. Pipeline Architecture: Used sklearn.pipeline.Pipeline to minimize data 
-#    copying and ensure a streamlined, reproducible transformation flow.
-# 3. Memory Efficiency: Used inplace replacements and simple imputation strategies 
-#    (median) which are faster and use less memory than iterative or KNN-based imputers.
-# 4. Data Robustness: Implemented a robust loader that handles delimiter mismatches 
-#    and column whitespace, preventing unnecessary crash-and-retry energy waste.
-# 5. Training: Used 'lbfgs' solver for Logistic Regression as it is efficient 
-#    for small-to-medium datasets and converges quickly on CPU.
-# 6. Performance Proxy: For classification, Accuracy is used. If a regression fallback 
-#    was triggered, R^2 would be used as the score proxy.
+# OPTIMIZATION SUMMARY
+# 1. Model Choice: Logistic Regression was selected as it is computationally lightweight, 
+#    providing a high performance-to-energy ratio for tabular binary classification.
+# 2. Preprocessing: Used sklearn.Pipeline and ColumnTransformer to avoid redundant 
+#    data copies and ensure efficient execution.
+# 3. Robustness: Implemented a robust CSV loader and column normalizer to handle 
+#    schema variations without manual intervention.
+# 4. Energy Efficiency: Avoided complex ensembles (like XGBoost/RandomForest) or 
+#    Deep Learning, as the feature set size (8 features) does not justify high-power compute.
+# 5. Data Handling: Numeric coercion and median imputation ensure the pipeline 
+#    is resilient to noisy data or missing values while keeping memory usage low.
+# 6. Hardware: Designed specifically for CPU execution; no GPU-accelerated libraries required.

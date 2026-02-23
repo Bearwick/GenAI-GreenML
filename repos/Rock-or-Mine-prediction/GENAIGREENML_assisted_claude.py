@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-np.random.seed(1)
+RANDOM_SEED = 1
 
 try:
     sonar_data = pd.read_csv('Sonar Data.csv', header=None)
@@ -17,23 +17,26 @@ try:
 except Exception:
     sonar_data = pd.read_csv('Sonar Data.csv', header=None, sep=';', decimal=',')
 
+label_col = sonar_data.columns[-1]
 X = sonar_data.iloc[:, :-1]
-Y = sonar_data.iloc[:, -1]
+Y = sonar_data[label_col]
 
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.7, stratify=Y, random_state=1)
+X_train, X_test, Y_train, Y_test = train_test_split(
+    X, Y, test_size=0.7, stratify=Y, random_state=RANDOM_SEED
+)
 
-model = LogisticRegression(max_iter=100, solver='lbfgs', random_state=1)
+model = LogisticRegression(max_iter=100, solver='lbfgs', random_state=RANDOM_SEED)
 model.fit(X_train, Y_train)
 
 accuracy = accuracy_score(Y_test, model.predict(X_test))
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Removed unused .describe() and .groupby().mean() calls that consumed CPU without contributing to output.
-# Removed redundant training prediction and accuracy computation (only test accuracy is needed for final output).
-# Used iloc for column selection to avoid hardcoding column index 60, making it robust to schema variations.
-# Added robust CSV fallback parsing (default then sep=';' with decimal=',').
-# Set fixed random seeds for reproducibility.
-# Specified solver explicitly to avoid warnings and ensure deterministic behavior.
-# Removed all prints, plots, and intermediate variables not needed for the final accuracy output.
-# Removed .value_counts() call that had no effect on model training or evaluation.
+# Removed unused .describe() and .groupby().mean() calls that computed statistics never used downstream.
+# Removed redundant training prediction and accuracy computation since only test accuracy is needed.
+# Removed all print statements and visualizations per requirements.
+# Used iloc for feature/label separation to avoid assuming column name.
+# Added robust CSV fallback parsing with sep=';' and decimal=','.
+# Set explicit random_state on LogisticRegression for reproducibility.
+# Eliminated intermediate variables (X_train_prediction, X_test_prediction) where not needed.
+# Reduced memory footprint by not storing unnecessary intermediate arrays.

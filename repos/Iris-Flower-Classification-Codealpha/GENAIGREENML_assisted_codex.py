@@ -4,80 +4,103 @@
 
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score
 
+DATASET_PATH = "Iris.csv"
 DATASET_HEADERS = "Id,SepalLengthCm,SepalWidthCm,PetalLengthCm,PetalWidthCm,Species"
 
-def _normalize_columns(columns):
+
+def normalize_columns(columns):
     return [str(c).strip() for c in columns]
 
-def _needs_fallback(df, expected_headers):
-    if df.shape[1] <= 1:
-        return True
-    if not expected_headers:
-        return False
-    cols_lower = {str(c).strip().lower() for c in df.columns}
-    matches = sum(1 for h in expected_headers if h.lower() in cols_lower)
-    return matches < max(2, len(expected_headers) // 2)
 
-def read_csv_robust(path, expected_headers):
+def parsing_looks_wrong(df, expected_cols):
+    if df.shape[1] == 1:
+        return True
+    if any(";" in str(c) for c in df.columns):
+        return True
+    if expected_cols:
+        cols_lower = {str(c).lower() for c in df.columns}
+        exp_lower = {str(c).lower() for c in expected_cols}
+        if not exp_lower.issubset(cols_lower) and df.shape[1] < len(expected_cols):
+            return True
+    return False
+
+
+def read_csv_robust(path, expected_cols):
     df = pd.read_csv(path)
-    df.columns = _normalize_columns(df.columns)
-    if _needs_fallback(df, expected_headers):
+    df.columns = normalize_columns(df.columns)
+    if parsing_looks_wrong(df, expected_cols):
         df = pd.read_csv(path, sep=";", decimal=",")
-        df.columns = _normalize_columns(df.columns)
+        df.columns = normalize_columns(df.columns)
     return df
 
-def find_column(columns, target):
-    if target is None:
-        return None
-    target_lower = target.lower()
-    for col in columns:
-        if str(col).lower() == target_lower:
+
+def resolve_column(df, candidates):
+    for cand in candidates:
+        if cand is None:
+            continue
+        if cand in df.columns:
+            return cand
+    lower_map = {str(col).lower(): col for col in df.columns}
+    for cand in candidates:
+        if cand is None:
+            continue
+        col = lower_map.get(str(cand).lower())
+        if col is not None:
             return col
     return None
 
+
 def main():
     np.random.seed(42)
-    expected_headers = [h.strip() for h in DATASET_HEADERS.split(",") if h.strip()]
-    df = read_csv_robust("Iris.csv", expected_headers)
-    id_hint = expected_headers[0] if expected_headers else None
-    label_hint = expected_headers[-1] if expected_headers else None
-    id_col = find_column(df.columns, id_hint)
+
+    expected_cols = [c.strip() for c in DATASET_HEADERS.split(",") if c.strip()]
+    df = read_csv_robust(DATASET_PATH, expected_cols)
+
+    id_candidate = expected_cols[0] if expected_cols else None
+    id_col = resolve_column(df, [id_candidate] if id_candidate else [])
     if id_col is not None:
         df.drop(columns=[id_col], inplace=True)
-    label_col = find_column(df.columns, label_hint)
-    if label_col is None:
-        label_col = df.columns[-1]
-    y_raw = df.pop(label_col)
+
+    target_candidate = expected_cols[-1] if expected_cols else None
+    target_col = resolve_column(df, [target_candidate] if target_candidate else [])
+    if target_col is None:
+        target_col = df.columns[-1]
+
     label_encoder = LabelEncoder()
-    y = label_encoder.fit_transform(y_raw)
-    X_values = df.to_numpy()
+    y = label_encoder.fit_transform(df[target_col])
+    df.drop(columns=[target_col], inplace=True)
+    X = df
+
+    stratify = y if len(np.unique(y)) > 1 else None
     X_train, X_test, y_train, y_test = train_test_split(
-        X_values, y, test_size=0.2, random_state=42, stratify=y
+        X, y, test_size=0.2, random_state=42, stratify=stratify
     )
-    pipeline = Pipeline([
-        ("scaler", StandardScaler(copy=False)),
-        ("model", LogisticRegression(max_iter=200, random_state=42))
-    ])
+
+    pipeline = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            ("model", LogisticRegression(max_iter=200, random_state=42)),
+        ]
+    )
+
     pipeline.fit(X_train, y_train)
     y_pred = pipeline.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
-    _ = classification_report(y_test, y_pred, output_dict=True)
-    _ = confusion_matrix(y_test, y_pred)
-    _ = cross_val_score(pipeline, X_values, y, cv=5, n_jobs=1).mean()
     print(f"ACCURACY={accuracy:.6f}")
+
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed plotting and extraneous logging to avoid unnecessary computation.
-# - Used in-place column removal and pop to minimize DataFrame copying.
-# - Converted features to a NumPy array once to reduce repeated pandas conversions.
-# - Enabled in-place scaling with StandardScaler(copy=False) to lower memory usage.
-# - Set fixed random seeds and deterministic parameters for reproducibility.
+# - Removed plotting and verbose reporting to avoid unnecessary computation and heavy dependencies.
+# - Eliminated unused cross-validation scoring to reduce redundant model training.
+# - Added robust CSV parsing with minimal retries and normalized headers to prevent misparsing.
+# - Used in-place column removal and reused the dataframe to reduce memory copies.
+# - Fixed random seeds and deterministic parameters to ensure reproducible results.

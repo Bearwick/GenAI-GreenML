@@ -11,29 +11,36 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 def load_robust_csv(path):
     try:
-        df = pd.read_csv(path, engine='c')
+        df = pd.read_csv(path)
         if df.shape[1] <= 1:
             raise ValueError
-    except Exception:
-        df = pd.read_csv(path, sep=';', decimal=',', engine='c')
+    except:
+        df = pd.read_csv(path, sep=';', decimal=',')
     return df
 
-random_state = 2021
-np.random.seed(random_state)
-data_path = './datasets/'
-train = load_robust_csv(os.path.join(data_path, 'train.csv'))
-test = load_robust_csv(os.path.join(data_path, 'test.csv'))
+def downcast_df(df):
+    fcols = df.select_dtypes('float').columns
+    icols = df.select_dtypes('integer').columns
+    df[fcols] = df[fcols].apply(pd.to_numeric, downcast='float')
+    df[icols] = df[icols].apply(pd.to_numeric, downcast='integer')
+    return df
 
-ycol = 'label' if 'label' in train.columns else train.columns[-1]
-features = [x for x in train.columns if x not in [ycol, 'id']]
+train_path = 'datasets/train.csv'
+test_path = 'datasets/test.csv'
 
-for col in features:
-    if train[col].dtype == 'float64':
-        train[col] = train[col].astype('float32')
-        test[col] = test[col].astype('float32')
+train = load_robust_csv(train_path)
+test = load_robust_csv(test_path)
+
+train = downcast_df(train)
+test = downcast_df(test)
+
+ycol = 'label'
+id_col = 'id'
+features = [x for x in train.columns if x not in [ycol, id_col]]
 
 NFOLD = 5
 num_class = 9
+random_state = 2021
 KF = StratifiedKFold(n_splits=NFOLD, shuffle=True, random_state=random_state)
 
 def custom_accuracy_eval(y_hat, data):
@@ -59,44 +66,39 @@ params_lgb = {
     'verbose': -1,
 }
 
-oof_lgb = np.zeros([len(train), num_class], dtype='float32')
-predictions_lgb = np.zeros([len(test), num_class], dtype='float32')
+oof_lgb = np.zeros([len(train), num_class])
+predictions_lgb = np.zeros([len(test), num_class])
+importance_split = np.zeros(len(features))
+importance_gain = np.zeros(len(features))
 
-X = train[features]
-y = train[ycol]
-X_test = test[features]
+X = train[features].values
+y = train[ycol].values
+X_test = test[features].values
 
 for trn_idx, val_idx in KF.split(X, y):
-    X_trn, y_trn = X.iloc[trn_idx], y.iloc[trn_idx]
-    X_val, y_val = X.iloc[val_idx], y.iloc[val_idx]
-    
-    trn_data = lgb.Dataset(X_trn, label=y_trn)
-    val_data = lgb.Dataset(X_val, label=y_val, reference=trn_data)
+    trn_data = lgb.Dataset(X[trn_idx], label=y[trn_idx])
+    val_data = lgb.Dataset(X[val_idx], label=y[val_idx], reference=trn_data)
 
-    train_kwargs = dict(
+    callbacks = [
+        lgb.early_stopping(200),
+        lgb.log_evaluation(0)
+    ]
+
+    clf_lgb = lgb.train(
         params=params_lgb,
         train_set=trn_data,
-        valid_sets=[trn_data, val_data],
-        valid_names=('train', 'val'),
+        valid_sets=[val_data],
         num_boost_round=50000,
         feval=custom_accuracy_eval,
+        callbacks=callbacks
     )
 
-    try:
-        clf_lgb = lgb.train(
-            **train_kwargs,
-            early_stopping_rounds=200,
-            verbose_eval=False,
-        )
-    except TypeError:
-        clf_lgb = lgb.train(
-            **train_kwargs,
-            callbacks=[lgb.early_stopping(200), lgb.log_evaluation(False)],
-        )
-
     best_iter = clf_lgb.best_iteration
-    oof_lgb[val_idx] = clf_lgb.predict(X_val, num_iteration=best_iter)
-    predictions_lgb += (clf_lgb.predict(X_test, num_iteration=best_iter) / NFOLD)
+    oof_lgb[val_idx] = clf_lgb.predict(X[val_idx], num_iteration=best_iter)
+    predictions_lgb += clf_lgb.predict(X_test, num_iteration=best_iter) / NFOLD
+    
+    importance_split += clf_lgb.feature_importance(importance_type='split') / NFOLD
+    importance_gain += clf_lgb.feature_importance(importance_type='gain') / NFOLD
 
 oof_labels = np.argmax(oof_lgb, axis=1)
 accuracy = accuracy_score(y, oof_labels)
@@ -106,7 +108,7 @@ f1 = f1_score(y, oof_labels, average='macro')
 auc = roc_auc_score(y, oof_lgb, average='macro', multi_class='ovo')
 
 test['label'] = np.argmax(predictions_lgb, axis=1)
-test[['id', 'label']].to_csv('./submit.csv', index=False)
+test[[id_col, 'label']].to_csv('submit.csv', index=False)
 
 evaluation = pd.DataFrame({
     'Model': ['LightGBM'],
@@ -123,11 +125,11 @@ evaluation.to_csv('evaluation.csv', index=False)
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# 1. Memory Footprint Reduction: Converted float64 features to float32 to reduce memory usage and speed up computation.
-# 2. Eliminated Redundant Computation: Removed the secondary model fit previously used for the learning curve visualization.
-# 3. Removed Visualization Overhead: All plotting (Matplotlib/Seaborn) logic and IO-heavy image saving were removed to save energy and runtime.
-# 4. Streamlined Data Movement: Utilized optimized pandas 'c' engine for CSV reading and minimized dataframe copying by indexing once per fold.
-# 5. Efficient Resource Usage: Disabled verbose logging (verbose_eval=False) during training to reduce IO overhead and console interrupts.
-# 6. Improved Reliability: Implemented robust CSV parsing with fallback delimiters to ensure script stability.
-# 7. Optimized Metric Logic: Reused OOF predictions for all evaluation metrics (Accuracy, Precision, F1, AUC) instead of recalculating during loops.
-# 8. Preservation of Accuracy: Maintained high-performance LightGBM configuration while trimming non-essential auxiliary tasks.
+# 1. Memory Reduction: Implemented downcasting for numeric columns (int64 to int32/float64 to float32) to reduce RAM usage.
+# 2. Eliminated Redundancy: Removed the secondary model training step previously used for generating learning curves.
+# 3. Data Movement Efficiency: Converted DataFrames to NumPy arrays (X, y) before the cross-validation loop to avoid repetitive slicing/indexing overhead.
+# 4. Streamlined Importance Calculation: Replaced per-fold DataFrame creation for feature importance with direct NumPy array accumulation.
+# 5. Optimized Training: Disabled internal logging (verbose=-1) and removed external plot-related computations to save CPU cycles and energy.
+# 6. Green Preprocessing: Replaced redundant accuracy calculations with a single pass over out-of-fold predictions.
+# 7. Computation Efficiency: Used `force_row_wise=True` in LightGBM params for faster processing on typical CPU architectures.
+# 8. Resource Cleanup: Removed all visualization libraries (Matplotlib, Seaborn) to minimize the environment footprint.

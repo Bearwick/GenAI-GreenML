@@ -5,92 +5,100 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-# Robust CSV loading
+# --- Robust CSV loading ---
+df = None
 try:
     df = pd.read_csv("Iris.csv")
-    if df.shape[1] < 2:
-        df = pd.read_csv("Iris.csv", sep=";", decimal=",")
+    if df.shape[1] < 3:
+        raise ValueError("Too few columns, retry with sep=';'")
 except Exception:
-    df = pd.read_csv("Iris.csv", sep=";", decimal=",")
+    try:
+        df = pd.read_csv("Iris.csv", sep=";", decimal=",")
+    except Exception as e:
+        raise RuntimeError(f"Failed to load CSV: {e}")
 
-# Normalize column names
-df.columns = df.columns.str.strip().str.replace(r"\s+", " ", regex=True)
-df = df.loc[:, ~df.columns.str.startswith("Unnamed")]
+# --- Column name normalization ---
+df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
+df = df.loc[:, ~df.columns.str.startswith('Unnamed')]
+
+# --- Identify target and features ---
+expected_target = 'Species'
+expected_features = ['SepalLengthCm', 'SepalWidthCm', 'PetalLengthCm', 'PetalWidthCm']
+expected_id = 'Id'
 
 # Drop Id column if present
-id_cols = [c for c in df.columns if c.lower() == "id"]
-if id_cols:
-    df.drop(columns=id_cols, inplace=True)
+if expected_id in df.columns:
+    df = df.drop(columns=[expected_id])
 
-# Identify target column
+# Determine target column
 target_col = None
-for c in df.columns:
-    if c.lower() == "species":
-        target_col = c
-        break
-
-if target_col is None:
-    object_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
-    if object_cols:
-        target_col = object_cols[-1]
-    else:
-        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-        if len(numeric_cols) >= 2:
-            target_col = numeric_cols[-1]
-        else:
-            target_col = df.columns[-1]
-
-# Encode target if categorical
-le = LabelEncoder()
-if df[target_col].dtype == object or df[target_col].dtype.name == "category":
-    df[target_col] = le.fit_transform(df[target_col].astype(str))
+if expected_target in df.columns:
+    target_col = expected_target
 else:
-    df[target_col] = pd.to_numeric(df[target_col], errors="coerce")
+    # Fallback: pick the first object/string column as target
+    obj_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
+    if obj_cols:
+        target_col = obj_cols[0]
+    else:
+        # Pick last column as target
+        target_col = df.columns[-1]
 
-# Prepare features
-feature_cols = [c for c in df.columns if c != target_col]
-for c in feature_cols:
-    df[c] = pd.to_numeric(df[c], errors="coerce")
+# Determine feature columns
+available_features = [c for c in expected_features if c in df.columns]
+if len(available_features) == 0:
+    # Fallback: use all numeric columns except target
+    available_features = [c for c in df.columns if c != target_col]
 
-# Drop rows with NaN/inf
-df.replace([np.inf, -np.inf], np.nan, inplace=True)
-df.dropna(subset=feature_cols + [target_col], inplace=True)
+# --- Coerce numeric features ---
+for col in available_features:
+    df[col] = pd.to_numeric(df[col], errors='coerce')
 
-assert df.shape[0] > 0, "Dataset empty after preprocessing"
+# Drop rows with NaN in features or target
+df = df.dropna(subset=available_features + [target_col])
 
-X = df[list(feature_cols)]
-y = df[target_col]
+# Remove infinite values in features
+feature_df = df[list(available_features)]
+mask_finite = np.isfinite(feature_df).all(axis=1)
+df = df.loc[mask_finite].reset_index(drop=True)
 
-n_classes = y.nunique()
-assert n_classes >= 2, "Target has fewer than 2 classes"
+assert len(df) > 0, "Dataset is empty after preprocessing"
 
-# Train/test split
+# --- Encode target ---
+le = LabelEncoder()
+y = le.fit_transform(df[target_col].astype(str))
+X = df[list(available_features)].values
+
+n_classes = len(np.unique(y))
+assert n_classes >= 2, "Need at least 2 classes for classification"
+
+# --- Train/test split ---
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-assert X_train.shape[0] > 0 and X_test.shape[0] > 0
+assert len(X_train) > 0 and len(X_test) > 0, "Train or test set is empty"
 
-# Lightweight pipeline: StandardScaler + LogisticRegression
+# --- Lightweight pipeline: StandardScaler + LogisticRegression ---
 pipeline = Pipeline([
-    ("scaler", StandardScaler()),
-    ("model", LogisticRegression(max_iter=200, solver="lbfgs", multi_class="auto", random_state=42))
+    ('scaler', StandardScaler()),
+    ('clf', LogisticRegression(
+        max_iter=200,
+        solver='lbfgs',
+        multi_class='multinomial',
+        random_state=42
+    ))
 ])
 
 pipeline.fit(X_train, y_train)
 y_pred = pipeline.predict(X_test)
-
 accuracy = accuracy_score(y_test, y_pred)
+
 print(f"ACCURACY={accuracy:.6f}")
 
-# OPTIMIZATION SUMMARY
-# 1. Replaced SVM with LogisticRegression: logistic regression is more energy-efficient
-#    and faster on small datasets, while still achieving high accuracy on Iris (~96-100%).
-# 2. Used lbfgs solver which is efficient for small multi-class problems.
-# 3. Removed matplotlib/seaborn visualization to avoid unnecessary computation and display overhead.
-# 4. Removed cross-validation from
+# --- OPTIMIZATION SUMMARY ---
+# 1. Logistic Regression chosen as the primary model

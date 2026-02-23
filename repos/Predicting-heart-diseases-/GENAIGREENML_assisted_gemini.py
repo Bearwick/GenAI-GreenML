@@ -2,8 +2,8 @@
 # LLM: gemini
 # Mode: assisted
 
-import numpy as np
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
@@ -12,36 +12,35 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 
-def load_data(file_path):
+def load_data(path):
     try:
-        data = pd.read_csv(file_path)
-        if data.shape[1] < 2:
+        df = pd.read_csv(path)
+        if df.shape[1] <= 1:
             raise ValueError
-        return data
-    except:
-        return pd.read_csv(file_path, sep=';', decimal=',')
+    except Exception:
+        df = pd.read_csv(path, sep=';', decimal=',')
+    return df
 
-df = load_data("heart/heart_dataset_.csv")
+path = "heart/heart_dataset_.csv"
+df = load_data(path)
 
-target_col = 'target' if 'target' in df.columns else df.columns[-1]
+target_col = [col for col in df.columns if col.lower() == 'target'][0]
 y = df[target_col].values
-X_raw = df.drop(columns=[target_col])
+X_raw = df.drop([target_col], axis=1)
 
-x_min = X_raw.min()
-x_max = X_raw.max()
-X = (X_raw - x_min) / (x_max - x_min)
+X = (X_raw - X_raw.min()) / (X_raw.max() - X_raw.min())
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
 
 model_accuracies = []
 
-lr = LogisticRegression(solver="lbfgs")
+lr = LogisticRegression(solver="lbfgs", max_iter=1000)
 lr.fit(X_train, y_train)
 model_accuracies.append(lr.score(X_test, y_test))
 
 best_knn_score = 0
-for k in range(1, 20):
-    knn = KNeighborsClassifier(n_neighbors=k)
+for i in range(1, 20):
+    knn = KNeighborsClassifier(n_neighbors=i)
     knn.fit(X_train, y_train)
     score = knn.score(X_test, y_test)
     if score > best_knn_score:
@@ -56,7 +55,7 @@ nb = GaussianNB()
 nb.fit(X_train, y_train)
 model_accuracies.append(nb.score(X_test, y_test))
 
-dtc = DecisionTreeClassifier()
+dtc = DecisionTreeClassifier(random_state=0)
 dtc.fit(X_train, y_train)
 model_accuracies.append(dtc.score(X_test, y_test))
 
@@ -68,11 +67,13 @@ accuracy = max(model_accuracies)
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# 1. Removed all visualization libraries (Seaborn, Matplotlib) and plotting code to eliminate graphical processing overhead.
-# 2. Removed unused dependencies including TensorFlow, pylab, and os to reduce memory footprint and startup time.
-# 3. Eliminated redundant data transpositions (.T) which previously created unnecessary memory copies and CPU cycles.
-# 4. Streamlined preprocessing using vectorized pandas operations for min-max scaling instead of iterative or complex structures.
-# 5. Replaced redundant predict calls and confusion matrix generation with direct model scoring to save computation.
-# 6. Implemented robust CSV parsing with a fallback mechanism to handle different delimiters and decimal formats automatically.
-# 7. Removed all logging, original comments, and decorative print statements to minimize I/O overhead.
-# 8. Preserved the original evaluation intent by calculating the best performing model score from the original algorithm suite.
+# 1. Removed heavy and unused dependencies: seaborn, matplotlib, tensorflow, and os.
+# 2. Eliminated all visualization and plotting code to reduce CPU and memory overhead.
+# 3. Replaced redundant data transpositions (.T) with direct matrix operations.
+# 4. Streamlined preprocessing by removing intermediate dataframe copies.
+# 5. Implemented robust CSV parsing with a fallback mechanism for different delimiters.
+# 6. Optimized memory footprint by avoiding storage of multiple confusion matrices and large figure objects.
+# 7. Removed all print/logging statements within the training loop to reduce I/O overhead.
+# 8. Set fixed random seeds (random_state) to ensure deterministic results and reproducibility.
+# 9. Simplified scaling using vectorized pandas operations instead of manual loops.
+# 10. Consolidated model evaluation logic to focus on extracting the primary performance metric.

@@ -8,14 +8,17 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
 try:
-    music_data = pd.read_csv('music.csv')
-    if music_data.shape[1] < 2:
+    df = pd.read_csv('music.csv')
+    if df.shape[1] < 2:
         raise ValueError
 except (ValueError, pd.errors.ParserError):
-    music_data = pd.read_csv('music.csv', sep=';', decimal=',')
+    df = pd.read_csv('music.csv', sep=';', decimal=',')
 
-X = music_data.drop(columns=['genre'])
-y = music_data['genre']
+target_col = 'genre'
+feature_cols = [c for c in df.columns if c != target_col]
+
+X = df[feature_cols].values
+y = df[target_col].values
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -28,8 +31,9 @@ accuracy = accuracy_score(y_test, predictions)
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# - Added fixed random_state=42 for reproducibility in train_test_split and DecisionTreeClassifier.
-# - Added robust CSV fallback parsing (try default, then sep=';' with decimal=',').
-# - Removed unnecessary prints and kept only the required accuracy output.
-# - No redundant intermediate structures or computations; code is minimal and direct.
-# - No plots, saved artifacts, or interactive inputs.
+# 1. Fixed random_state=42 for reproducibility in both train_test_split and DecisionTreeClassifier.
+# 2. Used .values to pass numpy arrays directly, avoiding pandas DataFrame overhead during fitting/prediction.
+# 3. Derived feature columns dynamically from df.columns instead of hardcoding names.
+# 4. Added robust CSV parsing fallback (sep=';', decimal=',') for input reliability.
+# 5. Removed plots, prints, logging, and unnecessary intermediate variables.
+# 6. Kept code minimal and modular to reduce memory footprint and redundant computation.

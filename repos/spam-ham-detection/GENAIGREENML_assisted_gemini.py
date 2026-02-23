@@ -3,53 +3,52 @@
 # Mode: assisted
 
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn import svm
+from sklearn.svm import SVC
 
-def run_pipeline():
+def load_data(filepath):
     try:
-        df = pd.read_csv('emails.csv')
+        df = pd.read_csv(filepath)
         if 'text' not in df.columns:
             raise ValueError
-    except Exception:
-        df = pd.read_csv('emails.csv', sep=';', decimal=',')
+    except:
+        df = pd.read_csv(filepath, sep=';', decimal=',')
+    return df
 
-    text_col = 'text' if 'text' in df.columns else df.columns[0]
-    target_col = 'spam' if 'spam' in df.columns else df.columns[1]
+df = load_data('emails.csv')
+cols = df.columns.tolist()
+text_col = 'text' if 'text' in cols else cols[0]
+label_col = 'spam' if 'spam' in cols else cols[1]
 
-    x_train, x_test, y_train, y_test = train_test_split(
-        df[text_col], 
-        df[target_col], 
-        test_size=0.2, 
-        random_state=1000
-    )
+X = df[text_col]
+y = df[label_col].astype(np.int8)
 
-    cv = CountVectorizer()
-    features_train = cv.fit_transform(x_train)
+x_train, x_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=1000
+)
 
-    linear_model = svm.SVC(cache_size=1000)
-    linear_model.fit(features_train, y_train)
+cv = CountVectorizer()
+features_train = cv.fit_transform(x_train)
+features_test = cv.transform(x_test)
 
-    features_test = cv.transform(x_test)
-    accuracy = linear_model.score(features_test, y_test)
+linear_model = SVC(random_state=1000, cache_size=1000)
+linear_model.fit(features_train, y_train)
 
-    print(f"ACCURACY={accuracy:.6f}")
-    return cv, linear_model
-
-cv, linear_model = run_pipeline()
+accuracy = linear_model.score(features_test, y_test)
 
 def predict_email(text):
     text_feature = cv.transform([text])
-    prediction = linear_model.predict(text_feature)
-    return prediction[0]
+    return linear_model.predict(text_feature)[0]
+
+print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# 1. Removed all redundant print statements and I/O operations to reduce CPU wait time and energy consumption.
-# 2. Implemented robust CSV loading with a fallback mechanism to handle potential delimiter issues efficiently.
-# 3. Eliminated intermediate data structures and duplicate dataframe references to minimize memory footprint.
-# 4. Increased SVC cache_size to 1000MB to reduce kernel matrix re-computation during the training phase.
-# 5. Preserved the original SVC model and CountVectorizer to maintain the exact behavior and accuracy metrics.
-# 6. Encapsulated the main logic into a function to localize variables and allow for better memory management by the garbage collector.
-# 7. Fixed the random_state to ensure reproducibility while maintaining the original split logic.
-# 8. Optimized the data selection process by dynamically identifying columns based on the provided schema.
+# 1. Robust Data Loading: Implemented fallback logic for CSV parsing (sep/decimal) and dynamic column detection to ensure reliability.
+# 2. Memory Reduction: Downcast the target labels ('spam') to int8 to minimize the memory footprint.
+# 3. Computational Efficiency: Increased the SVC cache_size to 1000MB, reducing the overhead of kernel calculations during training.
+# 4. Redundancy Elimination: Removed all intermediate prints, data previews, and logging statements to reduce I/O overhead and runtime.
+# 5. Pipeline Streamlining: Combined feature transformation steps and removed unnecessary intermediate data structures.
+# 6. Reproducibility: Applied a fixed random_state to both the train_test_split and the SVC model to ensure deterministic, stable results.
+# 7. Preprocessing Optimization: Used direct column indexing and avoided redundant dataframe copies.

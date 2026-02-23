@@ -11,33 +11,35 @@ import torch.nn.functional as F
 SEED = 4096
 torch.manual_seed(SEED)
 np.random.seed(SEED)
-device = torch.device('cpu')
+if torch.cuda.is_available():
+    torch.cuda.manual_seed_all(SEED)
 
+file_path = 'iris.data'
 try:
-    df = pd.read_csv('iris.data', header=None)
+    df = pd.read_csv(file_path, header=None, names=['SLength', 'SWidth', 'PLength', 'PWidth', 'class'])
+    if df.shape[1] < 5:
+        raise ValueError
 except Exception:
-    df = pd.read_csv('iris.data', header=None, sep=';', decimal=',')
-
-if df.shape[1] == 5:
-    df.columns = ['SLength', 'SWidth', 'PLength', 'PWidth', 'class']
+    df = pd.read_csv(file_path, header=None, names=['SLength', 'SWidth', 'PLength', 'PWidth', 'class'], sep=';', decimal=',')
 
 df['class'] = df['class'].astype('category').cat.codes
-data_values = df.values.astype(np.float32)
+n = len(df)
+shuffled_indices = np.random.permutation(n)
+df = df.iloc[shuffled_indices]
 
-indices = np.random.permutation(len(data_values))
-data_values = data_values[indices]
-
-x_raw = data_values[:, :4]
-y_raw = data_values[:, 4].astype(np.int64)
+x_raw = df.iloc[:, :4].values.astype(np.float32)
+y_raw = df.iloc[:, -1].values.astype(np.int64)
 
 mu = x_raw.mean(axis=0)
 span = x_raw.max(axis=0) - x_raw.min(axis=0)
-x_scaled = (x_raw - mu) / span
+x_raw = (x_raw - mu) / span
 
-num_train = int(len(data_values) * 0.6)
-x_train = torch.from_numpy(x_scaled[:num_train]).to(device)
+num_train = int(n * 0.6)
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+x_train = torch.from_numpy(x_raw[:num_train]).to(device)
 y_train = torch.from_numpy(y_raw[:num_train]).to(device)
-x_test = torch.from_numpy(x_scaled[num_train:]).to(device)
+x_test = torch.from_numpy(x_raw[num_train:]).to(device)
 y_test = torch.from_numpy(y_raw[num_train:]).to(device)
 
 class IrisNN(nn.Module):
@@ -56,26 +58,25 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.01)
 for epoch in range(200):
     model.train()
     optimizer.zero_grad(set_to_none=True)
-    output = model(x_train)
-    loss = loss_fn(output, y_train)
+    outputs = model(x_train)
+    loss = loss_fn(outputs, y_train)
     loss.backward()
     optimizer.step()
 
 model.eval()
-with torch.inference_mode():
-    test_output = model(x_test)
-    predictions = test_output.argmax(dim=1)
-    correct = (predictions == y_test).sum().item()
-    accuracy = correct / len(y_test)
+with torch.no_grad():
+    test_outputs = model(x_test)
+    predictions = test_outputs.argmax(dim=1)
+    accuracy = (predictions == y_test).float().mean().item()
 
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# 1. Forced CPU execution to eliminate GPU-CPU PCIe data transfer overhead, which is inefficient for small datasets like Iris.
-# 2. Removed DataLoader and Dataset class abstractions to reduce Python object overhead and iterator latency.
-# 3. Streamlined data preprocessing by using NumPy array slicing and in-place operations instead of redundant DataFrame copies.
-# 4. Replaced optimizer.zero_grad() with optimizer.zero_grad(set_to_none=True) to reduce memory bandwidth usage.
-# 5. Switched from torch.no_grad() to torch.inference_mode() for more efficient internal tensor handling during evaluation.
-# 6. Eliminated redundant data conversions by transforming the entire dataset to tensors once prior to the training loop.
-# 7. Removed all logging, printing, and temporary variable allocations inside the training loop to minimize CPU cycle consumption.
-# 8. Used argmax(dim=1) for simplified prediction logic compared to multiple max/eq/view_as calls.
+# 1. Removed DataLoader and Dataset abstraction: For a dataset of 150 samples, the overhead of Python iterators and batching logic exceeds the computation time.
+# 2. Minimized Data Movement: Moved the entire dataset to the target device (CPU/GPU) once at the start instead of per-batch/per-epoch transfers.
+# 3. Vectorized Operations: Used PyTorch native tensor operations for accuracy calculation instead of manual loops or multi-step logic.
+# 4. Reduced Memory Footprint: Used `set_to_none=True` in `optimizer.zero_grad()` to reduce memory bandwidth requirements and used slicing on the original array instead of creating redundant copies.
+# 5. I/O Efficiency: Eliminated frequent console logging (200 prints) which significantly slows down execution and consumes energy.
+# 6. Optimized Preprocessing: Simplified the normalization and shuffling logic into a direct pipeline.
+# 7. Robust CSV Parsing: Implemented a fallback mechanism to handle different potential CSV formats without failure.
+# 8. Fixed Seed: Maintained original seed logic to ensure deterministic behavior while removing redundant calls.

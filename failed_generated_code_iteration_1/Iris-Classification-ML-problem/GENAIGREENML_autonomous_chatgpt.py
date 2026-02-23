@@ -4,6 +4,7 @@
 
 import os
 import re
+import glob
 import numpy as np
 import pandas as pd
 
@@ -12,301 +13,306 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
-from sklearn.metrics import accuracy_score
 from sklearn.linear_model import LogisticRegression, Ridge
+from sklearn.metrics import accuracy_score
 
 
-SEED = 4096
-np.random.seed(SEED)
-
-
-def _normalize_columns(cols):
-    out = []
-    for c in cols:
-        c2 = "" if c is None else str(c)
+def _normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    cols = []
+    for c in df.columns:
+        c2 = str(c)
         c2 = c2.strip()
         c2 = re.sub(r"\s+", " ", c2)
-        out.append(c2)
-    return out
-
-
-def _drop_unnamed(df):
-    drop_cols = []
-    for c in df.columns:
-        if isinstance(c, str) and re.match(r"^Unnamed:\s*\d+$", c):
-            drop_cols.append(c)
-        if c == "":
-            drop_cols.append(c)
+        cols.append(c2)
+    df.columns = cols
+    drop_cols = [c for c in df.columns if re.match(r"^Unnamed:\s*\d+$", c)]
     if drop_cols:
-        df = df.drop(columns=list(dict.fromkeys(drop_cols)), errors="ignore")
+        df = df.drop(columns=drop_cols, errors="ignore")
     return df
 
 
-def _read_csv_robust(path):
-    last_err = None
-    for kwargs in ({}, {"sep": ";", "decimal": ","}):
-        try:
-            df = pd.read_csv(path, **kwargs)
-            if df is None or df.shape[0] == 0:
-                continue
-            if df.shape[1] == 1:
-                continue
-            return df
-        except Exception as e:
-            last_err = e
-            continue
-    raise RuntimeError(f"Could not parse CSV: {path}. Last error: {last_err}")
-
-
-def _read_iris_data_fallback(path):
-    # Handles classic iris.data (no header) robustly while keeping the main CSV loader generic.
-    df = None
+def _try_read_csv(path: str) -> pd.DataFrame:
+    # Attempt 1: default parser
     try:
-        df = pd.read_csv(path, header=None)
+        df1 = pd.read_csv(path)
     except Exception:
-        df = None
+        df1 = None
 
-    if df is None or df.shape[0] == 0:
-        raise RuntimeError(f"Dataset is empty or unreadable: {path}")
+    # Attempt 2: common EU formatting
+    try:
+        df2 = pd.read_csv(path, sep=";", decimal=",")
+    except Exception:
+        df2 = None
 
-    if df.shape[1] == 1:
-        # Try delimiter variants
-        try:
-            df2 = pd.read_csv(path, header=None, sep=";")
-            if df2.shape[1] > 1:
-                df = df2
-        except Exception:
-            pass
+    candidates = [d for d in [df1, df2] if isinstance(d, pd.DataFrame)]
+    if not candidates:
+        raise RuntimeError("Failed to read CSV with available fallbacks.")
 
-    if df.shape[1] >= 5:
-        df = df.iloc[:, :5].copy()
-        df.columns = ["SLength", "SWidth", "PLength", "PWidth", "class"]
-    else:
-        # Create generic names if unexpected shape
-        df = df.copy()
-        df.columns = [f"col_{i}" for i in range(df.shape[1])]
+    # Heuristic: pick the parse with more columns and more non-empty cells
+    def score(d: pd.DataFrame) -> tuple:
+        if d is None or d.empty:
+            return (-1, -1, -1)
+        non_empty = int(d.notna().sum().sum())
+        return (int(d.shape[1]), non_empty, int(d.shape[0]))
+
+    df = max(candidates, key=score)
     return df
 
 
-def _choose_target(df):
+def _discover_dataset_path() -> str:
+    # Prefer common iris dataset filenames, else any csv in repo.
+    preferred = [
+        "iris.csv",
+        "Iris.csv",
+        "IRIS.csv",
+        "data/iris.csv",
+        "data/Iris.csv",
+        "dataset/iris.csv",
+        "datasets/iris.csv",
+        "input/iris.csv",
+    ]
+    for p in preferred:
+        if os.path.exists(p) and os.path.isfile(p):
+            return p
+
+    csvs = []
+    for pattern in ["*.csv", "**/*.csv"]:
+        csvs.extend(glob.glob(pattern, recursive=True))
+    # Exclude obvious non-dataset files
+    csvs = [p for p in csvs if os.path.isfile(p) and "requirements" not in os.path.basename(p).lower()]
+    if not csvs:
+        raise FileNotFoundError("No CSV dataset found in the project directory.")
+    # Choose smallest reasonable CSV first for CPU/IO efficiency
+    csvs_sorted = sorted(csvs, key=lambda p: (os.path.getsize(p), len(p)))
+    return csvs_sorted[0]
+
+
+def _choose_target_and_features(df: pd.DataFrame):
+    # Prefer typical iris target names; otherwise pick a non-constant column.
     cols = list(df.columns)
-    if len(cols) == 0:
-        return None
+    lower_map = {c: c.lower() for c in cols}
 
-    preferred = [c for c in cols if str(c).strip().lower() in ("target", "label", "class", "y")]
-    for c in preferred:
-        if c in df.columns:
-            nun = df[c].nunique(dropna=True)
+    preferred_targets = ["species", "target", "label", "class", "y"]
+    for pt in preferred_targets:
+        for c in cols:
+            if lower_map[c] == pt:
+                target = c
+                features = [x for x in cols if x != target]
+                return target, features
+
+    # If there are 5 columns, iris often has 4 features + 1 label (string)
+    if df.shape[1] >= 2:
+        # Prefer last column if it looks categorical-like (object or few uniques)
+        last = cols[-1]
+        nun = df[last].nunique(dropna=True)
+        if df[last].dtype == "object" or nun <= max(20, int(0.2 * len(df))):
             if nun >= 2:
-                return c
+                target = last
+                features = [x for x in cols if x != target]
+                return target, features
 
-    # Prefer low-cardinality non-numeric columns for classification if available
-    for c in cols[::-1]:
-        if c not in df.columns:
-            continue
-        nun = df[c].nunique(dropna=True)
-        if nun >= 2 and nun <= max(20, int(0.2 * max(1, len(df)))):
-            return c
+    # Otherwise choose a column that varies and is not an obvious ID
+    def is_id_like(s: pd.Series, name: str) -> bool:
+        name_l = name.lower()
+        if name_l in ("id", "index", "rowid"):
+            return True
+        if "id" in name_l and len(name_l) <= 6:
+            return True
+        # If integer-like and all unique, likely ID
+        if pd.api.types.is_integer_dtype(s) and s.nunique(dropna=True) == len(s):
+            return True
+        return False
 
-    # Else pick a non-constant numeric column
-    numeric_cols = []
-    for c in cols[::-1]:
-        s = pd.to_numeric(df[c], errors="coerce")
+    candidates = []
+    for c in cols:
+        s = df[c]
         nun = s.nunique(dropna=True)
-        if nun >= 2:
-            numeric_cols.append(c)
-    if numeric_cols:
-        return numeric_cols[0]
+        if nun <= 1:
+            continue
+        if is_id_like(s, c):
+            continue
+        candidates.append((nun, c))
+    if not candidates:
+        # fallback: just pick last column
+        target = cols[-1]
+        features = [x for x in cols if x != target]
+        return target, features
 
-    # Else last column
-    return cols[-1]
-
-
-def _is_classification_target(y):
-    if y is None or len(y) == 0:
-        return False
-    if pd.api.types.is_numeric_dtype(y):
-        y_nonan = pd.Series(y).dropna()
-        if y_nonan.empty:
-            return False
-        nun = y_nonan.nunique()
-        if nun < 2:
-            return False
-        # Heuristic: small number of unique integer-like classes => classification
-        if nun <= 20:
-            y_vals = y_nonan.values
-            if np.all(np.isfinite(y_vals)) and np.all(np.abs(y_vals - np.round(y_vals)) < 1e-9):
-                return True
-        return False
-    # object/category/bool => classification if >=2 classes
-    nun = pd.Series(y).nunique(dropna=True)
-    return nun >= 2
+    # Prefer a categorical-ish target (few uniques) else numeric target (many uniques)
+    candidates_sorted = sorted(candidates, key=lambda t: t[0])
+    target = candidates_sorted[0][1]  # fewest uniques among non-constant non-ID
+    features = [x for x in cols if x != target]
+    if not features:
+        # if only one column, create empty features (will be handled)
+        features = []
+    return target, features
 
 
-def _bounded_regression_accuracy(y_true, y_pred):
+def _coerce_numeric_safely(df: pd.DataFrame, numeric_cols):
+    df2 = df.copy()
+    for c in numeric_cols:
+        df2[c] = pd.to_numeric(df2[c], errors="coerce")
+    return df2
+
+
+def _bounded_regression_score(y_true, y_pred) -> float:
+    # Stable proxy in [0,1]: 1 / (1 + MAPE_clipped), with epsilon for zeros.
     y_true = np.asarray(y_true, dtype=float)
     y_pred = np.asarray(y_pred, dtype=float)
-    mask = np.isfinite(y_true) & np.isfinite(y_pred)
-    if mask.sum() < 2:
-        return 0.0
-    yt = y_true[mask]
-    yp = y_pred[mask]
-    denom = np.var(yt)
-    if denom <= 0:
-        return 0.0
-    r2 = 1.0 - (np.mean((yt - yp) ** 2) / denom)
-    acc = float(np.clip((r2 + 1.0) / 2.0, 0.0, 1.0))
-    return acc
+    eps = 1e-9
+    denom = np.maximum(np.abs(y_true), eps)
+    ape = np.abs(y_true - y_pred) / denom
+    ape = np.clip(ape, 0.0, 1e6)
+    mape = float(np.nanmean(ape)) if ape.size else 1.0
+    score = 1.0 / (1.0 + mape)
+    if not np.isfinite(score):
+        score = 0.0
+    return float(np.clip(score, 0.0, 1.0))
 
 
-# ---- Load dataset ----
-candidate_paths = ["iris.data", "iris.csv", "data.csv", "dataset.csv", "train.csv"]
-file_path = None
-for p in candidate_paths:
-    if os.path.exists(p):
-        file_path = p
-        break
-if file_path is None:
-    file_path = "iris.data"
+def main():
+    dataset_path = _discover_dataset_path()
+    df = _try_read_csv(dataset_path)
+    df = _normalize_columns(df)
 
-if os.path.basename(file_path).lower() == "iris.data":
-    df = _read_iris_data_fallback(file_path)
-else:
-    df = _read_csv_robust(file_path)
+    # Drop fully empty rows/cols early
+    df = df.dropna(axis=0, how="all").dropna(axis=1, how="all")
+    assert df is not None and isinstance(df, pd.DataFrame)
+    assert not df.empty
 
-df.columns = _normalize_columns(df.columns)
-df = _drop_unnamed(df)
+    target_col, feature_cols = _choose_target_and_features(df)
 
-# Remove fully empty rows
-df = df.dropna(how="all").reset_index(drop=True)
-assert df.shape[0] > 0 and df.shape[1] > 0
+    # Ensure we have some features; if none, create a constant feature column.
+    if not feature_cols:
+        df["_const_feature_"] = 1.0
+        feature_cols = ["_const_feature_"]
 
-# Choose target and features defensively
-target_col = _choose_target(df)
-if target_col is None or target_col not in df.columns:
-    # Fallback to last column
-    target_col = df.columns[-1]
+    X = df[feature_cols].copy()
+    y = df[target_col].copy()
 
-X = df.drop(columns=[target_col], errors="ignore")
-y = df[target_col].copy()
-
-# If no features left, create a constant feature (keeps pipeline valid)
-if X.shape[1] == 0:
-    X = pd.DataFrame({"const": np.ones(len(df), dtype=float)})
-
-# Identify column types robustly
-numeric_features = []
-categorical_features = []
-for c in X.columns:
-    # Determine numeric-ness by coercion ratio
-    s = pd.to_numeric(X[c], errors="coerce")
-    non_na = X[c].notna().sum()
-    num_non_na = s.notna().sum()
-    if non_na > 0 and (num_non_na / non_na) >= 0.8:
-        numeric_features.append(c)
-        X[c] = s  # store coerced numeric to avoid object medians
-    else:
-        categorical_features.append(c)
-
-# Build preprocessing
-numeric_transformer = Pipeline(
-    steps=[
-        ("imputer", SimpleImputer(strategy="median")),
-        ("scaler", StandardScaler(with_mean=True, with_std=True)),
-    ]
-)
-
-categorical_transformer = Pipeline(
-    steps=[
-        ("imputer", SimpleImputer(strategy="most_frequent")),
-        ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=True)),
-    ]
-)
-
-preprocessor = ColumnTransformer(
-    transformers=[
-        ("num", numeric_transformer, numeric_features),
-        ("cat", categorical_transformer, categorical_features),
-    ],
-    remainder="drop",
-    sparse_threshold=0.3,
-)
-
-# Decide task
-task_is_classification = _is_classification_target(y)
-
-# Defensive label handling
-if task_is_classification:
-    y_series = pd.Series(y)
-    if not pd.api.types.is_numeric_dtype(y_series):
-        y_series = y_series.astype("category").cat.codes
-    else:
-        y_series = pd.to_numeric(y_series, errors="coerce")
-        # If integer-like, keep as int codes; else treat as regression
-        y_nonan = y_series.dropna()
-        if y_nonan.empty:
-            task_is_classification = False
+    # Identify column types robustly (after copying).
+    # Convert obvious numeric-looking objects to numeric for numeric pipeline.
+    numeric_candidate_cols = []
+    for c in X.columns:
+        if pd.api.types.is_numeric_dtype(X[c]):
+            numeric_candidate_cols.append(c)
         else:
-            if not (np.all(np.abs(y_nonan.values - np.round(y_nonan.values)) < 1e-9) and y_nonan.nunique() >= 2):
-                task_is_classification = False
-    y = y_series
-else:
-    y = pd.to_numeric(pd.Series(y), errors="coerce")
+            # Try coercion; if enough numeric values, treat as numeric
+            coerced = pd.to_numeric(X[c], errors="coerce")
+            non_na = int(coerced.notna().sum())
+            if non_na >= max(3, int(0.6 * len(coerced))):
+                X[c] = coerced
+                numeric_candidate_cols.append(c)
 
-# Remove rows with missing target
-mask = pd.Series(y).notna()
-X = X.loc[mask].reset_index(drop=True)
-y = pd.Series(y).loc[mask].reset_index(drop=True)
-assert len(X) > 0 and len(y) > 0
+    numeric_features = [c for c in X.columns if pd.api.types.is_numeric_dtype(X[c])]
+    categorical_features = [c for c in X.columns if c not in numeric_features]
 
-# If classification but <2 classes after cleaning, fallback to regression
-if task_is_classification:
-    if pd.Series(y).nunique(dropna=True) < 2:
-        task_is_classification = False
-        y = pd.to_numeric(pd.Series(y), errors="coerce").fillna(0.0)
+    # Coerce numeric safely (defensive)
+    X = _coerce_numeric_safely(X, numeric_features)
 
-# Split (stratify if classification and feasible)
-stratify = None
-if task_is_classification:
-    if pd.Series(y).nunique(dropna=True) >= 2 and len(y) >= 10:
-        stratify = y
+    # Determine if classification task is viable
+    # Prefer classification if y is non-numeric or has small number of classes.
+    y_is_numeric = pd.api.types.is_numeric_dtype(y)
+    if not y_is_numeric:
+        y_classes = y.astype("object").nunique(dropna=True)
+    else:
+        y_classes = y.nunique(dropna=True)
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y,
-    test_size=0.4,
-    random_state=SEED,
-    stratify=stratify,
-)
+    classification_viable = (y_classes >= 2) and ((not y_is_numeric) or (y_classes <= 20))
 
-assert len(X_train) > 0 and len(X_test) > 0
-
-if task_is_classification:
-    # Logistic regression is a strong, lightweight baseline for small datasets
-    model = LogisticRegression(
-        max_iter=200,
-        solver="lbfgs",
-        n_jobs=1,
-        multi_class="auto",
+    # Prepare preprocessors
+    numeric_transformer = Pipeline(
+        steps=[
+            ("imputer", SimpleImputer(strategy="median")),
+            ("scaler", StandardScaler(with_mean=True, with_std=True)),
+        ]
     )
-    clf = Pipeline(steps=[("preprocess", preprocessor), ("model", model)])
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
-    accuracy = float(accuracy_score(y_test, y_pred))
-else:
-    # Ridge regression is CPU-friendly and stable under collinearity
-    reg = Ridge(alpha=1.0, random_state=SEED)
-    rgs = Pipeline(steps=[("preprocess", preprocessor), ("model", reg)])
-    rgs.fit(X_train, y_train)
-    y_pred = rgs.predict(X_test)
-    accuracy = _bounded_regression_accuracy(y_test.values, y_pred)
 
-print(f"ACCURACY={accuracy:.6f}")
+    categorical_transformer = Pipeline(
+        steps=[
+            ("imputer", SimpleImputer(strategy="most_frequent")),
+            ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
+        ]
+    )
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("num", numeric_transformer, numeric_features),
+            ("cat", categorical_transformer, categorical_features),
+        ],
+        remainder="drop",
+        sparse_threshold=0.0,
+    )
+
+    # Split
+    # Use stratify only when classification with >=2 classes and not too many missing labels.
+    y_for_split = y
+    if classification_viable:
+        y_for_split = y.astype("object")
+        # Remove rows with missing target for classification to avoid split errors
+        mask = y_for_split.notna()
+        X2, y2 = X.loc[mask].copy(), y_for_split.loc[mask].copy()
+        assert len(X2) > 1
+        n_classes = int(y2.nunique(dropna=True))
+        if n_classes < 2:
+            classification_viable = False
+            X2, y2 = X.copy(), y.copy()
+    else:
+        # Regression: drop missing targets
+        y2 = pd.to_numeric(y, errors="coerce")
+        mask = y2.notna()
+        X2, y2 = X.loc[mask].copy(), y2.loc[mask].copy()
+        if len(X2) <= 1:
+            # Fallback: keep all and fill y with zeros (trivial baseline path)
+            X2, y2 = X.copy(), pd.Series(np.zeros(len(X), dtype=float), index=X.index)
+
+    assert len(X2) > 1
+
+    stratify = None
+    if classification_viable:
+        # Only stratify if every class has at least 2 samples
+        vc = y2.value_counts(dropna=True)
+        if (vc.min() >= 2) and (len(vc) >= 2):
+            stratify = y2
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X2,
+        y2,
+        test_size=0.2,
+        random_state=42,
+        stratify=stratify,
+    )
+    assert len(X_train) > 0 and len(X_test) > 0
+
+    if classification_viable:
+        # Logistic regression is CPU-friendly and strong for small tabular tasks.
+        clf = LogisticRegression(
+            solver="lbfgs",
+            max_iter=200,
+            n_jobs=1,
+        )
+        model = Pipeline(steps=[("preprocess", preprocessor), ("model", clf)])
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        accuracy = float(accuracy_score(y_test, y_pred))
+    else:
+        # Regression fallback with lightweight linear model; print bounded proxy as "accuracy".
+        reg = Ridge(alpha=1.0, random_state=42)
+        model = Pipeline(steps=[("preprocess", preprocessor), ("model", reg)])
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        accuracy = _bounded_regression_score(y_test, y_pred)
+
+    print(f"ACCURACY={accuracy:.6f}")
+
+
+if __name__ == "__main__":
+    main()
 
 # Optimization Summary
-# - Avoided deep learning (torch) and used lightweight sklearn linear models (LogisticRegression/Ridge) for CPU efficiency.
-# - Used a single Pipeline + ColumnTransformer to prevent redundant preprocessing and ensure reproducibility.
-# - Robust CSV ingestion with delimiter/decimal fallback; special-case iris.data (headerless) to run end-to-end.
-# - Defensive schema handling: normalized column names, dropped Unnamed columns, auto-selected target, and handled missing/constant targets.
-# - Numeric coercion (errors='coerce') before imputation/scaling prevents costly dtype issues and median on object dtype.
-# - For regression fallback, reported a bounded accuracy proxy: ACCURACY = clip((R2 + 1)/2, 0, 1) to keep output stable in [0,1].
+# - Uses lightweight, CPU-friendly models: LogisticRegression for classification; Ridge for regression fallback.
+# - Robust CSV parsing with a low-cost two-pass fallback (default, then sep=';' and decimal=',') to avoid manual edits.
+# - Defensive schema handling: normalizes column names, drops 'Unnamed' columns, selects target/features without hard-coded headers.
+# - Minimal preprocessing via ColumnTransformer: median imputation + standard scaling for numeric, most-frequent + one-hot for categoricals.
+# - Avoids heavy feature engineering and deep learning; keeps n_jobs=1 for predictable CPU use and reduced contention/energy.
+# - Regression fallback reports a bounded [0,1] proxy score: 1/(1+MAPE) to maintain a stable "ACCURACY" output format.

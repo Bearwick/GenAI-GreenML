@@ -6,56 +6,31 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-np.random.seed(42)
+DATASET_PATH = "data.csv"
+DATASET_HEADERS = "id,diagnosis,radius_mean,texture_mean,perimeter_mean,area_mean,smoothness_mean,compactness_mean,concavity_mean,concave_points_mean,symmetry_mean,fractal_dimension_mean,radius_se,texture_se,perimeter_se,area_se,smoothness_se,compactness_se,concavity_se,concave_points_se,symmetry_se,fractal_dimension_se,radius_worst,texture_worst,perimeter_worst,area_worst,smoothness_worst,compactness_worst,concavity_worst,concave_points_worst,symmetry_worst,fractal_dimension_worst"
 
-DATASET_HEADERS = (
-    "id,diagnosis,radius_mean,texture_mean,perimeter_mean,area_mean,"
-    "smoothness_mean,compactness_mean,concavity_mean,concave_points_mean,"
-    "symmetry_mean,fractal_dimension_mean,radius_se,texture_se,perimeter_se,"
-    "area_se,smoothness_se,compactness_se,concavity_se,concave_points_se,"
-    "symmetry_se,fractal_dimension_se,radius_worst,texture_worst,perimeter_worst,"
-    "area_worst,smoothness_worst,compactness_worst,concavity_worst,"
-    "concave_points_worst,symmetry_worst,fractal_dimension_worst"
-)
-
-EXPECTED_HEADERS = [h.strip() for h in DATASET_HEADERS.split(",")]
-EXPECTED_HEADERS_N = [h.lower() for h in EXPECTED_HEADERS]
-
-def looks_correct(df, expected_headers):
-    if df.shape[1] == 1:
-        return False
-    cols_lower = [c.strip().lower() for c in df.columns]
-    expected_lower = [h.lower() for h in expected_headers]
-    match_count = sum(1 for h in expected_lower if h in cols_lower)
-    if match_count >= len(expected_headers) * 0.5:
-        return True
-    return len(expected_headers) - 1 <= df.shape[1] <= len(expected_headers) + 1
-
-def load_csv(path, expected_headers):
+def read_dataset(path, headers_str):
+    expected_headers = [h.strip() for h in headers_str.split(",") if h.strip()]
     df = pd.read_csv(path)
-    if not looks_correct(df, expected_headers):
-        df_alt = pd.read_csv(path, sep=";", decimal=",")
-        if looks_correct(df_alt, expected_headers):
-            df = df_alt
-    return df
+    if df.shape[1] == 1 or (df.shape[1] < len(expected_headers) and not set(expected_headers).issubset(df.columns)):
+        df = pd.read_csv(path, sep=";", decimal=",")
+    if not set(expected_headers).issubset(df.columns):
+        if df.shape[1] >= len(expected_headers):
+            extras = [f"extra_{i}" for i in range(df.shape[1] - len(expected_headers))]
+            df.columns = expected_headers + extras
+        elif df.shape[1] == len(expected_headers):
+            df.columns = expected_headers
+    keep_cols = [c for c in expected_headers if c in df.columns]
+    if keep_cols:
+        df = df.loc[:, keep_cols]
+    return df, expected_headers
 
-def align_columns(df, expected_headers_n):
-    stripped = [c.strip().lower() for c in df.columns]
-    mapping = {s: original for s, original in zip(stripped, df.columns)}
-    if set(expected_headers_n).issubset(set(stripped)):
-        df = df[[mapping[h] for h in expected_headers_n]]
-        col_map = {h: mapping[h] for h in expected_headers_n}
-    else:
-        df = df.iloc[:, :len(expected_headers_n)]
-        col_map = {c.strip().lower(): c for c in df.columns}
-    return df, col_map
-
-def encode_diagnosis(series):
-    if series.dtype.kind in "biufc":
-        return series.astype(int)
-    values = np.unique(series.astype(str))
-    mapping = {val: idx for idx, val in enumerate(values)}
-    return series.astype(str).map(mapping).astype(int)
+def encode_labels(series):
+    if pd.api.types.is_numeric_dtype(series):
+        return series.fillna(0).astype(int)
+    labels = sorted(series.dropna().unique())
+    mapping = {label: idx for idx, label in enumerate(labels)}
+    return series.map(mapping).fillna(0).astype(int)
 
 def sigmoid(z):
     return 1.0 / (1.0 + np.exp(-z))
@@ -65,53 +40,61 @@ def gradient_descent(X, y, theta, alpha, num_iterations):
     X_T = X.T
     for _ in range(num_iterations):
         h = sigmoid(X @ theta)
-        theta -= (alpha / m) * (X_T @ (h - y))
+        gradient = (X_T @ (h - y)) / m
+        theta -= alpha * gradient
     return theta
 
 def add_bias(X):
-    m, n = X.shape
-    Xb = np.empty((m, n + 1), dtype=X.dtype)
-    Xb[:, 0] = 1.0
-    Xb[:, 1:] = X
-    return Xb
+    return np.hstack((np.ones((X.shape[0], 1), dtype=X.dtype), X))
+
+def predict_labels(X, theta):
+    return np.round(sigmoid(X @ theta)).astype(int)
 
 def predict(input_data, theta):
-    Xb = add_bias(input_data)
-    return ((Xb @ theta) > 0).astype(int)
+    return predict_labels(add_bias(input_data), theta)
 
 def main():
-    df = load_csv("data.csv", EXPECTED_HEADERS)
-    df, col_map = align_columns(df, EXPECTED_HEADERS_N)
+    np.random.seed(2)
+    df, expected_headers = read_dataset(DATASET_PATH, DATASET_HEADERS)
     df.fillna(0, inplace=True)
-    diag_col = col_map.get("diagnosis", df.columns[1])
-    df[diag_col] = encode_diagnosis(df[diag_col])
-    n_features = len(EXPECTED_HEADERS_N) - 2
-    if all(h in col_map for h in EXPECTED_HEADERS_N):
-        feature_cols = [col_map[h] for h in EXPECTED_HEADERS_N[2:]]
-    else:
-        feature_cols = df.columns[2:2 + n_features]
+    diag_col = expected_headers[1] if len(expected_headers) > 1 else None
+    if diag_col not in df.columns:
+        diag_col = df.columns[1] if len(df.columns) > 1 else df.columns[0]
+    df[diag_col] = encode_labels(df[diag_col])
+    id_col = expected_headers[0] if expected_headers else None
+    if id_col not in df.columns:
+        id_col = None
+    feature_cols = [c for c in expected_headers[2:] if c in df.columns]
+    if not feature_cols:
+        exclude = {diag_col}
+        if id_col:
+            exclude.add(id_col)
+        feature_cols = [c for c in df.columns if c not in exclude]
     X = df[feature_cols].to_numpy(dtype=float, copy=False)
-    y = df[diag_col].to_numpy(dtype=int, copy=False)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=2
-    )
+    y = df[diag_col].to_numpy(dtype=float, copy=False)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=2, shuffle=True)
     X_train_b = add_bias(X_train)
     X_test_b = add_bias(X_test)
     theta = np.zeros(X_train_b.shape[1], dtype=X_train_b.dtype)
     theta = gradient_descent(X_train_b, y_train, theta, alpha=0.01, num_iterations=1000)
-    train_preds = ((X_train_b @ theta) > 0).astype(int)
-    test_preds = ((X_test_b @ theta) > 0).astype(int)
-    train_acc = np.mean(train_preds == y_train)
-    test_acc = np.mean(test_preds == y_test)
-    accuracy = test_acc
+    test_preds = predict_labels(X_test_b, theta)
+    accuracy = float(np.mean(test_preds == y_test))
+    example = np.array([
+        17.14,16.4,116,912.7,0.1186,0.2276,0.2229,0.1401,0.304,0.07413,
+        1.046,0.976,7.276,111.4,0.008029,0.03799,0.03732,0.02397,
+        0.02308,0.007444,22.25,21.4,152.4,1461,0.1545,0.3949,
+        0.3853,0.255,0.4066,0.1059
+    ], dtype=float).reshape(1, -1)
+    if example.shape[1] == X.shape[1]:
+        _ = predict(example, theta)
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed unused visualization/logging paths and cost tracking to cut overhead.
-# - Added schema-aware CSV parsing with a deterministic fallback to prevent misreads.
-# - Preallocated bias columns and reused transposed matrices to reduce allocations.
-# - Replaced sigmoid-based classification with logit thresholding for faster inference.
-# - Fixed random seed for reproducible behavior across runs.
+# - Removed cost tracking and training-accuracy computation to eliminate unused work.
+# - Precomputed matrix transpose and reused vectorized operations in gradient descent.
+# - Dropped unused columns early and used zero-copy NumPy conversion to reduce memory movement.
+# - Replaced external label encoder with a deterministic mapping to cut dependency overhead.
+# - Centralized bias addition and prediction to avoid repeated preprocessing steps.

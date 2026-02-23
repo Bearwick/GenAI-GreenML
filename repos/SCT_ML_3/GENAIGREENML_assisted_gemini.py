@@ -3,36 +3,42 @@
 # Mode: assisted
 
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.svm import LinearSVC
-from sklearn.preprocessing import LabelEncoder
+from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 
-try:
-    df = pd.read_csv("cat_dog_data.csv")
-    if df.shape[1] < 2:
-        raise ValueError
-except (pd.errors.ParserError, ValueError, Exception):
-    df = pd.read_csv("cat_dog_data.csv", sep=";", decimal=",")
+def load_data(path):
+    try:
+        data = pd.read_csv(path, engine='c')
+        if data.shape[1] <= 1:
+            raise ValueError
+    except:
+        data = pd.read_csv(path, sep=';', decimal=',', engine='c')
+    return data
 
-target_col = [col for col in df.columns if col.lower() == 'label'][0]
-X = df.drop(columns=[target_col])
-y = LabelEncoder().fit_transform(df[target_col])
+df = load_data("cat_dog_data.csv")
+target_col = 'label' if 'label' in df.columns else df.columns[-1]
+y, _ = pd.factorize(df.pop(target_col), sort=True)
+X = df.values.astype(np.float32)
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.3, random_state=42
 )
 
-model = LinearSVC(random_state=42, dual='auto')
+model = SVC(kernel="linear", cache_size=1000)
 model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
 
-accuracy = accuracy_score(y_test, model.predict(X_test))
+accuracy = accuracy_score(y_test, y_pred)
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# 1. Replaced SVC(kernel="linear") with LinearSVC, reducing time complexity from O(n^2) to O(n).
-# 2. Implemented robust CSV ingestion with automated fallback for different delimiters and decimals.
-# 3. Eliminated redundant memory allocation by removing intermediate LabelEncoder objects and classification reports.
-# 4. Reduced computational overhead by removing logging, visualizations, and interactive components.
-# 5. Optimized training speed by using 'dual=auto' to select the most efficient solver based on dataset shape.
-# 6. Ensured deterministic behavior and reproducibility with fixed random seeds for both data splitting and model training.
+# 1. Reduced memory footprint by converting feature data to float32 instead of the default float64.
+# 2. Replaced LabelEncoder with pd.factorize(sort=True), which is faster for pandas series while preserving alphabetical label ordering.
+# 3. Utilized df.pop() and df.values to extract features and labels in-place, reducing unnecessary data copies.
+# 4. Configured SVC with a larger cache_size (1000MB) to accelerate the kernel computation by reducing re-evaluations.
+# 5. Implemented a robust C-engine CSV parser with fallback logic to handle potential delimiter variations efficiently.
+# 6. Removed high-overhead reporting functions like classification_report which perform redundant calculations.
+# 7. Minimized I/O overhead by removing all non-essential logging and diagnostic prints.
+# 8. Optimized the data loading process by using the more efficient 'c' engine in pandas.read_csv.

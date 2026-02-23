@@ -2,136 +2,88 @@
 # LLM: chatgpt
 # Mode: assisted
 
-import os
-import random
 import numpy as np
 import pandas as pd
 
-from sklearn.model_selection import train_test_split, RandomizedSearchCV
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import RandomizedSearchCV, train_test_split
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import StandardScaler
 
 
 RANDOM_SEED = 42
+DATASET_PATH = "diabetes.csv"
+DATASET_HEADERS = [
+    "Pregnancies",
+    "Glucose",
+    "BloodPressure",
+    "SkinThickness",
+    "Insulin",
+    "BMI",
+    "DiabetesPedigreeFunction",
+    "Age",
+    "Outcome",
+]
 
 
-def _set_reproducible(seed: int = RANDOM_SEED) -> None:
-    os.environ["PYTHONHASHSEED"] = str(seed)
-    random.seed(seed)
-    np.random.seed(seed)
-
-
-def _read_csv_robust(path: str, expected_headers: list[str]) -> pd.DataFrame:
+def _read_csv_robust(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
-    if not _looks_like_valid_csv(df, expected_headers):
+    if df.shape[1] == 1 or any(col not in df.columns for col in DATASET_HEADERS):
         df = pd.read_csv(path, sep=";", decimal=",")
     return df
 
 
-def _looks_like_valid_csv(df: pd.DataFrame, expected_headers: list[str]) -> bool:
-    if df is None or df.empty:
-        return False
-    cols = [c.strip() for c in df.columns.astype(str).tolist()]
-    expected = [c.strip() for c in expected_headers]
-    if len(cols) != len(expected):
-        return False
-    if set(cols) != set(expected):
-        return False
-    first_col = expected[0]
-    if first_col in df.columns:
-        s = df[first_col]
-        if pd.api.types.is_numeric_dtype(s):
-            return True
-        s_num = pd.to_numeric(s, errors="coerce")
-        return s_num.notna().mean() >= 0.95
-    return False
+def _prepare_data(df: pd.DataFrame):
+    cols_present = set(df.columns)
+    target_col = "Outcome" if "Outcome" in cols_present else df.columns[-1]
 
+    feature_cols = [c for c in df.columns if c != target_col]
+    df = df[feature_cols + [target_col]].copy()
 
-def _align_to_schema(df: pd.DataFrame, expected_headers: list[str]) -> pd.DataFrame:
-    df_cols = {c.strip(): c for c in df.columns.astype(str)}
-    ordered = []
-    for h in expected_headers:
-        key = h.strip()
-        if key in df_cols:
-            ordered.append(df[df_cols[key]])
-        else:
-            raise ValueError(f"Missing required column: {h}")
-    out = pd.concat(ordered, axis=1)
-    out.columns = expected_headers
-    return out
+    zero_to_nan_candidates = ["Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI"]
+    zcols = [c for c in zero_to_nan_candidates if c in df.columns]
+    if zcols:
+        df[zcols] = df[zcols].replace(0, np.nan)
 
+        if "Glucose" in zcols:
+            df["Glucose"] = df["Glucose"].fillna(df["Glucose"].mean())
 
-def _preprocess_inplace(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.copy(deep=False)
+        med_cols = [c for c in ["BloodPressure", "SkinThickness", "Insulin", "BMI"] if c in zcols]
+        if med_cols:
+            df[med_cols] = df[med_cols].fillna(df[med_cols].median())
 
-    zero_to_nan_cols = ["Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI"]
-    present_cols = [c for c in zero_to_nan_cols if c in df.columns]
-    if present_cols:
-        df[present_cols] = df[present_cols].replace(0, np.nan)
-
-    if "Glucose" in df.columns:
-        df["Glucose"] = df["Glucose"].fillna(df["Glucose"].mean())
-
-    median_fill_cols = ["BloodPressure", "SkinThickness", "Insulin", "BMI"]
-    for c in median_fill_cols:
-        if c in df.columns:
-            df[c] = df[c].fillna(df[c].median())
-
-    return df
+    X = df.drop(columns=[target_col]).to_numpy(dtype=np.float64, copy=False)
+    y = df[target_col].to_numpy(copy=False)
+    return X, y
 
 
 def main() -> None:
-    _set_reproducible(RANDOM_SEED)
+    np.random.seed(RANDOM_SEED)
 
-    dataset_headers = [
-        "Pregnancies",
-        "Glucose",
-        "BloodPressure",
-        "SkinThickness",
-        "Insulin",
-        "BMI",
-        "DiabetesPedigreeFunction",
-        "Age",
-        "Outcome",
-    ]
-
-    df = _read_csv_robust("diabetes.csv", dataset_headers)
-    df = _align_to_schema(df, dataset_headers)
-    df = _preprocess_inplace(df)
-
-    X = df.drop(columns=["Outcome"]).to_numpy()
-    y = df["Outcome"].to_numpy()
+    df = _read_csv_robust(DATASET_PATH)
+    X, y = _prepare_data(df)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=RANDOM_SEED
     )
 
-    pipeline = Pipeline(
-        steps=[
-            ("scaler", StandardScaler()),
-            ("knn", KNeighborsClassifier()),
-        ]
-    )
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
 
-    param_distributions = {
-        "knn__n_neighbors": np.arange(1, 16),
-        "knn__weights": ["uniform", "distance"],
-    }
-
+    param_dist = {"n_neighbors": np.arange(1, 16), "weights": ["uniform", "distance"]}
+    knn = KNeighborsClassifier()
     search = RandomizedSearchCV(
-        estimator=pipeline,
-        param_distributions=param_distributions,
+        estimator=knn,
+        param_distributions=param_dist,
         n_iter=10,
         cv=5,
         random_state=RANDOM_SEED,
         n_jobs=1,
     )
-    search.fit(X_train, y_train)
+    search.fit(X_train_scaled, y_train)
 
-    y_pred = search.best_estimator_.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
+    best_model = search.best_estimator_
+    accuracy = float(best_model.score(X_test_scaled, y_test))
     print(f"ACCURACY={accuracy:.6f}")
 
 
@@ -139,9 +91,11 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed all plotting, exploratory prints, and per-k loops/cross-val reporting to eliminate redundant computation and visualization overhead while keeping the core task (model selection + evaluation) intact.
-# - Used a single Pipeline(StandardScaler -> KNN) so scaling is computed only as needed within CV/search, reducing data movement and avoiding storing separate scaled train/test arrays.
-# - Replaced repeated model fits across multiple manual loops with one RandomizedSearchCV run (same intent as original hyperparameter search) to cut redundant training/evaluation passes.
-# - Implemented robust CSV parsing with a fallback separator/decimal to avoid costly downstream failures and rework.
-# - Avoided deep copies and minimized intermediate structures (copy(deep=False), vectorized replace/fill) to reduce memory footprint.
-# - Ensured reproducibility by fixing seeds for numpy/random/Python hash and passing random_state into split and search.
+# - Removed all plotting/EDA and intermediate prints to avoid expensive rendering and redundant computations.
+# - Implemented robust CSV parsing with a fallback delimiter/decimal strategy to prevent costly downstream failures.
+# - Avoided unnecessary full-data copies and used copy=False where safe to reduce memory footprint and data movement.
+# - Vectorized missing-value handling (single replace + columnwise fill) instead of repeated per-row operations.
+# - Reused a single train/test split and scaler; used fit_transform/transform to avoid redundant passes over data.
+# - Dropped repeated metric loops and cross-validation sweeps; kept a single randomized search (same evaluation intent) to reduce compute.
+# - Ensured reproducibility via fixed random seeds for NumPy, train/test split, and RandomizedSearchCV.
+# - Forced single-threaded execution (n_jobs=1) to reduce energy spikes and improve determinism across environments.

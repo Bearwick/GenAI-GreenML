@@ -5,97 +5,116 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.naive_bayes import GaussianNB
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
+from sklearn.metrics import accuracy_score, r2_score
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
-from sklearn.metrics import accuracy_score
 
-def load_data(file_path):
+# Robust CSV loading
+def load_data(path):
     try:
-        df = pd.read_csv(file_path)
-        if df.shape[1] <= 1:
+        df = pd.read_csv(path)
+        if len(df.columns) <= 1:
             raise ValueError
-    except:
-        df = pd.read_csv(file_path, sep=';', decimal=',')
+    except Exception:
+        df = pd.read_csv(path, sep=';', decimal=',')
     
-    df.columns = [str(c).strip() for c in df.columns]
-    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+    # Normalize column names
+    df.columns = [" ".join(str(c).strip().split()) for c in df.columns]
+    df = df.drop(columns=[c for c in df.columns if 'Unnamed' in c], errors='ignore')
     return df
 
-def run_pipeline():
-    # Load and clean
-    df = load_data("iris.csv")
-    
-    # Identify target and drop irrelevant ID column if exists
-    potential_ids = ['id', 'index', 'id_number']
-    df = df.drop(columns=[c for c in df.columns if c.lower() in potential_ids], errors='ignore')
-    
-    # Target selection: Use 'Species' or last column
-    target_col = 'Species' if 'Species' in df.columns else df.columns[-1]
-    
-    X = df.drop(columns=[target_col])
-    y = df[target_col]
+# Initialize data
+DATA_PATH = 'iris.csv'
+df = load_data(DATA_PATH)
 
-    # Preprocessing: Convert all to numeric where possible, handle NaNs
-    for col in X.columns:
-        X[col] = pd.to_numeric(X[col], errors='coerce')
+# Identify target and features
+potential_targets = ['Species', 'target', 'class', 'label', 'type']
+target_col = None
 
-    # Drop rows where target is missing
-    mask = y.notna()
-    X = X[mask]
-    y = y[mask]
+for col in df.columns:
+    if col.lower() in [t.lower() for t in potential_targets]:
+        target_col = col
+        break
 
-    # Encode target
+if target_col is None:
+    target_col = df.columns[-1]
+
+# Feature selection: drop ID columns and target
+id_keywords = ['id', 'index', 'row']
+features = [c for c in df.columns if c != target_col and not any(k in c.lower() for k in id_keywords)]
+
+# If no numeric features found, try to find any numeric column
+X_raw = df[features]
+y_raw = df[target_col]
+
+# Pre-processing target: Handle non-numeric or continuous
+is_classification = True
+if y_raw.dtype == 'object' or len(y_raw.unique()) < len(y_raw) * 0.05:
     le = LabelEncoder()
-    y_encoded = le.fit_transform(y.astype(str))
-    
-    # Check for classification vs regression fallback
-    unique_classes = len(np.unique(y_encoded))
-    
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded if unique_classes > 1 else None
-    )
+    y = le.fit_transform(y_raw.astype(str))
+    is_classification = True
+else:
+    # Regression fallback if target looks continuous
+    y = pd.to_numeric(y_raw, errors='coerce').fillna(0).values
+    is_classification = False
 
-    # Lightweight pipeline: Impute -> Scale -> GaussianNB
-    # GaussianNB is chosen for its extremely low CPU/memory footprint
-    numeric_features = X.columns.tolist()
-    
-    numeric_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='median')),
-        ('scaler', StandardScaler())
-    ])
+# Filter features: only numeric for this lightweight pipeline
+numeric_features = []
+for col in features:
+    try:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+        if not df[col].isna().all():
+            numeric_features.append(col)
+    except:
+        continue
 
-    preprocessor = ColumnTransformer(
-        transformers=[('num', numeric_transformer, numeric_features)]
-    )
+# Defensive check
+if not numeric_features:
+    numeric_features = features
 
-    clf = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('classifier', GaussianNB())
-    ])
+X = df[numeric_features].copy()
+# Handle potential Inf/NaN in features
+X = X.replace([np.inf, -np.inf], np.nan)
 
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
-    
-    accuracy = accuracy_score(y_test, y_pred)
-    print(f"ACCURACY={accuracy:.6f}")
+# Train/Test Split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-if __name__ == "__main__":
-    run_pipeline()
+# Verify data exists
+if X_train.empty:
+    accuracy = 0.0
+else:
+    if is_classification:
+        # Energy-efficient Gaussian Naive Bayes
+        pipeline = Pipeline([
+            ('imputer', SimpleImputer(strategy='median')),
+            ('scaler', StandardScaler()),
+            ('model', GaussianNB())
+        ])
+        pipeline.fit(X_train, y_train)
+        y_pred = pipeline.predict(X_test)
+        accuracy = accuracy_score(y_test, y_pred)
+    else:
+        # Fallback to simple Linear Regression for continuous target
+        from sklearn.linear_model import LinearRegression
+        pipeline = Pipeline([
+            ('imputer', SimpleImputer(strategy='median')),
+            ('scaler', StandardScaler()),
+            ('model', LinearRegression())
+        ])
+        pipeline.fit(X_train, y_train)
+        score = pipeline.score(X_test, y_test)
+        # Map R^2 to a 0-1 range for the accuracy proxy
+        accuracy = max(0, min(1, score))
+
+print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary:
-# 1. Model Choice: Gaussian Naive Bayes was selected as it has O(n_samples * n_features) complexity 
-#    for training and O(n_features) for prediction, making it one of the most energy-efficient 
-#    algorithms for small-to-medium numeric datasets.
-# 2. Preprocessing: Used sklearn.Pipeline and ColumnTransformer to minimize redundant 
-#    data copies and ensure efficient memory management during the transformation phase.
-# 3. Robustness: Implemented a fallback CSV parser and dynamic schema detection to prevent 
-#    crashes on unexpected formatting, avoiding manual intervention and wasted compute cycles.
-# 4. Energy Efficiency: Avoided heavy ensembles (Random Forest/XGBoost) or deep learning 
-#    models which consume significantly more CPU cycles for marginal gains on small datasets like Iris.
-# 5. Data Handling: Median imputation and standard scaling are computationally cheap 
-#    transformations that provide high stability for linear/probabilistic models.
-# 6. ID Removal: Automated detection and removal of ID-like columns prevents the model from 
-#    overfitting on noise and reduces the feature space dimensions.
+# 1. Model Choice: Utilized Gaussian Naive Bayes (O(n_features * n_samples)), which is highly CPU-efficient and has low memory overhead.
+# 2. Resource Usage: Avoided computationally expensive ensembles (Random Forest/XGBoost) or deep learning, making the solution suitable for green environments.
+# 3. Robustness: Implemented a robust CSV parser and dynamic schema inference to ensure end-to-end execution without manual intervention.
+# 4. Preprocessing: Used a simple Pipeline with median imputation and scaling to minimize the training CO2 footprint while maintaining stability.
+# 5. Fallback Logic: Included a regression path with an R2-to-accuracy proxy to handle unexpected target data types safely.
+# 6. Efficiency: Only processed numeric features and dropped identifier columns (like 'Id') to reduce redundant matrix computations.

@@ -85,7 +85,7 @@ def predict():
     scaler = StandardScaler()
     scaler.fit(pFeatures)
     f_prediction = scaler.transform(pFeatures)
-    mlp.predict(f_prediction)
+    prediction = mlp.predict(f_prediction)
     saveModel()
 
 

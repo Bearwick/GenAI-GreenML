@@ -3,28 +3,36 @@
 # Mode: assisted
 
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
 
 def load_data(filepath):
     try:
-        data = pd.read_csv(filepath)
-        if data.shape[1] <= 1:
+        df = pd.read_csv(filepath)
+        if len(df.columns) < 2:
             raise ValueError
     except (ValueError, pd.errors.ParserError):
-        data = pd.read_csv(filepath, sep=';', decimal=',')
-    return data
+        df = pd.read_csv(filepath, sep=';', decimal=',')
+    return df
 
 df = load_data("bodyPerformance.csv")
 
-target_column = 'Blass' if 'Blass' in df.columns else df.columns[-1]
-X = df.drop([target_column], axis=1)
-y = df[target_column]
+target_col = 'Blass'
+X = df.drop(columns=[target_col])
+y = df[target_col]
+
+X = X.apply(pd.to_numeric, errors='coerce').fillna(0).astype('float32')
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
+    X, y, test_size=0.2, random_state=42, stratify=y
 )
+
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
 
 param_grid = {
     'C': [1, 0.1, 0.01, 0.001],
@@ -39,20 +47,21 @@ grid_search = GridSearchCV(
     n_jobs=-1,
     refit=True
 )
-
 grid_search.fit(X_train, y_train)
 
-y_pred = grid_search.predict(X_test)
+best_model = grid_search.best_estimator_
+y_pred = best_model.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
 
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# 1. Removed redundant model re-training by utilizing GridSearchCV's built-in refit=True attribute.
-# 2. Implemented n_jobs=-1 in GridSearchCV to enable parallel processing, reducing total execution time.
-# 3. Increased SVC cache_size to 1000MB to reduce redundant kernel matrix computations and disk I/O.
-# 4. Streamlined data loading with a robust fallback mechanism to handle different CSV delimiters efficiently.
-# 5. Eliminated multiple exploratory data analysis steps (head, dtypes, value_counts, isna) to reduce runtime and memory overhead.
-# 6. Removed all visualization libraries and plotting calls to minimize computational footprint and dependency loading.
-# 7. Optimized memory usage by removing intermediate variables and unnecessary data structures.
-# 8. Set fixed random seeds (random_state) to ensure deterministic results and avoid redundant experimental runs.
+# 1. Implemented Feature Scaling (StandardScaler): SVMs converge significantly faster on scaled data, reducing CPU cycles and energy.
+# 2. Memory Optimization: Downcasted feature data types to float32 to reduce memory footprint.
+# 3. Parallel Processing: Enabled n_jobs=-1 in GridSearchCV to utilize all CPU cores, reducing total execution runtime.
+# 4. SVM Cache Optimization: Increased cache_size to 1000MB to minimize redundant kernel computations during training.
+# 5. Redundancy Removal: Utilized GridSearchCV's built-in refit functionality instead of manually re-instantiating and retraining the model.
+# 6. Computation Efficiency: Removed all exploratory data analysis (EDA), visualizations, and logging prints to eliminate unnecessary I/O and CPU overhead.
+# 7. Robust Data Loading: Implemented a fallback mechanism for CSV parsing to handle different delimiters efficiently.
+# 8. Fixed Random State: Ensured reproducibility and stable convergence with fixed seeds, avoiding unnecessary repeat runs.
+# 9. Data Pipeline: Streamlined the preprocessing steps to avoid creating large intermediate data structures.

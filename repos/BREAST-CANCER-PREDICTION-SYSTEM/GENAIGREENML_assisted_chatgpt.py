@@ -8,9 +8,7 @@ from sklearn.model_selection import train_test_split
 
 
 RANDOM_SEED = 2
-np.random.seed(RANDOM_SEED)
-
-
+DATASET_PATH = "data.csv"
 DATASET_HEADERS = [
     "id",
     "diagnosis",
@@ -47,97 +45,82 @@ DATASET_HEADERS = [
 ]
 
 
-def _read_csv_robust(path: str) -> pd.DataFrame:
-    df_default = pd.read_csv(path)
-    if df_default.shape[1] <= 2:
-        df_alt = pd.read_csv(path, sep=";", decimal=",")
-        if df_alt.shape[1] > df_default.shape[1]:
-            return df_alt
-    if df_default.shape[1] == 1:
-        try:
-            df_alt = pd.read_csv(path, sep=";", decimal=",")
-            return df_alt
-        except Exception:
-            return df_default
-    return df_default
+def _read_csv_robust(path: str, expected_headers: list[str]) -> pd.DataFrame:
+    df = pd.read_csv(path)
+    if df.shape[1] == 1 or not set(expected_headers).issubset(set(df.columns)):
+        df2 = pd.read_csv(path, sep=";", decimal=",")
+        if df2.shape[1] > df.shape[1]:
+            df = df2
+    if "Unnamed: 32" in df.columns:
+        df = df.drop(columns=["Unnamed: 32"])
+    return df
 
 
-def _resolve_columns(df: pd.DataFrame):
-    cols = list(df.columns)
-
-    def find_col(candidates):
-        cand_lower = {c.lower(): c for c in cols}
-        for c in candidates:
-            if c in cols:
-                return c
-            cl = c.lower()
-            if cl in cand_lower:
-                return cand_lower[cl]
-        return None
-
-    diagnosis_col = find_col(["diagnosis"])
-    if diagnosis_col is None:
-        raise ValueError("Could not find diagnosis column in input CSV.")
-
-    feature_names = [c for c in DATASET_HEADERS[2:] if c in cols]
-    if len(feature_names) < 30:
-        lowered = {c.lower(): c for c in cols}
-        for c in DATASET_HEADERS[2:]:
-            if c not in feature_names and c.lower() in lowered:
-                feature_names.append(lowered[c.lower()])
-        feature_names = feature_names[:30]
-
-    if len(feature_names) == 0:
-        start_idx = 2 if len(cols) >= 32 else 0
-        end_idx = min(start_idx + 30, len(cols))
-        feature_names = cols[start_idx:end_idx]
-
-    return diagnosis_col, feature_names
+def _encode_diagnosis(series: pd.Series) -> np.ndarray:
+    s = series.astype(str).str.strip().str.upper()
+    return (s == "M").astype(np.int8).to_numpy()
 
 
-def sigmoid(z: np.ndarray) -> np.ndarray:
-    z = np.clip(z, -500.0, 500.0)
+def _prepare_features_labels(df: pd.DataFrame, expected_headers: list[str]) -> tuple[np.ndarray, np.ndarray]:
+    df = df.copy()
+    df = df.fillna(0)
+
+    if "diagnosis" not in df.columns:
+        raise ValueError("Missing required column: diagnosis")
+
+    y = _encode_diagnosis(df["diagnosis"])
+
+    feature_names = [c for c in expected_headers[2:] if c in df.columns]
+    if not feature_names:
+        raise ValueError("No expected feature columns found in dataset.")
+
+    X_df = df[feature_names]
+    X = X_df.to_numpy(dtype=np.float64, copy=False)
+    return X, y
+
+
+def _add_bias_column(X: np.ndarray) -> np.ndarray:
+    return np.concatenate((np.ones((X.shape[0], 1), dtype=X.dtype), X), axis=1)
+
+
+def _sigmoid(z: np.ndarray) -> np.ndarray:
+    z = np.clip(z, -50.0, 50.0)
     return 1.0 / (1.0 + np.exp(-z))
 
 
-def gradient_descent(X: np.ndarray, y: np.ndarray, theta: np.ndarray, alpha: float, num_iterations: int) -> np.ndarray:
-    m = y.size
+def _gradient_descent(X: np.ndarray, y: np.ndarray, alpha: float, num_iterations: int) -> np.ndarray:
+    m, n = X.shape
+    theta = np.zeros(n, dtype=np.float64)
+    y = y.astype(np.float64, copy=False)
+
     for _ in range(num_iterations):
-        h = sigmoid(X @ theta)
+        h = _sigmoid(X @ theta)
         theta -= (alpha / m) * (X.T @ (h - y))
+
     return theta
 
 
-def add_bias(X: np.ndarray) -> np.ndarray:
-    return np.c_[np.ones((X.shape[0], 1), dtype=X.dtype), X]
+def _predict_labels(X: np.ndarray, theta: np.ndarray) -> np.ndarray:
+    probs = _sigmoid(X @ theta)
+    return np.rint(probs).astype(np.int8)
 
 
-def main():
-    df = _read_csv_robust("data.csv")
-    df = df.fillna(0)
+def main() -> None:
+    np.random.seed(RANDOM_SEED)
 
-    diagnosis_col, feature_cols = _resolve_columns(df)
-
-    y_raw = df[diagnosis_col].to_numpy()
-    if np.issubdtype(y_raw.dtype, np.number):
-        y = (y_raw.astype(np.int64) != 0).astype(np.int64)
-    else:
-        y = (pd.Series(y_raw).astype(str).str.upper().to_numpy() == "M").astype(np.int64)
-
-    X_df = df[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0)
-    X = X_df.to_numpy(dtype=np.float64, copy=False)
+    df = _read_csv_robust(DATASET_PATH, DATASET_HEADERS)
+    X, y = _prepare_features_labels(df, DATASET_HEADERS)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=RANDOM_SEED
     )
 
-    X_train_b = add_bias(X_train)
-    X_test_b = add_bias(X_test)
+    X_train_b = _add_bias_column(X_train)
+    X_test_b = _add_bias_column(X_test)
 
-    theta = np.zeros(X_train_b.shape[1], dtype=np.float64)
-    theta = gradient_descent(X_train_b, y_train.astype(np.float64, copy=False), theta, alpha=0.01, num_iterations=1000)
+    theta = _gradient_descent(X_train_b, y_train, alpha=0.01, num_iterations=1000)
 
-    test_preds = np.rint(sigmoid(X_test_b @ theta)).astype(np.int64)
+    test_preds = _predict_labels(X_test_b, theta)
     accuracy = float(np.mean(test_preds == y_test))
     print(f"ACCURACY={accuracy:.6f}")
 
@@ -146,11 +129,12 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed unused heavy visualization imports (seaborn/matplotlib) to cut startup time and dependency overhead.
-# - Implemented robust CSV parsing with a fallback delimiter/decimal configuration to avoid costly manual fixes and reruns.
-# - Derived label/feature columns from DATASET_HEADERS and df.columns to prevent brittle hard-coded indexing and reduce failure-driven re-execution.
-# - Replaced LabelEncoder with a lightweight deterministic mapping for diagnosis (M->1, else->0) while preserving expected encoding behavior.
-# - Eliminated cost tracking and per-iteration cost computation in gradient descent (was unused), reducing redundant computation and memory allocations.
-# - Used vectorized operations (@, np.c_) and avoided intermediate lists/arrays where possible to reduce data movement and overhead.
-# - Added numerically stable sigmoid with clipping to prevent overflow-related slowdowns and NaN propagation.
-# - Ensured reproducibility via fixed random seeds and deterministic train/test split parameters.
+# - Removed unused heavy visualization imports and all plotting/logging to cut import time and overhead.
+# - Implemented robust CSV parsing with a fallback separator/decimal pass to avoid repeated manual fixes and ensure reliability.
+# - Replaced LabelEncoder with a deterministic vectorized encoding (M->1, else->0) to reduce sklearn overhead and data movement.
+# - Derived feature columns from DATASET_HEADERS intersected with df.columns to avoid hard-coded positional slicing and improve robustness.
+# - Avoided repeated cost computation and storing per-iteration costs (unused) to reduce redundant computation and memory allocations.
+# - Used in-place/zero-copy conversions where safe (to_numpy(copy=False), astype(copy=False)) to reduce memory footprint.
+# - Vectorized linear algebra with @ and used a numerically safe sigmoid with clipping to prevent overflow without changing outputs materially.
+# - Centralized bias addition and prediction into small functions to prevent repeated intermediate structures and keep code modular/reusable.
+# - Set fixed random seeds and train_test_split random_state for reproducible, stable results.

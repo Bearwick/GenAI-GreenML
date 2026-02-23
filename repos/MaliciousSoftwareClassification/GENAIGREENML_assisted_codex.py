@@ -10,58 +10,82 @@ import lightgbm as lgb
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 
-SEED = 2021
-os.environ["PYTHONHASHSEED"] = str(SEED)
-random.seed(SEED)
-np.random.seed(SEED)
-
+DATASET_PATH = "datasets/train.csv"
 DATASET_HEADERS = "id,asm_commands_add,asm_commands_call,asm_commands_cdq,asm_commands_cld,asm_commands_cli,asm_commands_cmc,asm_commands_cmp,asm_commands_cwd,asm_commands_daa,asm_commands_dd,asm_commands_dec,asm_commands_dw,asm_commands_endp,asm_commands_faddp,asm_commands_fchs,asm_commands_fdiv,asm_commands_fdivr,asm_commands_fistp,asm_commands_fld,asm_commands_fstp,asm_commands_fword,asm_commands_fxch,asm_commands_imul,asm_commands_in,asm_commands_inc,asm_commands_ins,asm_commands_jb,asm_commands_je,asm_commands_jg,asm_commands_jl,asm_commands_jmp,asm_commands_jnb,asm_commands_jno,asm_commands_jo,asm_commands_jz,asm_commands_lea,asm_commands_mov,asm_commands_mul,asm_commands_not,asm_commands_or,asm_commands_out,asm_commands_outs,asm_commands_pop,asm_commands_push,asm_commands_rcl,asm_commands_rcr,asm_commands_rep,asm_commands_ret,asm_commands_rol,asm_commands_ror,asm_commands_sal,asm_commands_sar,asm_commands_sbb,asm_commands_scas,asm_commands_shl,asm_commands_shr,asm_commands_sidt,asm_commands_stc,asm_commands_std,asm_commands_sti,asm_commands_stos,asm_commands_sub,asm_commands_test,asm_commands_wait,asm_commands_xchg,asm_commands_xor,line_count_asm,size_asm,label"
-EXPECTED_HEADERS = [h.strip() for h in DATASET_HEADERS.split(",") if h.strip()]
 
+random_state = 2021
+np.random.seed(random_state)
+random.seed(random_state)
 
-def _needs_fallback(df, expected_cols):
-    if df.shape[1] == 1:
-        return True
-    if any(";" in str(c) for c in df.columns):
-        return True
-    if expected_cols is not None and df.shape[1] < expected_cols - 1:
-        return True
-    return False
+expected_headers = [h.strip() for h in DATASET_HEADERS.split(",") if h.strip()]
 
+def _is_parse_ok(df, expected):
+    if df is None or df.empty:
+        return False
+    cols = list(df.columns)
+    if len(cols) == 1:
+        col0 = cols[0]
+        if isinstance(col0, str) and ("," in col0 or ";" in col0):
+            return False
+    if expected:
+        matched = sum(1 for h in expected if h in cols)
+        if matched < max(1, len(expected) // 2):
+            return False
+    return True
 
-def read_csv_robust(path, expected_cols):
+def read_csv_robust(path, expected):
     df = pd.read_csv(path)
-    if _needs_fallback(df, expected_cols):
+    if not _is_parse_ok(df, expected):
         df = pd.read_csv(path, sep=";", decimal=",")
     return df
 
+data_dir = os.path.dirname(DATASET_PATH)
+if not data_dir:
+    data_dir = "."
+train_path = DATASET_PATH
+test_path = os.path.join(data_dir, "test.csv")
 
-data_path = "./datasets"
-train_path = os.path.join(data_path, "train.csv")
-test_path = os.path.join(data_path, "test.csv")
+train_df = read_csv_robust(train_path, expected_headers)
+test_df = read_csv_robust(test_path, expected_headers)
 
-expected_train_cols = len(EXPECTED_HEADERS)
-expected_test_cols = expected_train_cols - (1 if "label" in EXPECTED_HEADERS else 0)
+label_col = "label" if "label" in train_df.columns else None
+if label_col is None:
+    for name in reversed(expected_headers):
+        if name in train_df.columns:
+            label_col = name
+            break
+if label_col is None:
+    label_col = train_df.columns[-1]
 
-train = read_csv_robust(train_path, expected_train_cols)
-test = read_csv_robust(test_path, expected_test_cols)
+id_col = "id" if "id" in train_df.columns else None
+if id_col is None and expected_headers:
+    if expected_headers[0] in train_df.columns:
+        id_col = expected_headers[0]
 
-ycol = "label" if "label" in train.columns else train.columns[-1]
-id_col = "id" if "id" in train.columns else train.columns[0]
-if id_col not in test.columns:
-    id_col = test.columns[0]
+exclude_cols = {label_col}
+if id_col is not None:
+    exclude_cols.add(id_col)
 
-features = [c for c in train.columns if c not in {ycol, id_col}]
+features = [c for c in train_df.columns if c not in exclude_cols]
 
-X = train[features].to_numpy()
-y = train[ycol].to_numpy()
-X_test = test.reindex(columns=features, fill_value=0).to_numpy()
-test_ids = test[id_col].to_numpy()
+X = train_df[features].to_numpy()
+y = train_df[label_col].to_numpy()
+X_test = test_df[features].to_numpy()
 
-del train, test
+if id_col is not None and id_col in test_df.columns:
+    test_ids = test_df[id_col].to_numpy()
+else:
+    test_ids = np.arange(len(test_df))
 
-num_class = int(np.unique(y).size)
+id_col_name = id_col if id_col is not None else "id"
+label_col_name = label_col
+
+del train_df
+del test_df
+
+num_class = 9
 NFOLD = 5
+kf = StratifiedKFold(n_splits=NFOLD, shuffle=True, random_state=random_state)
 
 params_lgb = {
     "boosting": "gbdt",
@@ -70,7 +94,7 @@ params_lgb = {
     "metric": "multi_logloss",
     "first_metric_only": True,
     "force_row_wise": True,
-    "random_state": SEED,
+    "random_state": random_state,
     "learning_rate": 0.05,
     "subsample": 0.8,
     "subsample_freq": 3,
@@ -81,64 +105,63 @@ params_lgb = {
     "verbose": -1,
 }
 
-kf = StratifiedKFold(n_splits=NFOLD, shuffle=True, random_state=SEED)
-
-oof = np.zeros((X.shape[0], num_class))
-preds = np.zeros((X_test.shape[0], num_class))
+oof_preds = np.zeros((X.shape[0], num_class))
+test_preds = np.zeros((X_test.shape[0], num_class))
 
 for trn_idx, val_idx in kf.split(X, y):
-    trn_data = lgb.Dataset(X[trn_idx], label=y[trn_idx])
-    val_data = lgb.Dataset(X[val_idx], label=y[val_idx], reference=trn_data)
-    train_kwargs = dict(
-        params=params_lgb,
-        train_set=trn_data,
-        valid_sets=[val_data],
-        num_boost_round=50000,
-    )
+    X_trn = X[trn_idx]
+    y_trn = y[trn_idx]
+    X_val = X[val_idx]
+    y_val = y[val_idx]
+    trn_data = lgb.Dataset(X_trn, label=y_trn, feature_name=features)
+    val_data = lgb.Dataset(X_val, label=y_val, reference=trn_data, feature_name=features)
+    train_kwargs = {
+        "params": params_lgb,
+        "train_set": trn_data,
+        "valid_sets": [trn_data, val_data],
+        "valid_names": ["train", "val"],
+        "num_boost_round": 50000,
+    }
     try:
         model = lgb.train(**train_kwargs, early_stopping_rounds=200, verbose_eval=False)
     except TypeError:
-        model = lgb.train(**train_kwargs, callbacks=[lgb.early_stopping(200, verbose=False)])
-    best_iter = model.best_iteration
-    if best_iter is None or best_iter <= 0:
-        best_iter = model.current_iteration()
-    oof[val_idx] = model.predict(X[val_idx], num_iteration=best_iter)
-    preds += model.predict(X_test, num_iteration=best_iter)
+        callbacks = [lgb.early_stopping(200, verbose=False)]
+        if hasattr(lgb, "log_evaluation"):
+            callbacks.append(lgb.log_evaluation(0))
+        model = lgb.train(**train_kwargs, callbacks=callbacks)
+    oof_preds[val_idx] = model.predict(X_val, num_iteration=model.best_iteration)
+    test_preds += model.predict(X_test, num_iteration=model.best_iteration) / NFOLD
 
-preds /= NFOLD
+oof_pred_labels = np.argmax(oof_preds, axis=1)
+test_labels = np.argmax(test_preds, axis=1)
 
-oof_pred = np.argmax(oof, axis=1)
-accuracy = accuracy_score(y, oof_pred)
-precision = precision_score(y, oof_pred, average="macro")
-recall = recall_score(y, oof_pred, average="macro")
-f1 = f1_score(y, oof_pred, average="macro")
-auc = roc_auc_score(y, oof, average="macro", multi_class="ovo")
+submit_df = pd.DataFrame({id_col_name: test_ids, label_col_name: test_labels})
+submit_df.to_csv("submit.csv", index=False)
 
+accuracy = accuracy_score(y, oof_pred_labels)
+precision = precision_score(y, oof_pred_labels, average="macro")
+recall = recall_score(y, oof_pred_labels, average="macro")
+f1 = f1_score(y, oof_pred_labels, average="macro")
+auc = roc_auc_score(y, oof_preds, average="macro", multi_class="ovo")
 learning_rate = params_lgb["learning_rate"]
-valid_accuracy_score = accuracy
 
-evaluation = pd.DataFrame(
-    {
-        "Model": ["LightGBM"],
-        "学习率": [learning_rate],
-        "准确率": [accuracy],
-        "精确率": [precision],
-        "召回率": [recall],
-        "F1 值": [f1],
-        "AUC值": [auc],
-        "5折交叉验证的score": [valid_accuracy_score],
-    }
-)
+evaluation = pd.DataFrame({
+    "Model": ["LightGBM"],
+    "学习率": [learning_rate],
+    "准确率": [accuracy],
+    "精确率": [precision],
+    "召回率": [recall],
+    "F1 值": [f1],
+    "AUC值": [auc],
+    "5折交叉验证的score": [accuracy],
+})
 evaluation.to_csv("evaluation.csv", index=False)
-
-submit_df = pd.DataFrame({id_col: test_ids, "label": np.argmax(preds, axis=1)})
-submit_df.to_csv("./submit.csv", index=False)
 
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Removed visualization and extra model training to cut runtime and energy use.
-# Pre-extracted numpy arrays to avoid repeated DataFrame slicing during CV.
-# Reduced validation overhead by evaluating only on the validation split without logging.
-# Avoided redundant metric computations by reusing predictions for all scores.
-# Released large DataFrames after extraction to lower memory footprint.
+# Implemented robust CSV parsing with fallback and schema-derived column resolution to avoid mis-parsing.
+# Converted feature data to NumPy arrays and reused slices to reduce DataFrame overhead and data movement.
+# Removed unused feature-importance and visualization steps to cut unnecessary computation and I/O.
+# Reused argmax results for all metrics and kept per-fold averaging to match original outputs while minimizing redundant ops.
+# Released large DataFrames after extraction to reduce memory footprint.

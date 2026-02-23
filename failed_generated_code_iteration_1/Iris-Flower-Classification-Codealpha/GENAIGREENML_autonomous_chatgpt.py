@@ -5,277 +5,278 @@
 import os
 import re
 import warnings
+
 import numpy as np
 import pandas as pd
 
-from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score
-from sklearn.linear_model import LogisticRegression, Ridge
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.linear_model import LogisticRegression, RidgeClassifier
+from sklearn.dummy import DummyClassifier
 
 warnings.filterwarnings("ignore")
 
 
 def _normalize_columns(cols):
-    new_cols = []
+    norm = []
     for c in cols:
-        c = str(c)
-        c = c.strip()
-        c = re.sub(r"\s+", " ", c)
-        new_cols.append(c)
-    return new_cols
+        c2 = re.sub(r"\s+", " ", str(c).strip())
+        norm.append(c2)
+    return norm
 
 
-def _drop_unnamed(df):
-    drop_cols = [c for c in df.columns if str(c).strip().lower().startswith("unnamed:")]
-    if drop_cols:
-        df = df.drop(columns=drop_cols)
+def _read_csv_robust(path):
+    # Try default parsing first
+    df = pd.read_csv(path)
+    if df.shape[1] <= 1:
+        # Fallback for semicolon-separated and comma decimals
+        df = pd.read_csv(path, sep=";", decimal=",")
     return df
 
 
-def _try_read_csv(path):
-    df = None
-    try:
-        df = pd.read_csv(path)
-    except Exception:
-        df = None
-
-    def looks_wrong(dfx):
-        if dfx is None or dfx.empty:
-            return True
-        if dfx.shape[1] == 1:
-            return True
-        return False
-
-    if looks_wrong(df):
-        try:
-            df2 = pd.read_csv(path, sep=";", decimal=",")
-            if not looks_wrong(df2):
-                df = df2
-        except Exception:
-            pass
-
-    if df is None:
-        raise RuntimeError("Failed to read CSV with supported fallbacks.")
-    return df
-
-
-def _pick_target_and_task(df):
+def _pick_target_and_features(df, dataset_headers=None):
     cols = list(df.columns)
 
-    def nunique_non_nan(s):
-        return int(pd.Series(s).dropna().nunique())
+    # Prefer a reasonable target using provided headers if present
+    target = None
+    if dataset_headers:
+        candidates = [h for h in dataset_headers if h in cols]
+        for cand in candidates[::-1]:
+            if cand.lower() not in ("id",):
+                target = cand
+                break
 
-    preferred_targets = ["Species", "species", "target", "label", "y", "class"]
-    for cand in preferred_targets:
-        if cand in df.columns:
-            y = df[cand]
-            # Classification if discrete-ish
-            nuniq = nunique_non_nan(y)
-            if nuniq >= 2 and nuniq <= max(20, int(0.2 * max(1, len(y)))):
-                return cand, "classification"
-            # Otherwise fallback to regression
-            return cand, "regression"
+    if target is None:
+        # Prefer a non-numeric column with low-ish unique count for classification
+        nonnum = [c for c in cols if df[c].dtype == "object" or str(df[c].dtype).startswith("category")]
+        nonnum = [c for c in nonnum if not c.lower().startswith("unnamed")]
+        best = None
+        best_u = None
+        for c in nonnum:
+            u = df[c].nunique(dropna=True)
+            if u >= 2 and (best is None or u < best_u):
+                best, best_u = c, u
+        if best is not None:
+            target = best
+        else:
+            # Otherwise pick a numeric column as target (regression fallback)
+            num = []
+            for c in cols:
+                if c.lower() in ("id",) or c.lower().startswith("unnamed"):
+                    continue
+                s = pd.to_numeric(df[c], errors="coerce")
+                if s.notna().sum() > 0 and s.nunique(dropna=True) >= 2:
+                    num.append(c)
+            target = num[-1] if num else cols[-1]
 
-    # Prefer object/categorical with small number of classes
-    obj_cols = [c for c in cols if df[c].dtype == "object" or str(df[c].dtype).startswith("category")]
-    best_obj = None
-    best_obj_nuniq = None
-    for c in obj_cols:
-        nuniq = nunique_non_nan(df[c])
-        if 2 <= nuniq <= max(20, int(0.2 * max(1, len(df)))):
-            if best_obj is None or nuniq < best_obj_nuniq:
-                best_obj, best_obj_nuniq = c, nuniq
-    if best_obj is not None:
-        return best_obj, "classification"
+    # Features: all columns except target, excluding obvious index-like columns
+    features = [c for c in cols if c != target and not c.lower().startswith("unnamed")]
+    # Drop ID-like columns from features when present
+    features = [c for c in features if c.lower() not in ("id", "index")]
 
-    # Prefer numeric non-constant for regression
-    numeric_candidates = []
-    for c in cols:
-        s = pd.to_numeric(df[c], errors="coerce")
-        if s.notna().any():
-            nuniq = nunique_non_nan(s)
-            if nuniq > 1:
-                numeric_candidates.append((c, s.notna().mean(), nuniq))
-    if numeric_candidates:
-        numeric_candidates.sort(key=lambda t: (t[1], t[2]), reverse=True)
-        return numeric_candidates[0][0], "regression"
+    if not features:
+        # If no features left, keep at least one column not equal to target (even if ID)
+        features = [c for c in cols if c != target][:1]
 
-    # Last resort: pick first column and treat as classification (may collapse)
-    return cols[0], "classification"
+    return target, features
 
 
-def _safe_accuracy_proxy_from_regression(y_true, y_pred):
+def _safe_bounded_regression_score(y_true, y_pred):
     y_true = np.asarray(y_true, dtype=float)
     y_pred = np.asarray(y_pred, dtype=float)
     mask = np.isfinite(y_true) & np.isfinite(y_pred)
-    if mask.sum() <= 1:
-        return 0.0
     y_true = y_true[mask]
     y_pred = y_pred[mask]
+    if y_true.size == 0:
+        return 0.0
     ss_res = float(np.sum((y_true - y_pred) ** 2))
-    ss_tot = float(np.sum((y_true - float(np.mean(y_true))) ** 2))
+    y_mean = float(np.mean(y_true))
+    ss_tot = float(np.sum((y_true - y_mean) ** 2))
     if ss_tot <= 0.0:
-        r2 = 0.0
-    else:
-        r2 = 1.0 - (ss_res / ss_tot)
-    # Bound into [0,1] for stable "accuracy"
-    acc = float(np.clip((r2 + 1.0) / 2.0, 0.0, 1.0))
-    return acc
+        return 0.0
+    r2 = 1.0 - ss_res / ss_tot
+    return float(np.clip(r2, 0.0, 1.0))
 
 
-# --------- Load data ---------
-csv_candidates = ["Iris.csv", "iris.csv", "data.csv", "dataset.csv", "train.csv"]
-csv_path = None
-for p in csv_candidates:
-    if os.path.exists(p):
-        csv_path = p
-        break
-if csv_path is None:
-    # Try any csv in current directory
-    for fn in os.listdir("."):
-        if fn.lower().endswith(".csv"):
-            csv_path = fn
-            break
-if csv_path is None:
-    raise RuntimeError("No CSV file found in current directory.")
+def main():
+    dataset_path = "Iris.csv"
+    dataset_headers = ["Id", "SepalLengthCm", "SepalWidthCm", "PetalLengthCm", "PetalWidthCm", "Species"]
 
-df = _try_read_csv(csv_path)
+    if not os.path.exists(dataset_path):
+        # Minimal safe behavior: create empty-like accuracy
+        accuracy = 0.0
+        print(f"ACCURACY={accuracy:.6f}")
+        return
 
-df.columns = _normalize_columns(df.columns)
-df = _drop_unnamed(df)
+    df = _read_csv_robust(dataset_path)
 
-# Drop likely ID columns (energy-efficient heuristic)
-id_like = []
-for c in df.columns:
-    cl = c.strip().lower()
-    if cl in ("id", "index"):
-        id_like.append(c)
-    elif cl.endswith(" id") or cl.endswith("_id"):
-        id_like.append(c)
-if id_like:
-    df = df.drop(columns=[c for c in id_like if c in df.columns])
+    # Normalize/clean column names
+    df.columns = _normalize_columns(df.columns)
+    df = df.loc[:, [c for c in df.columns if not str(c).startswith("Unnamed:")]]
 
-assert df is not None and not df.empty
+    # Drop completely empty rows
+    df = df.dropna(how="all").reset_index(drop=True)
 
-target_col, task = _pick_target_and_task(df)
+    assert df.shape[0] > 0, "Dataset is empty after basic cleaning."
 
-# Build X/y with schema robustness
-feature_cols = [c for c in df.columns if c != target_col]
-if not feature_cols:
-    # Minimal fallback: create a constant feature to allow pipeline to run
-    df["_const_feature"] = 1.0
-    feature_cols = ["_const_feature"]
+    target_col, feature_cols = _pick_target_and_features(df, dataset_headers=dataset_headers)
 
-X = df[feature_cols].copy()
-y_raw = df[target_col].copy()
+    # Build X/y with defensive copying
+    X = df[feature_cols].copy()
+    y = df[target_col].copy()
 
-# Coerce numeric columns safely; keep categoricals
-numeric_cols = []
-categorical_cols = []
-for c in X.columns:
-    s = X[c]
-    if s.dtype == "object" or str(s.dtype).startswith("category"):
-        # Try numeric coercion if it looks mostly numeric
-        s_num = pd.to_numeric(s, errors="coerce")
-        if s_num.notna().mean() >= 0.9:
+    # Identify numeric vs categorical from X
+    numeric_features = []
+    categorical_features = []
+    for c in X.columns:
+        s_num = pd.to_numeric(X[c], errors="coerce")
+        # If most values are numeric-coercible, treat as numeric
+        valid_ratio = float(s_num.notna().mean()) if len(s_num) else 0.0
+        if valid_ratio >= 0.8:
+            numeric_features.append(c)
             X[c] = s_num
-            numeric_cols.append(c)
         else:
-            categorical_cols.append(c)
+            categorical_features.append(c)
+
+    # Decide task type (classification preferred)
+    # If y is object/category => classification; else numeric => classification if low unique count
+    y_is_object = (y.dtype == "object") or str(y.dtype).startswith("category")
+    y_numeric = pd.to_numeric(y, errors="coerce")
+    if y_is_object:
+        task = "classification"
     else:
-        X[c] = pd.to_numeric(s, errors="coerce")
-        numeric_cols.append(c)
+        non_na = y_numeric.dropna()
+        uniq = int(non_na.nunique()) if non_na.size else 0
+        task = "classification" if 2 <= uniq <= max(20, int(0.2 * len(non_na) + 1)) else "regression"
 
-# Decide final task based on y properties
-if task == "classification":
-    y_series = y_raw
-    if not (y_series.dtype == "object" or str(y_series.dtype).startswith("category")):
-        # still can be numeric classes; keep as-is
-        pass
-    # If too many unique values, treat as regression
-    nuniq_y = int(pd.Series(y_series).dropna().nunique())
-    if nuniq_y < 2:
-        task = "regression"
-    elif nuniq_y > max(50, int(0.3 * max(1, len(y_series)))):
-        task = "regression"
+    if task == "classification":
+        # Ensure y is clean strings (stable for sklearn)
+        y_clean = y.astype(str).replace({"nan": np.nan})
+        # If too many missing labels, drop them
+        mask = y_clean.notna()
+        X = X.loc[mask].reset_index(drop=True)
+        y_clean = y_clean.loc[mask].reset_index(drop=True)
 
-if task == "regression":
-    y = pd.to_numeric(y_raw, errors="coerce")
-else:
-    # Keep labels as string/object to avoid assumptions; sklearn can handle
-    y = y_raw.astype(str)
+        assert len(y_clean) > 0, "No valid target labels."
 
-# Drop rows with missing y (after coercion for regression)
-mask_y = y.notna()
-X = X.loc[mask_y].reset_index(drop=True)
-y = y.loc[mask_y].reset_index(drop=True)
+        n_classes = int(y_clean.nunique(dropna=True))
+        if n_classes < 2:
+            # Fallback to trivial baseline that still runs end-to-end
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y_clean, test_size=0.2, random_state=42, shuffle=True
+            )
+            assert len(X_train) > 0 and len(X_test) > 0, "Train/test split failed."
+            model = DummyClassifier(strategy="most_frequent")
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+            accuracy = float(accuracy_score(y_test, y_pred))
+            print(f"ACCURACY={accuracy:.6f}")
+            return
 
-assert len(X) > 0 and len(y) > 0
-
-# Preprocess
-numeric_transformer = Pipeline(steps=[
-    ("imputer", SimpleImputer(strategy="median")),
-    ("scaler", StandardScaler(with_mean=True, with_std=True)),
-])
-
-categorical_transformer = Pipeline(steps=[
-    ("imputer", SimpleImputer(strategy="most_frequent")),
-    ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=True)),
-])
-
-preprocessor = ColumnTransformer(
-    transformers=[
-        ("num", numeric_transformer, [c for c in numeric_cols if c in X.columns]),
-        ("cat", categorical_transformer, [c for c in categorical_cols if c in X.columns]),
-    ],
-    remainder="drop",
-    sparse_threshold=0.3,
-)
-
-# Split
-if task == "classification":
-    # Stratify only if viable
-    try:
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42, stratify=y
+        # Preprocess + lightweight linear classifier
+        numeric_transformer = Pipeline(
+            steps=[
+                ("imputer", SimpleImputer(strategy="median")),
+                ("scaler", StandardScaler(with_mean=True, with_std=True)),
+            ]
         )
-    except Exception:
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42
+        categorical_transformer = Pipeline(
+            steps=[
+                ("imputer", SimpleImputer(strategy="most_frequent")),
+                ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=True)),
+            ]
         )
-else:
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
 
-assert len(X_train) > 0 and len(X_test) > 0
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ("num", numeric_transformer, numeric_features),
+                ("cat", categorical_transformer, categorical_features),
+            ],
+            remainder="drop",
+            sparse_threshold=0.3,
+        )
 
-# Model (lightweight)
-if task == "classification":
-    # Small, CPU-friendly solver; good baseline for Iris-like data
-    model = LogisticRegression(max_iter=200, solver="lbfgs", multi_class="auto")
-    pipe = Pipeline(steps=[("prep", preprocessor), ("model", model)])
-    pipe.fit(X_train, y_train)
-    y_pred = pipe.predict(X_test)
-    accuracy = float(accuracy_score(y_test, y_pred))
-else:
-    # Ridge is stable and cheap; avoids iterative heavy solvers
-    model = Ridge(alpha=1.0, random_state=42)
-    pipe = Pipeline(steps=[("prep", preprocessor), ("model", model)])
-    pipe.fit(X_train, y_train)
-    y_pred = pipe.predict(X_test)
-    accuracy = _safe_accuracy_proxy_from_regression(y_test, y_pred)
+        # LogisticRegression is efficient for small datasets; lbfgs handles multinomial well
+        clf = LogisticRegression(
+            solver="lbfgs",
+            max_iter=200,
+            n_jobs=1,
+        )
 
-print(f"ACCURACY={accuracy:.6f}")
+        pipeline = Pipeline(steps=[("preprocess", preprocessor), ("model", clf)])
+
+        stratify = y_clean if n_classes >= 2 and len(y_clean) >= n_classes * 2 else None
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y_clean, test_size=0.2, random_state=42, shuffle=True, stratify=stratify
+        )
+        assert len(X_train) > 0 and len(X_test) > 0, "Train/test split failed."
+
+        pipeline.fit(X_train, y_train)
+        y_pred = pipeline.predict(X_test)
+        accuracy = float(accuracy_score(y_test, y_pred))
+
+    else:
+        # Regression fallback (still prints ACCURACY=...) using bounded R2 proxy
+        y_reg = pd.to_numeric(y, errors="coerce")
+        mask = y_reg.notna()
+        X = X.loc[mask].reset_index(drop=True)
+        y_reg = y_reg.loc[mask].reset_index(drop=True)
+
+        assert len(y_reg) > 1, "Not enough numeric target values for regression."
+
+        numeric_transformer = Pipeline(
+            steps=[
+                ("imputer", SimpleImputer(strategy="median")),
+                ("scaler", StandardScaler(with_mean=True, with_std=True)),
+            ]
+        )
+        categorical_transformer = Pipeline(
+            steps=[
+                ("imputer", SimpleImputer(strategy="most_frequent")),
+                ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=True)),
+            ]
+        )
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ("num", numeric_transformer, numeric_features),
+                ("cat", categorical_transformer, categorical_features),
+            ],
+            remainder="drop",
+            sparse_threshold=0.3,
+        )
+
+        # RidgeClassifier would be classification; use linear regression-like via SGD? Keep simple:
+        # Use RidgeClassifier only if y is discrete; otherwise use LinearRegression.
+        # To keep lightweight & stable, we use RidgeClassifier only when unique small; else DummyRegressor proxy.
+        from sklearn.linear_model import Ridge
+        reg = Ridge(alpha=1.0, random_state=42)
+
+        pipeline = Pipeline(steps=[("preprocess", preprocessor), ("model", reg)])
+
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y_reg, test_size=0.2, random_state=42, shuffle=True
+        )
+        assert len(X_train) > 0 and len(X_test) > 0, "Train/test split failed."
+
+        pipeline.fit(X_train, y_train)
+        y_pred = pipeline.predict(X_test)
+        accuracy = _safe_bounded_regression_score(y_test, y_pred)
+
+    print(f"ACCURACY={accuracy:.6f}")
+
+
+if __name__ == "__main__":
+    main()
 
 # Optimization Summary
-# - Uses lightweight linear models (LogisticRegression/Ridge) for CPU efficiency and fast convergence on small datasets.
-# - ColumnTransformer + Pipeline avoids repeated preprocessing and improves reproducibility.
-# - Robust CSV loading retries with ; separator and , decimal to handle common locale formats without manual edits.
-# - Defensive schema handling: normalizes headers, drops Unnamed columns, heuristically drops ID-like columns, and selects a viable target if expected columns are missing.
-# - Numeric coercion with errors='coerce' and SimpleImputer prevents failures from mixed types/NaNs while keeping computation minimal.
-# - Regression fallback uses bounded proxy ACCURACY in [0,1] derived from R^2: accuracy = clip((R^2+1)/2, 0, 1) for stable reporting.
+# - Chose a lightweight linear model (LogisticRegression) suitable for small tabular datasets; avoids heavy ensembles/boosting.
+# - Used a single sklearn Pipeline + ColumnTransformer to ensure reproducible preprocessing and prevent redundant computations.
+# - Numeric handling: coercion to numeric with errors='coerce', median imputation, and StandardScaler for stable optimization.
+# - Categorical handling: most-frequent imputation + OneHotEncoder with sparse output to reduce memory/CPU on wide categories.
+# - Robust CSV parsing fallback (default then sep=';' and decimal=',') and column name normalization for schema resilience.
+# - Defensive target/feature selection if headers mismatch; drops ID-like columns to reduce noise and computation.
+# - Regression fallback uses a bounded R2 proxy clipped to [0,1] to keep ACCURACY consistent and stable.

@@ -5,63 +5,53 @@
 import pandas as pd
 import xgboost as xgb
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score
 
-def load_data(filepath):
+def run_pipeline():
+    file_path = 'xgboost_on _binary.csv'
     try:
-        df = pd.read_csv(filepath)
-        if df.shape[1] <= 1:
+        df = pd.read_csv(file_path)
+        if len(df.columns) < 2:
             raise ValueError
     except Exception:
-        df = pd.read_csv(filepath, sep=';', decimal=',')
-    return df
+        df = pd.read_csv(file_path, sep=';', decimal=',')
 
-def main():
-    filename = 'xgboost_on _binary.csv'
-    df = load_data(filename)
-    
-    le = LabelEncoder()
-    target_orig = 'admit'
-    cat_feature = 'rank'
-    
-    df[target_orig] = le.fit_transform(df[target_orig])
-    df[cat_feature] = le.fit_transform(df[cat_feature])
-    
-    df_encoded = pd.get_dummies(df, columns=[target_orig, cat_feature], drop_first=True)
-    
-    target_dummy = [c for c in df_encoded.columns if c.startswith(f"{target_orig}_")][0]
-    
-    X = df_encoded.drop(columns=[target_dummy])
-    y = df_encoded[target_dummy]
-    
+    df['admit'] = df['admit'].astype('category').cat.codes
+    df['rank'] = df['rank'].astype('category').cat.codes
+
+    df_encoded = pd.get_dummies(df, columns=['admit', 'rank'], drop_first=True)
+
+    y = df_encoded['admit_1']
+    X = df_encoded.drop(columns=['admit_1'])
+
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42
     )
-    
+
     model = xgb.XGBClassifier(
         random_state=42, 
         use_label_encoder=False, 
         eval_metric='logloss',
-        n_jobs=-1
+        n_jobs=1
     )
     model.fit(X_train, y_train)
-    
+
     y_pred = model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
     
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
-    main()
+    run_pipeline()
 
 # Optimization Summary
-# 1. Removed heavy visualization libraries (seaborn, matplotlib) to reduce memory and CPU overhead.
-# 2. Eliminated all Exploratory Data Analysis (EDA) steps (head, info, describe, pairplots) to minimize runtime.
-# 3. Streamlined preprocessing by removing redundant intermediate prints and variable assignments.
-# 4. Implemented robust CSV parsing with a fallback mechanism to handle different delimiters/decimals.
-# 5. Enabled parallel processing in XGBoost using n_jobs=-1 for better hardware utilization.
-# 6. Removed unused metric calculations (Precision, Recall, F1, ROC-AUC) and visualization (ROC curves).
-# 7. Optimized memory by avoiding unnecessary DataFrame copies and complex intermediate structures.
-# 8. Set a fixed random seed in train_test_split and XGBClassifier to ensure reproducibility.
-# 9. Automated target column detection to handle schema variations based on DATASET_HEADERS.
+# 1. Removed heavy visualization libraries (seaborn, matplotlib) to reduce memory overhead and import time.
+# 2. Eliminated redundant Exploratory Data Analysis (EDA) steps (head, info, describe, pairplot) to save CPU cycles.
+# 3. Replaced Scikit-Learn's LabelEncoder with Pandas 'category' codes for faster, more memory-efficient categorical mapping.
+# 4. Streamlined preprocessing by combining encoding and dummy variable creation into a single logical flow.
+# 5. Set n_jobs=1 in XGBoost to avoid the energy overhead of multi-threading/process spawning on a very small dataset.
+# 6. Used a robust CSV loading mechanism to prevent execution failure and unnecessary manual debugging.
+# 7. Removed all intermediate logging, prints, and unused metric calculations to minimize I/O and computation.
+# 8. Fixed random seeds (random_state=42) to ensure reproducibility without re-running experiments.
+# 9. Reduced memory footprint by avoiding multiple intermediate copies of the dataframe.
+# 10. Simplified the evaluation logic to focus solely on the required accuracy output.

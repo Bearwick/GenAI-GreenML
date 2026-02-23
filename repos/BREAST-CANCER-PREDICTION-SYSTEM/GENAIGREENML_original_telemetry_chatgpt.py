@@ -10,6 +10,20 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 
 
+df = pd.read_csv("data.csv")
+df.fillna(0, inplace=True)
+
+labelencoder_Y = LabelEncoder()
+df["diagnosis"] = labelencoder_Y.fit_transform(df["diagnosis"])
+
+X = df.iloc[:, 2:32].values
+Y = df.iloc[:, 1].values
+
+X_train, X_test, Y_train, Y_test = train_test_split(
+    X, Y, test_size=0.2, random_state=2
+)
+
+
 def sigmoid(z):
     return 1 / (1 + np.exp(-z))
 
@@ -23,12 +37,28 @@ def compute_cost(X, y, theta):
 def gradient_descent(X, y, theta, alpha, num_iterations):
     costs = []
     m = len(y)
+
     for _ in range(num_iterations):
         h = sigmoid(X.dot(theta))
         gradient = (1 / m) * X.T.dot(h - y)
         theta -= alpha * gradient
         costs.append(compute_cost(X, y, theta))
+
     return theta, costs
+
+
+X_train = np.hstack((np.ones((X_train.shape[0], 1)), X_train))
+X_test = np.hstack((np.ones((X_test.shape[0], 1)), X_test))
+
+theta = np.zeros(X_train.shape[1])
+alpha = 0.01
+num_iterations = 1000
+
+theta, costs = gradient_descent(X_train, Y_train, theta, alpha, num_iterations)
+
+test_preds = np.round(sigmoid(X_test.dot(theta))).astype(int)
+accuracy = np.mean(test_preds == Y_test)
+print(f"ACCURACY={accuracy:.6f}")
 
 
 def predict(input_data, theta):
@@ -36,34 +66,39 @@ def predict(input_data, theta):
     return np.round(sigmoid(input_data.dot(theta))).astype(int)
 
 
-def main():
-    df = pd.read_csv("data.csv")
-    df.fillna(0, inplace=True)
+example = np.array(
+    [
+        17.14,
+        16.4,
+        116,
+        912.7,
+        0.1186,
+        0.2276,
+        0.2229,
+        0.1401,
+        0.304,
+        0.07413,
+        1.046,
+        0.976,
+        7.276,
+        111.4,
+        0.008029,
+        0.03799,
+        0.03732,
+        0.02397,
+        0.02308,
+        0.007444,
+        22.25,
+        21.4,
+        152.4,
+        1461,
+        0.1545,
+        0.3949,
+        0.3853,
+        0.255,
+        0.4066,
+        0.1059,
+    ]
+).reshape(1, -1)
 
-    labelencoder_Y = LabelEncoder()
-    df["diagnosis"] = labelencoder_Y.fit_transform(df["diagnosis"])
-
-    X = df.iloc[:, 2:32].values
-    Y = df.iloc[:, 1].values
-
-    X_train, X_test, Y_train, Y_test = train_test_split(
-        X, Y, test_size=0.2, random_state=2
-    )
-
-    X_train = np.hstack((np.ones((X_train.shape[0], 1)), X_train))
-    X_test = np.hstack((np.ones((X_test.shape[0], 1)), X_test))
-
-    theta = np.zeros(X_train.shape[1])
-
-    alpha = 0.01
-    num_iterations = 1000
-
-    theta, costs = gradient_descent(X_train, Y_train, theta, alpha, num_iterations)
-
-    test_preds = np.round(sigmoid(X_test.dot(theta))).astype(int)
-    accuracy = np.mean(test_preds == Y_test)
-    print(f"ACCURACY={accuracy:.6f}")
-
-
-if __name__ == "__main__":
-    main()
+pred = predict(example, theta)

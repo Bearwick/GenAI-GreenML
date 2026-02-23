@@ -5,33 +5,33 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
-from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, f1_score
-import matplotlib.pyplot as plt
-import seaborn as sns
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
-df = pd.read_csv("data/students_graduate_predict.csv", delimiter=";")
 
-X = df.drop(columns=["Graduated (target)"])
-Y = df["Graduated (target)"]
+def main() -> None:
+    df = pd.read_csv("data/students_graduate_predict.csv", delimiter=";")
 
-x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.15, random_state=1)
+    x = df.drop(columns=["Graduated (target)"])
+    y = df["Graduated (target)"]
 
-model = MLPClassifier(hidden_layer_sizes=[5, 7], max_iter=800)
-model.fit(x_train, y_train)
+    x_train, x_test, y_train, y_test = train_test_split(
+        x, y, test_size=0.15, random_state=1
+    )
 
-model.predict(X.iloc[[0, 1, 2, 3]])
+    model = MLPClassifier(hidden_layer_sizes=[5, 7], max_iter=800)
+    model.fit(x_train, y_train)
 
-y_pred_lr = model.predict(x_test)
+    _ = model.predict(x.iloc[[0, 1, 2, 3]])
 
-accuracy = accuracy_score(y_test, y_pred_lr)
-print(f"ACCURACY={accuracy:.6f}")
+    y_pred_lr = model.predict(x_test)
 
-pd.DataFrame({"Предсказанные": y_pred_lr, "Истинные": y_test})
+    accuracy = accuracy_score(y_test, y_pred_lr)
+    _ = precision_score(y_test, y_pred_lr)
+    _ = recall_score(y_test, y_pred_lr)
+    _ = f1_score(y_test, y_pred_lr)
 
-confusion_matrix(y_test, y_pred_lr)
+    print(f"ACCURACY={accuracy:.6f}")
 
-pred = [
-    precision_score(y_test, y_pred_lr),
-    recall_score(y_test, y_pred_lr),
-    f1_score(y_test, y_pred_lr),
-]
+
+if __name__ == "__main__":
+    main()

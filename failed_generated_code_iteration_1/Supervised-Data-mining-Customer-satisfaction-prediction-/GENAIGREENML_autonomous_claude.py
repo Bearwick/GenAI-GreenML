@@ -2,113 +2,103 @@
 # LLM: claude
 # Mode: autonomous
 
-import numpy as np
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import OneHotEncoder
-import warnings
-warnings.filterwarnings("ignore")
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
 
-# Robust CSV loading
-df = None
+# --- Robust CSV loading ---
 try:
-    df = pd.read_csv("EireJet.csv")
+    df = pd.read_csv("EireJet (1).csv")
     if df.shape[1] < 3:
-        df = pd.read_csv("EireJet.csv", sep=';', decimal=',')
+        df = pd.read_csv("EireJet (1).csv", sep=';', decimal=',')
 except Exception:
-    try:
-        df = pd.read_csv("EireJet.csv", sep=';', decimal=',')
-    except Exception:
-        pass
+    df = pd.read_csv("EireJet (1).csv", sep=';', decimal=',')
 
-if df is None or df.empty:
-    print("ACCURACY=0.000000")
-    raise SystemExit
-
-# Normalize column names
+# --- Normalize column names ---
 df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
-df = df[[c for c in df.columns if not c.startswith('Unnamed')]]
+df = df.loc[:, ~df.columns.str.startswith('Unnamed')]
 
-# Drop rows with any NaN
-df = df.dropna(how='any', axis=0)
-
-# Identify target
+# --- Identify target ---
 target_col = None
-expected_target = 'satisfaction'
-for c in df.columns:
-    if c.strip().lower() == expected_target.lower():
-        target_col = c
-        break
-
-if target_col is None:
-    # Fallback: pick last column if categorical, else last numeric non-constant
-    for c in reversed(list(df.columns)):
-        if df[c].nunique() >= 2:
+if 'satisfaction' in df.columns:
+    target_col = 'satisfaction'
+else:
+    for c in df.columns:
+        if 'satisfaction' in c.lower():
             target_col = c
             break
-    if target_col is None:
-        print("ACCURACY=0.000000")
-        raise SystemExit
 
-# Encode target if needed
-y_raw = df[target_col].copy()
-if y_raw.dtype == object or y_raw.dtype.name == 'category':
-    le_target = LabelEncoder()
-    y = pd.Series(le_target.fit_transform(y_raw), index=y_raw.index)
-else:
-    y = y_raw.copy()
-    # Check if this is classification (few unique values) or regression
-    if y.nunique() > 50:
-        # Treat as regression fallback - but try classification first
-        pass
+if target_col is None:
+    # Fallback: pick last column
+    target_col = df.columns[-1]
 
-assert y.nunique() >= 2, "Target has fewer than 2 classes"
-
+# --- Separate features and target ---
 feature_cols = [c for c in df.columns if c != target_col]
-X = df[list(feature_cols)].copy()
+X = df[feature_cols].copy()
+y = df[target_col].copy()
 
-# Identify numeric and categorical columns
+# --- Drop rows where target is NaN ---
+mask = y.notna()
+X = X.loc[mask].reset_index(drop=True)
+y = y.loc[mask].reset_index(drop=True)
+
+# --- Encode target if it's categorical ---
+is_classification = True
+if y.dtype == object or y.dtype.name == 'category':
+    from sklearn.preprocessing import LabelEncoder
+    le = LabelEncoder()
+    y = pd.Series(le.fit_transform(y.astype(str)), name=target_col)
+else:
+    unique_vals = y.nunique()
+    if unique_vals <= 20:
+        is_classification = True
+    else:
+        is_classification = False
+
+# Check at least 2 classes
+if is_classification and y.nunique() < 2:
+    is_classification = False
+
+# --- Identify numeric and categorical feature columns ---
 numeric_cols = []
 categorical_cols = []
 
 for c in feature_cols:
-    col_converted = pd.to_numeric(X[c], errors='coerce')
-    non_null_ratio = col_converted.notna().sum() / len(X)
-    if non_null_ratio > 0.5:
-        numeric_cols.append(c)
-        X[c] = col_converted
-    else:
+    if X[c].dtype == object or X[c].dtype.name == 'category':
         categorical_cols.append(c)
+    else:
+        # Try coercing to numeric
+        coerced = pd.to_numeric(X[c], errors='coerce')
+        if coerced.notna().sum() > 0.5 * len(X):
+            X[c] = coerced
+            numeric_cols.append(c)
+        else:
+            categorical_cols.append(c)
 
-# Build preprocessing pipeline
-numeric_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='median')),
-    ('scaler', StandardScaler())
-])
+# --- Handle NaN/inf in numeric columns ---
+for c in numeric_cols:
+    X[c] = X[c].replace([np.inf, -np.inf], np.nan)
+    median_val = X[c].median()
+    if pd.isna(median_val):
+        median_val = 0.0
+    X[c] = X[c].fillna(median_val)
 
-categorical_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='most_frequent')),
-    ('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False, max_categories=20))
-])
+# --- Handle NaN in categorical columns ---
+for c in categorical_cols:
+    X[c] = X[c].astype(str).fillna('missing')
 
-transformers = []
-if numeric_cols:
-    transformers.append(('num', numeric_transformer, numeric_cols))
-if categorical_cols:
-    transformers.append(('cat', categorical_transformer, categorical_cols))
+# --- Assert dataset not empty ---
+assert len(X) > 0, "Dataset is empty after preprocessing"
 
-if not transformers:
-    print("ACCURACY=0.000000")
-    raise SystemExit
+# --- Train/test split ---
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y if is_classification else None
+)
 
-preprocessor = ColumnTransformer(transformers=transformers)
-
-# Handle inf values in numeric columns
-for c in numeric
+assert len(X_train) > 0, "Training set is empty"
+assert len(X_test) > 0, "

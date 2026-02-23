@@ -9,50 +9,46 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-RANDOM_SEED = 3
+SEED = 3
 
 try:
     df = pd.read_csv('mail_data.csv')
     if df.shape[1] < 2:
-        df = pd.read_csv('mail_data.csv', sep=';', decimal=',')
-except Exception:
+        raise ValueError
+except (ValueError, pd.errors.ParserError):
     df = pd.read_csv('mail_data.csv', sep=';', decimal=',')
 
-df.fillna('', inplace=True)
+cols = df.columns.tolist()
+cat_col = cols[0]
+msg_col = cols[1]
 
-cat_col = df.columns[0]
-msg_col = df.columns[1]
-
+df[msg_col] = df[msg_col].fillna('')
 df[cat_col] = df[cat_col].map({"spam": 0, "ham": 1}).astype(np.int8)
 
-X = df[msg_col]
-Y = df[cat_col]
-
 X_train, X_test, Y_train, Y_test = train_test_split(
-    X, Y, test_size=0.2, random_state=RANDOM_SEED
+    df[msg_col], df[cat_col], test_size=0.2, random_state=SEED
 )
 
 vectorizer = TfidfVectorizer(min_df=1, stop_words='english', lowercase=True)
-X_train_features = vectorizer.fit_transform(X_train)
-X_test_features = vectorizer.transform(X_test)
+X_train_feat = vectorizer.fit_transform(X_train)
+X_test_feat = vectorizer.transform(X_test)
 
-model = LogisticRegression(solver='liblinear', random_state=RANDOM_SEED)
-model.fit(X_train_features, Y_train)
+model = LogisticRegression(solver='liblinear', random_state=SEED, max_iter=100)
+model.fit(X_train_feat, Y_train)
 
-prediction_on_test_data = model.predict(X_test_features)
-accuracy = accuracy_score(Y_test, prediction_on_test_data)
+accuracy = accuracy_score(Y_test, model.predict(X_test_feat))
 
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Removed all prints, plots, and interactive inputs to eliminate unnecessary I/O overhead.
-# Removed redundant training-data prediction since only test accuracy is needed for evaluation.
-# Removed the predictive system demo block (single sample prediction) as it is not part of evaluation.
-# Used inplace fillna to avoid creating an extra DataFrame copy.
-# Used np.int8 for label column to reduce memory footprint.
-# Used solver='liblinear' for LogisticRegression which is faster on small datasets.
-# Added robust CSV fallback parsing (default then sep=';' with decimal=',').
-# Derived column names from df.columns instead of hardcoding.
-# Set fixed random seeds for reproducibility.
-# Removed duplicate import of TfidfVectorizer.
-# Removed intermediate variable raw_mail_data to reduce memory usage.
+# 1. Removed all print statements, plots, and interactive inputs per requirements.
+# 2. Removed redundant duplicate import of TfidfVectorizer.
+# 3. Removed unnecessary prediction on training data (only test accuracy is needed).
+# 4. Removed the predictive system demo section (interactive input).
+# 5. Used fillna('') instead of where(pd.notnull(...)) for cleaner null handling.
+# 6. Used np.int8 for label encoding to reduce memory footprint.
+# 7. Used solver='liblinear' for LogisticRegression — lightweight solver ideal for small datasets, avoids heavier LBFGS overhead.
+# 8. Added robust CSV fallback parsing with sep=';' and decimal=','.
+# 9. Set fixed random seeds for reproducibility.
+# 10. Avoided storing intermediate variables (prediction_on_training_data, etc.) that were unused for final output.
+# 11. Derived column names from actual dataframe headers rather than hardcoding.

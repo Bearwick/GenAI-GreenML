@@ -2,104 +2,104 @@
 # LLM: claude
 # Mode: autonomous
 
-import numpy as np
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
-import os
-import sys
 
-# Suppress warnings for clean output
-import warnings
-warnings.filterwarnings("ignore")
-
-# --- Robust CSV Loading ---
-data_path = None
-candidates = ["mail_data.csv", "spam_email.csv", "spam.csv", "data.csv", "dataset.csv"]
-for c in candidates:
-    if os.path.isfile(c):
-        data_path = c
-        break
-
-if data_path is None:
-    for f in os.listdir("."):
-        if f.endswith(".csv"):
-            data_path = f
+# Robust CSV loading
+df = None
+for sep, decimal in [(',', '.'), (';', ','), ('\t', '.')]:
+    try:
+        df = pd.read_csv('mail_data.csv', sep=sep, decimal=decimal, encoding='utf-8')
+        if df.shape[1] >= 2:
             break
-
-if data_path is None:
-    print("ACCURACY=0.000000")
-    sys.exit(0)
-
-# Try default parsing first
-try:
-    df = pd.read_csv(data_path, encoding="utf-8")
-except Exception:
-    try:
-        df = pd.read_csv(data_path, encoding="latin-1")
     except Exception:
-        df = pd.read_csv(data_path, encoding="utf-8", sep=";", decimal=",")
+        continue
 
-# If only 1 column, retry with sep=';'
-if df.shape[1] < 2:
+if df is None or df.shape[1] < 2:
     try:
-        df2 = pd.read_csv(data_path, sep=";", decimal=",", encoding="utf-8")
-        if df2.shape[1] >= 2:
-            df = df2
+        df = pd.read_csv('mail_data.csv', sep=',', encoding='latin-1')
     except Exception:
-        pass
+        df = pd.read_csv('mail_data.csv')
 
-# --- Column Name Normalization ---
-df.columns = [str(c).strip().replace("  ", " ") for c in df.columns]
-df = df[[c for c in df.columns if not c.startswith("Unnamed")]]
+# Normalize column names
+df.columns = [c.strip().replace('  ', ' ') for c in df.columns]
+df = df[[c for c in df.columns if not c.startswith('Unnamed')]]
 
-# --- Identify target and text columns ---
+# Identify target and message columns
 target_col = None
-text_col = None
+message_col = None
 
-# Check for expected headers
-col_lower_map = {c.lower(): c for c in df.columns}
+for c in df.columns:
+    cl = c.lower()
+    if cl in ('category', 'label', 'class', 'target', 'spam', 'type', 'v1'):
+        target_col = c
+    if cl in ('message', 'text', 'sms', 'email', 'content', 'v2'):
+        message_col = c
 
-if "category" in col_lower_map:
-    target_col = col_lower_map["category"]
-elif "label" in col_lower_map:
-    target_col = col_lower_map["label"]
-elif "class" in col_lower_map:
-    target_col = col_lower_map["class"]
-elif "v1" in col_lower_map:
-    target_col = col_lower_map["v1"]
+# Fallback: if not found, assume first col is target, second is message
+if target_col is None:
+    target_col = df.columns[0]
+if message_col is None:
+    message_col = df.columns[1]
 
-if "message" in col_lower_map:
-    text_col = col_lower_map["message"]
-elif "text" in col_lower_map:
-    text_col = col_lower_map["text"]
-elif "sms" in col_lower_map:
-    text_col = col_lower_map["sms"]
-elif "v2" in col_lower_map:
-    text_col = col_lower_map["v2"]
+# Drop rows with missing target or message
+df = df[[target_col, message_col]].dropna().reset_index(drop=True)
 
-# Fallback: if we have exactly 2 columns, assume first is target, second is text
-if target_col is None or text_col is None:
-    if df.shape[1] >= 2:
-        if target_col is None:
-            target_col = df.columns[0]
-        if text_col is None:
-            text_col = df.columns[1]
-    else:
-        print("ACCURACY=0.000000")
-        sys.exit(0)
+# Encode target: spam -> 0, ham -> 1 (as per common convention in the project)
+# First check unique values
+unique_targets = df[target_col].astype(str).str.strip().str.lower().unique()
 
-# --- Preprocessing ---
-df = df[[target_col, text_col]].copy()
-df[text_col] = df[text_col].fillna("").astype(str)
-df[target_col] = df[target_col].astype(str).str.strip().str.lower()
-
-# Encode target: spam -> 0, ham -> 1; handle other encodings
-unique_labels = df[target_col].unique()
-
+# Map labels to binary
 label_map = {}
-if "spam" in unique_labels and "ham" in unique_labels:
-    label_map = {"spam": 0, "ham": 1}
-elif set(unique_labels).issubset
+for val in unique_targets:
+    if val in ('spam', '1'):
+        label_map[val] = 0
+    elif val in ('ham', '0'):
+        label_map[val] = 1
+    else:
+        label_map[val] = len(label_map)
+
+df['label'] = df[target_col].astype(str).str.strip().str.lower().map(label_map)
+df = df.dropna(subset=['label']).reset_index(drop=True)
+df['label'] = df['label'].astype(int)
+
+# Ensure message is string
+df[message_col] = df[message_col].astype(str)
+
+# Assert dataset not empty
+assert len(df) > 0, "Dataset is empty after preprocessing"
+assert df['label'].nunique() >= 2, "Need at least 2 classes"
+
+X = df[message_col]
+y = df['label']
+
+# Train/test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+assert len(X_train) > 0 and len(X_test) > 0, "Train/test split has no samples"
+
+# Energy-efficient pipeline: TF-IDF with limited features + Logistic Regression
+pipeline = Pipeline([
+    ('tfidf', TfidfVectorizer(
+        max_features=5000,
+        stop_words='english',
+        lowercase=True,
+        sublinear_tf=True,
+        dtype=np.float32
+    )),
+    ('clf', LogisticRegression(
+        solver='liblinear',
+        max_iter=200,
+        random_state=42,
+        C=1.0
+    ))
+])
+
+pipeline.

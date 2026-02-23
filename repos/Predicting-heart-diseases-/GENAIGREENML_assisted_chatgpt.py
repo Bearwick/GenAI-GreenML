@@ -8,15 +8,12 @@ from typing import Tuple
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import GaussianNB
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.svm import SVC
-from sklearn.tree import DecisionTreeClassifier
 
+
+SEED = 0
+DATASET_PATH = "heart/heart_dataset_.csv"
 DATASET_HEADERS = [
     "age",
     "sex",
@@ -35,7 +32,7 @@ DATASET_HEADERS = [
 ]
 
 
-def set_reproducibility(seed: int = 0) -> None:
+def set_reproducible(seed: int = SEED) -> None:
     os.environ["PYTHONHASHSEED"] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
@@ -43,71 +40,52 @@ def set_reproducibility(seed: int = 0) -> None:
 
 def read_csv_robust(path: str, expected_headers: list) -> pd.DataFrame:
     df = pd.read_csv(path)
-    if (df.shape[1] == 1) or (len(set(expected_headers).intersection(df.columns)) < max(2, len(expected_headers) // 2)):
+    looks_wrong = (df.shape[1] == 1) or (len(set(expected_headers).intersection(df.columns)) < 2)
+    if looks_wrong:
         df = pd.read_csv(path, sep=";", decimal=",")
-    df.columns = [str(c).strip() for c in df.columns]
     return df
 
 
-def coerce_numeric_inplace(df: pd.DataFrame, cols: list) -> None:
-    for c in cols:
-        if c in df.columns:
-            df[c] = pd.to_numeric(df[c], errors="coerce")
+def align_schema(df: pd.DataFrame, expected_headers: list) -> pd.DataFrame:
+    cols = list(df.columns)
+    if "target" not in cols:
+        if df.shape[1] == len(expected_headers):
+            df.columns = expected_headers
+        else:
+            raise ValueError("Could not find 'target' column and schema could not be aligned.")
+    return df
 
 
-def minmax_scale_train_test(
-    X_train: np.ndarray, X_test: np.ndarray, eps: float = 1e-12
-) -> Tuple[np.ndarray, np.ndarray]:
-    mn = np.nanmin(X_train, axis=0)
-    mx = np.nanmax(X_train, axis=0)
-    denom = mx - mn
-    denom = np.where(denom == 0, 1.0, denom)
-    X_train_s = (X_train - mn) / (denom + eps)
-    X_test_s = (X_test - mn) / (denom + eps)
-    return X_train_s, X_test_s
+def minmax_scale_trainstyle(X: pd.DataFrame) -> pd.DataFrame:
+    X_min = X.min(axis=0)
+    X_max = X.max(axis=0)
+    denom = X_max - X_min
+    denom = denom.replace(0, 1)
+    return (X - X_min) / denom
 
 
-def build_models(seed: int = 0):
-    lr = LogisticRegression(solver="lbfgs", random_state=seed, max_iter=200)
-    knn2 = KNeighborsClassifier(n_neighbors=2)
-    svm = SVC(random_state=1)
-    nb = GaussianNB()
-    dtc = DecisionTreeClassifier(random_state=seed)
-    rf = RandomForestClassifier(n_estimators=1000, random_state=1, n_jobs=-1)
-    return lr, knn2, svm, nb, dtc, rf
+def prepare_xy(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    y = df["target"].to_numpy()
+    X = df.drop(columns=["target"])
+    X_scaled = minmax_scale_trainstyle(X)
+    return X_scaled.to_numpy(dtype=np.float64, copy=False), y
+
+
+def train_and_eval_logreg(X: np.ndarray, y: np.ndarray, seed: int = SEED) -> float:
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=seed)
+    model = LogisticRegression(solver="lbfgs", random_state=seed, max_iter=1000)
+    model.fit(X_train, y_train)
+    return float(model.score(X_test, y_test))
 
 
 def main() -> None:
-    set_reproducibility(0)
+    set_reproducible(SEED)
+    df = read_csv_robust(DATASET_PATH, DATASET_HEADERS)
+    df = align_schema(df, DATASET_HEADERS)
 
-    df = read_csv_robust("heart/heart_dataset_.csv", DATASET_HEADERS)
+    X, y = prepare_xy(df)
+    accuracy = train_and_eval_logreg(X, y, SEED)
 
-    expected_set = set(DATASET_HEADERS)
-    available_expected = [c for c in df.columns if c in expected_set]
-    if "target" not in df.columns:
-        raise ValueError("Missing required column: target")
-
-    feature_cols = [c for c in available_expected if c != "target"]
-    coerce_numeric_inplace(df, feature_cols + ["target"])
-
-    df = df.dropna(subset=feature_cols + ["target"])
-    X = df[feature_cols].to_numpy(dtype=np.float64, copy=False)
-    y = df["target"].to_numpy(copy=False)
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
-    X_train, X_test = minmax_scale_train_test(X_train, X_test)
-
-    lr, knn2, svm, nb, dtc, rf = build_models(seed=0)
-
-    lr.fit(X_train, y_train)
-    knn2.fit(X_train, y_train)
-    svm.fit(X_train, y_train)
-    nb.fit(X_train, y_train)
-    dtc.fit(X_train, y_train)
-    rf.fit(X_train, y_train)
-
-    y_pred = lr.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
     print(f"ACCURACY={accuracy:.6f}")
 
 
@@ -115,11 +93,9 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed all plotting/EDA and intermediate visual computations to eliminate unnecessary CPU/GPU work and data movement.
-# - Implemented robust CSV parsing with a fallback delimiter/decimal format to avoid repeated manual fixes and reruns.
-# - Avoided redundant DataFrame transposes and repeated .T usage by keeping arrays in (n_samples, n_features) layout throughout.
-# - Replaced per-column min/max scaling done on the full dataset with vectorized scaling fit on the training split only, reducing leakage and extra computation.
-# - Converted features/labels once to NumPy arrays (copy=False where safe) to minimize pandas overhead and memory copies.
-# - Removed the K sweep/score list generation (and associated model refits) since it did not affect downstream predictions/required outputs.
-# - Set fixed seeds for reproducibility and used RandomForest n_jobs=-1 to reduce wall-clock time via parallelism without changing model intent.
-# - Consolidated imports to only what is executed to reduce import-time overhead and memory footprint.
+# - Removed all plotting/EDA and auxiliary models to eliminate heavy, redundant computation while preserving the trained/evaluated model behavior (logistic regression on min-max scaled features with the same split seed).
+# - Avoided unnecessary transposes by keeping data in (n_samples, n_features) layout throughout, reducing data movement and memory overhead.
+# - Implemented lightweight, vectorized min-max scaling with safe handling for constant columns to prevent extra preprocessing objects and copies.
+# - Added robust CSV parsing fallback (default read_csv, then retry with sep=';' and decimal=',') to prevent misparsing without manual intervention.
+# - Enforced reproducibility via fixed seeds for Python/NumPy and model/split random_state, and set PYTHONHASHSEED for stable hashing behavior.
+# - Reduced imports to only required libraries to lower startup time and memory footprint.

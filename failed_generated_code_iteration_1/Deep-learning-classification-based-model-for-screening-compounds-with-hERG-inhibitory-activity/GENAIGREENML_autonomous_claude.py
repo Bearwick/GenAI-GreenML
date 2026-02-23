@@ -5,98 +5,91 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
-import warnings
-warnings.filterwarnings("ignore")
 
-def robust_read_csv(path):
-    try:
-        df = pd.read_csv(path)
-        if df.shape[1] < 2:
-            df = pd.read_csv(path, sep=';', decimal=',')
-        return df
-    except Exception:
-        try:
-            df = pd.read_csv(path, sep=';', decimal=',')
-            return df
-        except Exception:
-            return pd.DataFrame()
-
-train_path = "herg_train_activity.csv"
-test_path = "herg_test_activity.csv"
-
-have_separate_test = False
+# --- Robust CSV Loading ---
+DATASET_PATH = "herg_train_activity.csv"
 
 try:
-    train_df = robust_read_csv(train_path)
-    test_df = robust_read_csv(test_path)
-    if not test_df.empty and test_df.shape[0] > 0:
-        have_separate_test = True
+    df = pd.read_csv(DATASET_PATH)
+    if df.shape[1] < 2:
+        df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
 except Exception:
-    train_df = pd.DataFrame()
-    test_df = pd.DataFrame()
+    df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
 
-if train_df.empty:
-    try:
-        train_df = robust_read_csv("herg_train_activity.csv")
-    except Exception:
-        pass
+# --- Column Name Normalization ---
+df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
+df = df.loc[:, ~df.columns.str.startswith('Unnamed')]
 
-if train_df.empty:
-    try:
-        import glob
-        csv_files = glob.glob("*.csv")
-        for f in csv_files:
-            if "cas" not in f.lower():
-                candidate = robust_read_csv(f)
-                if not candidate.empty and candidate.shape[0] > 5:
-                    train_df = candidate
-                    break
-    except Exception:
-        pass
+# --- Schema Discovery ---
+EXPECTED_FEATURES = ['a_acc', 'a_don', 'b_rotN', 'density', 'logP(o/w)', 'logS', 'rings', 'Weight']
+EXPECTED_TARGET = 'Activity_value'
 
-assert not train_df.empty, "No data loaded"
+available_cols = list(df.columns)
 
-train_df.columns = train_df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
-unnamed_cols = [c for c in train_df.columns if c.lower().startswith('unnamed')]
-train_df = train_df.drop(columns=unnamed_cols, errors='ignore')
-
-if have_separate_test and not test_df.empty:
-    test_df.columns = test_df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
-    unnamed_cols_test = [c for c in test_df.columns if c.lower().startswith('unnamed')]
-    test_df = test_df.drop(columns=unnamed_cols_test, errors='ignore')
-
-expected_headers = ['a_acc', 'a_don', 'b_rotN', 'density', 'logP(o/w)', 'logS', 'rings', 'Weight', 'Activity_value']
-
-target_col = None
-for col in train_df.columns:
-    if col.lower().replace(' ', '_') == 'activity_value' or col == 'Activity_value':
-        target_col = col
-        break
-
-if target_col is None:
-    for col in train_df.columns:
-        if 'activity' in col.lower() or 'target' in col.lower() or 'label' in col.lower() or 'class' in col.lower():
-            target_col = col
+# Determine target
+if EXPECTED_TARGET in available_cols:
+    target_col = EXPECTED_TARGET
+else:
+    # Fallback: pick last numeric column that is not constant
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    target_col = None
+    for c in reversed(numeric_cols):
+        if df[c].nunique() > 1:
+            target_col = c
             break
+    if target_col is None and len(numeric_cols) > 0:
+        target_col = numeric_cols[-1]
 
-if target_col is None:
-    numeric_cols = train_df.select_dtypes(include=[np.number]).columns.tolist()
-    if numeric_cols:
-        for col in numeric_cols:
-            nunique = train_df[col].nunique()
-            if 2 <= nunique <= 20:
-                target_col = col
-                break
-        if target_col is None:
-            target_col = numeric_cols[-1]
+assert target_col is not None, "No suitable target column found."
 
-assert target_col is not None, "No suitable target column found"
+# Determine features
+feature_cols = [c for c in EXPECTED_FEATURES if c in available_cols]
+if len(feature_cols) == 0:
+    feature_cols = [c for c in available_cols if c != target_col]
 
-for col in train_df.columns:
-    if train_df[col].dtype == object:
-        try:
-            train_df[col] = pd.to_numeric(train_df[col], errors='co
+# --- Coerce to Numeric ---
+for c in feature_cols + [target_col]:
+    df[c] = pd.to_numeric(df[c], errors='coerce')
+
+# Drop rows with NaN/inf in features or target
+df = df.replace([np.inf, -np.inf], np.nan)
+df = df.dropna(subset=feature_cols + [target_col])
+
+assert len(df) > 0, "Dataset is empty after preprocessing."
+
+X = df[list(feature_cols)].values
+y = df[target_col].values
+
+# --- Task Detection ---
+n_classes = len(np.unique(y))
+is_classification = n_classes >= 2 and n_classes <= 50 and np.issubdtype(y.dtype, np.integer) or set(np.unique(y)).issubset({0, 1})
+
+if n_classes < 2:
+    # Trivial baseline: everything is one class
+    accuracy = 1.0
+    print(f"ACCURACY={accuracy:.6f}")
+    import sys
+    sys.exit(0)
+
+# --- Train/Test Split ---
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=42, stratify=y if is_classification else None
+)
+
+assert len(X_train) > 0 and len(X_test) > 0, "Train or test split is empty."
+
+# --- Model Pipeline ---
+# Using Logistic Regression: energy-efficient, CPU-friendly, well-suited for binary classification
+# The project context is hERG blocker/non-blocker classification (binary)
+pipeline = Pipeline([
+    ('scaler', StandardScaler()),
+    ('clf', LogisticRegression(
+        max_iter=1000,
+        solver='lbfgs',
+        C=1.0,
+        random_state=42,
+        n_jobs=1  # single core for

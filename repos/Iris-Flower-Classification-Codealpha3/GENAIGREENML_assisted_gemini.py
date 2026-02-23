@@ -3,48 +3,46 @@
 # Mode: assisted
 
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
-def load_data(file_path):
+def run_process():
+    data_path = "Iris.csv"
     try:
-        df = pd.read_csv(file_path)
+        df = pd.read_csv(data_path)
         if df.shape[1] <= 1:
             raise ValueError
-    except (pd.errors.ParserError, ValueError):
-        df = pd.read_csv(file_path, sep=';', decimal=',')
-    return df
+    except Exception:
+        df = pd.read_csv(data_path, sep=';', decimal=',')
 
-df = load_data("Iris.csv")
+    if "Id" in df.columns:
+        df.drop(columns=["Id"], inplace=True)
 
-if 'Id' in df.columns:
-    df.drop(columns=['Id'], inplace=True)
+    target = "Species"
+    x_data = df.drop(columns=[target]).values.astype(np.float32)
+    y_data = LabelEncoder().fit_transform(df[target])
 
-target_col = [col for col in df.columns if 'Species' in col][0]
-df[target_col] = df[target_col].astype('category').cat.codes
+    x_train, x_test, y_train, y_test = train_test_split(
+        x_data, y_data, test_size=0.2, random_state=42, stratify=y_data
+    )
 
-X = df.drop(columns=[target_col]).astype('float32')
-y = df[target_col]
+    clf = RandomForestClassifier(n_estimators=100, random_state=42)
+    clf.fit(x_train, y_train)
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
+    accuracy = accuracy_score(y_test, clf.predict(x_test))
+    print(f"ACCURACY={accuracy:.6f}")
 
-model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=1)
-model.fit(X_train, y_train)
-
-y_pred = model.predict(X_test)
-accuracy = accuracy_score(y_test, y_pred)
-
-print(f"ACCURACY={accuracy:.6f}")
+if __name__ == "__main__":
+    run_process()
 
 # Optimization Summary
-# 1. Reduced memory footprint by casting feature data to float32.
-# 2. Replaced LabelEncoder with pandas categorical codes for faster, more efficient target encoding.
-# 3. Implemented robust CSV parsing with conditional fallback to handle different delimiters and decimal formats.
-# 4. Eliminated redundant computations by removing unused cross-validation and detailed metrics (report/confusion matrix).
-# 5. Removed visualization libraries (matplotlib/seaborn) to reduce package overhead and execution time.
-# 6. Optimized data loading by identifying and dropping the 'Id' column immediately.
-# 7. Set n_jobs=1 for RandomForest to avoid the overhead of multiprocessing on a small-scale dataset.
-# 8. Minimized I/O and CPU cycles by removing all logging, plotting, and intermediate data structures.
+# 1. Reduced memory footprint by casting features to float32 instead of the default float64.
+# 2. Removed heavy visualization dependencies (Matplotlib, Seaborn) to reduce environment overhead and runtime.
+# 3. Eliminated redundant computations by removing cross-validation and duplicate metric calculations.
+# 4. Streamlined data loading with a robust fallback mechanism to ensure single-pass parsing.
+# 5. Removed all logging, descriptive prints, and plots to minimize CPU cycles and I/O operations.
+# 6. Used .values to convert dataframes to NumPy arrays early, reducing overhead of pandas index alignment during training.
+# 7. Maintained model consistency using fixed seeds to ensure reproducibility with minimal complexity.

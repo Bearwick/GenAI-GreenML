@@ -11,7 +11,6 @@ from tensorflow.keras.layers import Dense, InputLayer
 from tensorflow.keras.utils import to_categorical
 import numpy as np
 
-
 data = pd.read_csv("heart_failure.csv")
 
 y = data["death_event"]
@@ -54,7 +53,6 @@ ct = ColumnTransformer(
         )
     ]
 )
-
 X_train = ct.fit_transform(X_train)
 X_test = ct.transform(X_test)
 
@@ -70,7 +68,7 @@ model.add(Dense(12, activation="relu"))
 model.add(Dense(2, activation="softmax"))
 model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
 
-model.fit(X_train, Y_train, epochs=100, batch_size=16, verbose=1)
-
+model.fit(X_train, Y_train, epochs=100, batch_size=16, verbose=0)
 loss, accuracy = model.evaluate(X_test, Y_test, verbose=0)
+
 print(f"ACCURACY={accuracy:.6f}")

@@ -3,11 +3,11 @@
 # Mode: assisted
 
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import ExtraTreesClassifier
 
 path = "data/wine_dataset.csv"
+
 try:
     df = pd.read_csv(path)
     if df.shape[1] < 2:
@@ -15,34 +15,38 @@ try:
 except Exception:
     df = pd.read_csv(path, sep=';', decimal=',')
 
-df["style"] = df["style"].astype(str).str.strip().str.lower()
-df = df[df["style"].isin(["red", "white"])].copy()
-df["style"] = df["style"].map({"red": 0, "white": 1}).astype(np.int8)
+style_col = "style"
+df[style_col] = df[style_col].astype(str).str.strip().str.lower()
+df = df[df[style_col].isin(["red", "white"])].copy()
+df[style_col] = df[style_col].map({"red": 0, "white": 1}).astype("int8")
 
-feature_cols = [c for c in df.columns if c != "style"]
-df[feature_cols] = df[feature_cols].apply(pd.to_numeric, errors="coerce")
-df.dropna(subset=feature_cols, inplace=True)
+X = df.drop(columns=[style_col])
+y = df[style_col]
 
-X = df[feature_cols].values
-y = df["style"].values
+X = X.apply(pd.to_numeric, errors="coerce")
+valid = X.notna().all(axis=1)
+X = X.loc[valid]
+y = y.loc[valid]
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.3, random_state=42, stratify=y
 )
 
-modelo = ExtraTreesClassifier(n_estimators=100, random_state=42, n_jobs=-1)
-modelo.fit(X_train, y_train)
+model = ExtraTreesClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+model.fit(X_train, y_train)
 
-accuracy = modelo.score(X_test, y_test)
+accuracy = model.score(X_test, y_test)
+
+_ = model.predict(X_test.iloc[300:600])
+
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# 1. Converted DataFrames to NumPy arrays (.values) before train/test split and fitting to reduce memory and avoid pandas overhead during model training.
-# 2. Used np.int8 for binary target instead of int64, reducing memory by 8x for that column.
-# 3. Used dropna(inplace=True) to avoid creating an extra copy of the dataframe.
-# 4. Derived feature columns dynamically from df.columns to avoid hardcoding.
-# 5. Added n_jobs=-1 to ExtraTreesClassifier to leverage all CPU cores, reducing wall-clock time and overall energy for the same computation.
-# 6. Removed redundant mask-based filtering; used dropna directly on the dataframe.
-# 7. Removed plots, prints, and unnecessary predict call on a slice that was not used for evaluation.
-# 8. Added robust CSV parsing fallback (sep=';', decimal=',').
-# 9. Fixed random_state=42 for reproducibility.
+# 1. Used int8 instead of int64 for binary label column to reduce memory footprint.
+# 2. Added n_jobs=-1 to ExtraTreesClassifier to parallelize tree fitting, reducing wall-clock time and overall energy use.
+# 3. Removed all print statements except the required accuracy output.
+# 4. Removed redundant variable aliases (arquivo -> df, modelo -> model) for clarity.
+# 5. Added robust CSV parsing fallback (sep=';', decimal=',') for input reliability.
+# 6. Removed plots, visualizations, and artifact saving.
+# 7. Fixed random_state=42 for reproducibility.
+# 8. Kept prediction call to preserve original behavior but discarded output since it is not needed.

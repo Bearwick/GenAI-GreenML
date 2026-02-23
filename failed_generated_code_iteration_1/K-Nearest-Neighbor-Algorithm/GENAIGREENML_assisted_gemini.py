@@ -5,53 +5,66 @@
 import pandas as pd
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import train_test_split
+import os
 
-def load_data(filename):
+def load_data(file_path):
     try:
-        df = pd.read_csv(filename)
-        if df.shape[1] < 2:
-            raise ValueError
-    except:
-        df = pd.read_csv(filename, sep=';', decimal=',')
+        df = pd.read_csv(file_path)
+    except (pd.errors.ParserError, ValueError):
+        df = pd.read_csv(file_path, sep=';', decimal=',')
     
-    df = df.apply(pd.to_numeric, errors='coerce').dropna()
+    if df.iloc[0].apply(lambda x: isinstance(x, str)).any():
+        df = df.iloc[1:].reset_index(drop=True)
     
-    X = df.iloc[:, 1:].values.astype(np.float32)
-    y = df.iloc[:, 0].values.astype(np.int32)
-    return X, y
+    return df.apply(pd.to_numeric, errors='coerce').fillna(0)
 
 def main():
-    train_file = "MNIST_train.csv"
-    test_file = "MNIST_test.csv"
-    
-    try:
-        X_train, y_train = load_data(train_file)
-        X_test, y_test = load_data(test_file)
-    except:
+    train_path = "MNIST_train.csv"
+    test_path = "MNIST_test.csv"
+    seed = 42
+
+    if not os.path.exists(train_path):
         return
+
+    train_df = load_data(train_path)
+    
+    if os.path.exists(test_path):
+        test_df = load_data(test_path)
+    else:
+        train_df, test_df = train_test_split(train_df, test_size=0.2, random_state=seed)
+
+    label_col = train_df.columns[0]
+    
+    X_train = train_df.drop(columns=[label_col]).values.astype(np.uint8)
+    y_train = train_df[label_col].values.astype(np.int32)
+    
+    X_test = test_df.drop(columns=[label_col]).values.astype(np.uint8)
+    y_test = test_df[label_col].values.astype(np.int32)
 
     knn = KNeighborsClassifier(
         n_neighbors=7, 
         weights='distance', 
         algorithm='auto', 
+        metric='euclidean',
         n_jobs=-1
     )
+    
     knn.fit(X_train, y_train)
-    
-    predictions = knn.predict(X_test)
-    
-    accuracy_percentage = np.mean(predictions == y_test) * 100
-    
-    print(f"ACCURACY={accuracy_percentage:.6f}")
+    accuracy = knn.score(X_test, y_test)
+
+    print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# 1. Vectorized Operations: Replaced manual Python loops for Euclidean distance with Scikit-learn's optimized C-backend, reducing runtime from O(N*D) to highly efficient vectorized routines.
-# 2. Algorithmic Efficiency: Utilized Scikit-learn's 'auto' algorithm which employs KD-Trees or Ball-Trees to reduce search complexity from linear O(N) to logarithmic O(log N) per query.
-# 3. Fast I/O: Replaced line-by-line file parsing with Pandas read_csv for high-speed data ingestion and robust schema handling.
-# 4. Memory Footprint: Converted data to float32 and int32 types to reduce memory consumption compared to native Python objects and lists.
-# 5. Parallel Processing: Enabled n_jobs=-1 to utilize all available CPU cores for distance calculations, minimizing total wall-clock energy consumption.
-# 6. Redundancy Removal: Eliminated expensive list operations (del, max, remove) inside nested loops used in the original KNN implementation.
-# 7. Preprocessing Simplification: Replaced manual string-to-int conversion loops with vectorized Pandas/NumPy type casting.
+# 1. Replaced manual Python loops for Euclidean distance with Scikit-learn's KNeighborsClassifier, 
+#    leveraging highly optimized C/Cython backends and vectorization.
+# 2. Utilized 'n_jobs=-1' to enable multi-core processing, significantly reducing runtime and energy waste.
+# 3. Employed Pandas for efficient CSV parsing and used NumPy arrays with 'uint8' types to minimize memory footprint.
+# 4. Eliminated redundant distance calculations and manual sorting logic (O(N) vs O(log N) search).
+# 5. Removed expensive math.pow and math.sqrt calls inside nested loops, reducing CPU instruction cycles.
+# 6. Optimized data movement by avoiding repeated list conversions and intermediate dictionary structures.
+# 7. Implemented robust data loading with a fallback to handle varying CSV delimiters and decimal formats.
+# 8. Set a fixed random seed for reproducibility and stable evaluation.

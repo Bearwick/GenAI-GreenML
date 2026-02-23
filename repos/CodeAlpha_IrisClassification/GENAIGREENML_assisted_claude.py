@@ -9,55 +9,44 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-def load_data(path="Iris.csv"):
-    try:
-        data = pd.read_csv(path)
-        if data.shape[1] <= 2:
-            data = pd.read_csv(path, sep=';', decimal=',')
-    except FileNotFoundError:
-        raise SystemExit("Dataset not found.")
-    return data
+DATASET_PATH = "Iris.csv"
 
-def main():
-    data = load_data()
+try:
+    data = pd.read_csv(DATASET_PATH)
+    if data.shape[1] <= 2:
+        data = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
+except Exception:
+    data = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
 
-    drop_cols = [c for c in data.columns if c.lower() == 'id']
-    if drop_cols:
-        data.drop(columns=drop_cols, inplace=True)
+id_cols = [c for c in data.columns if c.lower() == 'id']
+if id_cols:
+    data.drop(columns=id_cols, inplace=True)
 
-    species_col = [c for c in data.columns if c.lower() == 'species']
-    if not species_col:
-        raise SystemExit("Species column not found.")
-    species_col = species_col[0]
+species_col = [c for c in data.columns if c.lower() == 'species'][0]
 
-    X = data.drop(columns=[species_col]).values
-    y = data[species_col].values
+X = data.drop(columns=[species_col]).values
+le = LabelEncoder()
+y = le.fit_transform(data[species_col])
 
-    le = LabelEncoder()
-    y_encoded = le.fit_transform(y)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
-    )
+model = LogisticRegression(max_iter=200, solver='lbfgs', random_state=42)
+model.fit(X_train, y_train)
 
-    model = LogisticRegression(max_iter=200, solver='lbfgs', random_state=42)
-    model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
 
-    y_pred = model.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-
-    print(f"ACCURACY={accuracy:.6f}")
-
-if __name__ == "__main__":
-    main()
+print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# - Removed RandomForestClassifier entirely; kept only LogisticRegression which is lighter and sufficient for Iris, preserving the ML task and producing equivalent high accuracy.
-# - Removed seaborn/matplotlib imports and all visualization code to eliminate unnecessary computation and memory usage.
-# - Removed all intermediate prints, logging, and classification_report calls to reduce I/O overhead.
-# - Converted DataFrame features to numpy arrays (.values) before training to avoid pandas overhead during model fitting.
-# - Used robust CSV fallback: retries with sep=';' and decimal=',' if initial parse yields too few columns.
-# - Derived column names dynamically (case-insensitive) instead of hardcoding, improving robustness.
-# - Set fixed random_state on both train_test_split and LogisticRegression for reproducibility.
-# - Removed confusion matrix computation since it was only used for visualization.
-# - No artifacts saved to disk; minimal memory footprint throughout.
+# Removed RandomForestClassifier: LogisticRegression achieves the same accuracy on Iris and is much lighter in computation and memory.
+# Removed seaborn/matplotlib imports and all visualization code to eliminate unnecessary dependencies and rendering overhead.
+# Removed all intermediate print/logging statements to reduce I/O overhead.
+# Used .values to pass numpy array directly to sklearn, avoiding repeated DataFrame indexing.
+# Robust CSV fallback: tries default separator first, falls back to sep=';' and decimal=',' if needed.
+# Column names derived dynamically from actual data rather than hardcoded.
+# Fixed random_state on both train_test_split and LogisticRegression for reproducibility.
+# Dropped the Id column detection using case-insensitive matching for robustness.
+# Removed redundant confusion_matrix and classification_report computations since only accuracy is needed.

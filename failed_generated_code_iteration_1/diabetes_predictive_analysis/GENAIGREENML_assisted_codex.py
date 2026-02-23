@@ -9,93 +9,111 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import KNeighborsClassifier
 
-DATASET_HEADERS = "Pregnancies,Glucose,BloodPressure,SkinThickness,Insulin,BMI,DiabetesPedigreeFunction,Age,Outcome"
+DATASET_PATH = "diabetes.csv"
+DATASET_HEADERS = ["Pregnancies", "Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI", "DiabetesPedigreeFunction", "Age", "Outcome"]
+SEED = 42
 
-def normalize_col(name):
-    return "".join(ch for ch in str(name).lower() if ch.isalnum())
+np.random.seed(SEED)
+random.seed(SEED)
 
-def parsing_wrong(df, expected_cols):
-    if df.shape[1] <= 1:
+HEADER_MAP = {h.lower(): h for h in DATASET_HEADERS}
+GLUCOSE_COL = HEADER_MAP.get("glucose")
+BP_COL = HEADER_MAP.get("bloodpressure")
+SKIN_COL = HEADER_MAP.get("skinthickness")
+INSULIN_COL = HEADER_MAP.get("insulin")
+BMI_COL = HEADER_MAP.get("bmi")
+TARGET_COL = HEADER_MAP.get("outcome")
+ZERO_IMPUTE_COLS = [c for c in [GLUCOSE_COL, BP_COL, SKIN_COL, INSULIN_COL, BMI_COL] if c]
+MEDIAN_IMPUTE_COLS = [c for c in [BP_COL, SKIN_COL, INSULIN_COL, BMI_COL] if c]
+
+def columns_are_numeric(cols):
+    for c in cols:
+        try:
+            float(str(c))
+        except ValueError:
+            return False
+    return True
+
+def parsing_looks_wrong(df, expected_headers):
+    cols = list(df.columns)
+    if len(cols) == 1 and len(expected_headers) > 1:
         return True
-    if expected_cols:
-        expected_norm = {normalize_col(c) for c in expected_cols}
-        actual_norm = {normalize_col(c) for c in df.columns}
-        if len(expected_norm & actual_norm) < max(1, len(expected_norm) // 2):
-            return True
-        if df.shape[1] > len(expected_cols) and any(str(c).startswith("Unnamed") for c in df.columns):
-            return True
+    expected_set = set(expected_headers)
+    if expected_set.intersection(cols):
+        return len(cols) < len(expected_headers)
+    if len(cols) < len(expected_headers):
+        return True
+    if columns_are_numeric(cols):
+        return True
     return False
 
-def read_csv_with_fallback(path, expected_cols):
-    df = pd.read_csv(path)
-    if parsing_wrong(df, expected_cols):
-        df = pd.read_csv(path, sep=";", decimal=",")
+def align_columns(df, expected_headers):
+    lower_map = {str(c).strip().lower(): c for c in df.columns}
+    rename_map = {}
+    for exp in expected_headers:
+        key = exp.lower()
+        if key in lower_map and lower_map[key] != exp:
+            rename_map[lower_map[key]] = exp
+    if rename_map:
+        df = df.rename(columns=rename_map)
     return df
 
-def standardize_columns(df, expected_cols):
+def _read_csv(path, **kwargs):
+    df = pd.read_csv(path, **kwargs)
     df.columns = [str(c).strip() for c in df.columns]
-    if expected_cols:
-        norm_actual = {normalize_col(c): c for c in df.columns}
-        rename_map = {}
-        for exp in expected_cols:
-            norm_exp = normalize_col(exp)
-            if norm_exp in norm_actual:
-                rename_map[norm_actual[norm_exp]] = exp
-        if rename_map:
-            df = df.rename(columns=rename_map)
     return df
 
-def preprocess(df):
-    zero_names = ["Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI"]
-    norm_zero = {normalize_col(c) for c in zero_names}
-    zero_cols = [c for c in df.columns if normalize_col(c) in norm_zero]
+def load_dataset(path, expected_headers):
+    df = _read_csv(path)
+    df = align_columns(df, expected_headers)
+    if parsing_looks_wrong(df, expected_headers):
+        df = _read_csv(path, sep=";", decimal=",")
+        df = align_columns(df, expected_headers)
+    if parsing_looks_wrong(df, expected_headers):
+        df = _read_csv(path, header=None, names=expected_headers)
+        df = align_columns(df, expected_headers)
+    if len(df.columns) == len(expected_headers) and not set(expected_headers).issubset(df.columns):
+        df.columns = expected_headers
+    return df
+
+def preprocess_data(df, expected_headers):
+    if set(expected_headers).issubset(df.columns):
+        df = df.loc[:, expected_headers].copy()
+    else:
+        df = df.copy()
+    zero_cols = [c for c in ZERO_IMPUTE_COLS if c in df.columns]
     if zero_cols:
         df.loc[:, zero_cols] = df.loc[:, zero_cols].replace(0, np.nan)
-        fill_values = {}
-        glucose_col = next((c for c in zero_cols if normalize_col(c) == normalize_col("Glucose")), None)
-        if glucose_col is not None:
-            fill_values[glucose_col] = df[glucose_col].mean()
-        median_cols = [c for c in zero_cols if c != glucose_col]
-        if median_cols:
-            fill_values.update(df[median_cols].median().to_dict())
-        if fill_values:
-            df.fillna(value=fill_values, inplace=True)
-    return df
+    if GLUCOSE_COL in df.columns:
+        df.loc[:, GLUCOSE_COL] = df[GLUCOSE_COL].fillna(df[GLUCOSE_COL].mean())
+    median_cols = [c for c in MEDIAN_IMPUTE_COLS if c in df.columns]
+    if median_cols:
+        df.loc[:, median_cols] = df[median_cols].fillna(df[median_cols].median())
+    target_col = TARGET_COL if TARGET_COL in df.columns else (expected_headers[-1] if expected_headers[-1] in df.columns else df.columns[-1])
+    feature_cols = [c for c in df.columns if c != target_col]
+    X = df.loc[:, feature_cols].to_numpy()
+    y = df.loc[:, target_col].to_numpy()
+    return X, y
+
+def train_and_evaluate(X, y, seed):
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=seed)
+    scaler = StandardScaler(copy=False)
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+    model = KNeighborsClassifier(n_neighbors=5, n_jobs=1)
+    model.fit(X_train, y_train)
+    return model.score(X_test, y_test)
 
 def main():
-    np.random.seed(42)
-    random.seed(42)
-    expected_cols = [c.strip() for c in DATASET_HEADERS.split(",") if c.strip()]
-    df = read_csv_with_fallback("diabetes.csv", expected_cols)
-    df = standardize_columns(df, expected_cols)
-    df = preprocess(df)
-    target_col = None
-    if expected_cols:
-        target_norm = normalize_col(expected_cols[-1])
-        for col in df.columns:
-            if normalize_col(col) == target_norm:
-                target_col = col
-                break
-    if target_col is None:
-        target_col = df.columns[-1]
-    feature_cols = [c for c in df.columns if c != target_col]
-    X = df[feature_cols].to_numpy(dtype=np.float64, copy=False)
-    y = df[target_col].to_numpy()
-    x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    scaler = StandardScaler(copy=False)
-    x_train = scaler.fit_transform(x_train)
-    x_test = scaler.transform(x_test)
-    knn = KNeighborsClassifier(n_neighbors=5)
-    knn.fit(x_train, y_train)
-    accuracy = knn.score(x_test, y_test)
+    df = load_dataset(DATASET_PATH, DATASET_HEADERS)
+    X, y = preprocess_data(df, DATASET_HEADERS)
+    accuracy = train_and_evaluate(X, y, SEED)
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed visualization and verbose logging to avoid unnecessary computation and I/O.
-# - Preprocessed data in place with vectorized zero handling and single-pass imputation to reduce memory use.
-# - Used in-place scaling (copy=False) and direct model scoring to minimize temporary arrays and extra predictions.
-# - Eliminated redundant hyperparameter exploration loops not required for the final output.
-# - Added robust CSV parsing with fallback and fixed random seeds for reproducibility.
+# Removed exploratory plotting and hyperparameter search loops that did not affect the final accuracy output.
+# Used vectorized imputations and in-place scaling to minimize redundant computation and memory copies.
+# Implemented robust CSV parsing and column alignment for reliable, deterministic preprocessing.

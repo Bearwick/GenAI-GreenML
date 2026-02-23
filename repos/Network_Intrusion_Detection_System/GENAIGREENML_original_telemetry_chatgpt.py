@@ -38,11 +38,12 @@ def main():
     model.fit(X_train_pca, y_train)
 
     y_pred = model.predict(X_test_pca)
-    _ = classification_report(y_test, y_pred)
-
     y_probs = model.predict_proba(X_test_pca)[:, 1]
+
+    classification_report(y_test, y_pred)
+
     fpr, tpr, _ = roc_curve(y_test, y_probs)
-    _ = auc(fpr, tpr)
+    roc_auc = auc(fpr, tpr)
 
     joblib.dump(scaler, "models/scaler.pkl")
     joblib.dump(pca, "models/pca.pkl")

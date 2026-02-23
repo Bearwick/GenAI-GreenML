@@ -3,59 +3,50 @@
 # Mode: assisted
 
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 
-def load_data(filepath):
+def load_robust_csv(path):
     try:
-        df = pd.read_csv(filepath)
-        if len(df.columns) < 2:
+        data = pd.read_csv(path)
+        if data.shape[1] <= 1:
             raise ValueError
-    except:
-        df = pd.read_csv(filepath, sep=';', decimal=',')
-    return df
+    except (pd.errors.ParserError, ValueError):
+        data = pd.read_csv(path, sep=';', decimal=',')
+    return data
 
-def run_pipeline():
-    df = load_data("Iris.csv")
+df = load_robust_csv("Iris.csv")
 
-    if "Id" in df.columns:
-        df.drop(columns=["Id"], inplace=True)
-    elif df.columns[0].lower() == 'id':
-        df.drop(columns=[df.columns[0]], inplace=True)
+if "Id" in df.columns:
+    df.drop(columns=["Id"], inplace=True)
 
-    target_col = "Species" if "Species" in df.columns else df.columns[-1]
-    
-    X = df.drop(columns=[target_col]).values.astype(np.float32)
-    y, _ = pd.factorize(df[target_col])
+target_col = "Species" if "Species" in df.columns else df.columns[-1]
+X = df.drop(columns=[target_col]).astype("float32")
+y = df[target_col].astype("category").cat.codes
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
 
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
+clf = Pipeline([
+    ("scaler", StandardScaler()),
+    ("svc", SVC(kernel="linear", random_state=42))
+])
 
-    model = SVC(kernel="linear", random_state=42)
-    model.fit(X_train, y_train)
-    
-    y_pred = model.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    
-    print(f"ACCURACY={accuracy:.6f}")
+clf.fit(X_train, y_train)
+y_pred = clf.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
 
-if __name__ == "__main__":
-    run_pipeline()
+print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# 1. Removed heavy visualization libraries (Matplotlib, Seaborn) to reduce memory footprint and startup time.
-# 2. Replaced LabelEncoder with pd.factorize for faster, more memory-efficient target encoding.
-# 3. Converted features to float32 to reduce memory usage during computation.
-# 4. Eliminated sklearn Pipeline to reduce object overhead, performing manual scaling and fitting.
-# 5. Removed redundant cross-validation and classification reports to minimize energy consumption and runtime.
-# 6. Implemented robust CSV parsing with fallback logic to handle different delimiters/decimals efficiently.
-# 7. Replaced dataframe-based operations with NumPy arrays (.values) for faster internal processing in Scikit-Learn.
-# 8. Fixed random seeds for reproducibility and avoided unnecessary data copies.
+# 1. Reduced memory footprint by casting features to float32 instead of float64.
+# 2. Optimized target encoding by using pandas category codes instead of scikit-learn LabelEncoder.
+# 3. Eliminated redundant computation by removing unused cross-validation and visualization code.
+# 4. Reduced runtime and energy consumption by removing heavy visualization libraries (matplotlib, seaborn).
+# 5. Implemented robust CSV parsing with fallbacks to avoid execution failure and repeated attempts.
+# 6. Improved efficiency by removing unnecessary intermediate structures and print/logging overhead.
+# 7. Ensured reproducibility and stability by fixing random seeds in split and model parameters.

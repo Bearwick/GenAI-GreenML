@@ -32,6 +32,7 @@ def main():
         feature = data["text"]
         classcol = data["label"]
         tf = TfidfVectorizer()
+
         train_x, test_x, train_y, test_y = train_test_split(
             feature, classcol, train_size=0.75, test_size=0.25
         )
@@ -75,8 +76,8 @@ def main():
         sentence = tf.transform(sentence)
 
         prediction = trained_model.predict(sentence)
-        accuracy = float("nan")
-        print(f"ACCURACY={accuracy:.6f}")
+        for k in prediction:
+            print(k)
 
 
 main()
@@ -88,7 +89,7 @@ def naivebayes():
         cancer.data, cancer.target, stratify=cancer.target, random_state=0
     )
     nb = GaussianNB().fit(train_feature, train_class)
-    nb.score(test_feature, test_class)
+    _ = nb.score(test_feature, test_class)
 
 
 def linsupvec():
@@ -97,18 +98,19 @@ def linsupvec():
         cancer.data, cancer.target, stratify=cancer.target, random_state=0
     )
     linearsvm = LinearSVC(random_state=0).fit(train_feature, train_class)
-    linearsvm.score(test_feature, test_class)
+    _ = linearsvm.score(test_feature, test_class)
 
 
 def knearneighbor():
     cancer = load_breast_cancer()
+
     train_feature, test_feature, train_class, test_class = train_test_split(
         cancer.data, cancer.target, stratify=cancer.target, random_state=0
     )
     knn = KNeighborsClassifier(n_neighbors=3)
     knn.fit(train_feature, train_class)
-    knn.predict(test_feature)
-    knn.score(test_feature, test_class)
+    _ = knn.predict(test_feature)
+    _ = knn.score(test_feature, test_class)
 
     cancer = load_breast_cancer()
     train_feature, test_feature, train_class, test_class = train_test_split(

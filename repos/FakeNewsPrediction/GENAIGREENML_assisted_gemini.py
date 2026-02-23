@@ -6,49 +6,62 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
 
-def load_data_optimized(filepath, label):
+def load_data(file_path):
     try:
-        df = pd.read_csv(filepath, usecols=['text'])
-    except Exception:
-        df = pd.read_csv(filepath, sep=';', decimal=',', usecols=['text'])
-    df['label'] = label
-    return df
+        return pd.read_csv(file_path, usecols=['text'])
+    except (ValueError, pd.errors.ParserError):
+        return pd.read_csv(file_path, usecols=['text'], sep=';', decimal=',')
 
-def train_and_evaluate():
-    seed = 42
+def main():
+    df_fake = load_data("Fake.csv")
+    df_real = load_data("True.csv")
+
+    df_fake['label'] = 0
+    df_real['label'] = 1
+
+    df = pd.concat([df_fake, df_real], axis=0, ignore_index=True)
     
-    df_fake = load_data_optimized("Fake.csv", 0)
-    df_real = load_data_optimized("True.csv", 1)
-    
-    df = pd.concat([df_fake, df_real], ignore_index=True)
-    
-    X_train, X_test, y_train, y_test = train_test_split(
+    del df_fake
+    del df_real
+
+    df['label'] = df['label'].astype('int8')
+
+    x_train, x_test, y_train, y_test = train_test_split(
         df['text'], 
         df['label'], 
         test_size=0.2, 
-        random_state=seed
+        random_state=42, 
+        stratify=df['label']
+    )
+
+    del df
+
+    vectorizer = TfidfVectorizer(
+        stop_words='english', 
+        max_df=0.7, 
+        min_df=5, 
+        max_features=10000
     )
     
-    vectorizer = TfidfVectorizer(stop_words='english', max_df=0.7)
-    X_train_tfidf = vectorizer.fit_transform(X_train)
-    
-    model = LogisticRegression(random_state=seed, solver='liblinear')
-    model.fit(X_train_tfidf, y_train)
-    
-    X_test_tfidf = vectorizer.transform(X_test)
-    accuracy = model.score(X_test_tfidf, y_test)
-    
+    x_train_tfidf = vectorizer.fit_transform(x_train)
+    x_test_tfidf = vectorizer.transform(x_test)
+
+    model = LogisticRegression(solver='lbfgs', max_iter=100, random_state=42)
+    model.fit(x_train_tfidf, y_train)
+
+    accuracy = model.score(x_test_tfidf, y_test)
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == '__main__':
-    train_and_evaluate()
+    main()
 
 # Optimization Summary
-# - Memory Efficiency: Utilized the 'usecols' parameter in pandas.read_csv to only load the necessary 'text' column, reducing the memory footprint of the dataframes.
-# - Reduced I/O Overhead: Removed joblib serialization (saving .pkl files) to eliminate unnecessary disk write operations and save energy.
-# - Computational Streamlining: Replaced intermediate data manipulation steps with an optimized concatenation approach using 'ignore_index' to avoid index reconstruction.
-# - Data Movement reduction: Performed labeling directly on loaded subsets to avoid iterating over the combined dataset multiple times.
-# - Resource Conservation: Removed all logging, debug prints, and visualizations to reduce runtime and CPU cycles.
-# - Stability and Reproducibility: Added a fixed random seed to train_test_split and LogisticRegression to ensure deterministic behavior and reliable evaluation.
-# - Robust Parsing: Implemented a fallback mechanism for CSV parsing to handle different delimiters and decimal formats without manual intervention.
+# 1. Memory Efficiency: Used `usecols` in `read_csv` to load only the required 'text' column, skipping unnecessary metadata.
+# 2. Memory Footprint: Downcast 'label' column to `int8` and used `del` to release large dataframes from memory as soon as they were no longer needed.
+# 3. Computational Efficiency: Limited `TfidfVectorizer` to 10,000 features and set `min_df=5` to reduce the dimensionality of the sparse matrix, decreasing training time and CPU usage.
+# 4. Reduced I/O: Removed model and vectorizer serialization (`joblib.dump`) to eliminate unnecessary disk writes.
+# 5. Pipeline Optimization: Integrated stratified splitting to ensure stable results with a single pass and avoided redundant data copies.
+# 6. Green Preprocessing: Simplified the data pipeline by processing text only once through the vectorizer and avoiding intermediate diagnostic prints or visualizations.
+# 7. Reproducibility: Set `random_state` globally for deterministic behavior across runs without increasing overhead.

@@ -25,9 +25,13 @@ df = pd.read_csv("spam.csv")
 le = LabelEncoder()
 df["Category"] = le.fit_transform(df["Category"])
 df["Message"] = df["Message"].apply(convert)
+
 cv = CountVectorizer(stop_words="english")
-X_train, X_test, y_train, y_test = train_test_split(df["Message"], df["Category"], test_size=0.2)
+X_train, X_test, y_train, y_test = train_test_split(
+    df["Message"], df["Category"], test_size=0.2
+)
 X_train_count = cv.fit_transform(X_train)
+
 model = MultinomialNB()
 model.fit(X_train_count, y_train)
 

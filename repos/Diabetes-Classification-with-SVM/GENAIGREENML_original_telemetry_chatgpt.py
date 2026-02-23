@@ -6,7 +6,15 @@ import pandas as pd
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score, confusion_matrix, roc_curve, roc_auc_score, f1_score, precision_recall_curve
+from sklearn.metrics import (
+    classification_report,
+    accuracy_score,
+    confusion_matrix,
+    roc_curve,
+    roc_auc_score,
+    f1_score,
+    precision_recall_curve,
+)
 import seaborn as sns
 import matplotlib.pyplot as plt
 from imblearn.over_sampling import SMOTE
@@ -51,16 +59,6 @@ def main() -> None:
 
     accuracy = accuracy_score(y_test, y_pred)
     print(f"ACCURACY={accuracy:.6f}")
-
-    confusion_matrix(y_test, y_pred)
-
-    decision_function = best_model.decision_function(X_test_scaled)
-    roc_curve(y_test, decision_function)
-    roc_auc_score(y_test, decision_function)
-
-    f1_score(y_test, y_pred)
-
-    precision_recall_curve(y_test, decision_function)
 
 
 if __name__ == "__main__":

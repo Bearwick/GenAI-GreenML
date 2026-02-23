@@ -2,76 +2,106 @@
 # LLM: claude
 # Mode: autonomous
 
-import json
-import os
-import numpy as np
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score
+import json
+import warnings
+warnings.filterwarnings("ignore")
 
-# Robust file reading: try train.json first
+# Step 1: Load dataset robustly
 data = None
-for candidate in ["train.json", "data/train.json", "../train.json"]:
-    if os.path.exists(candidate):
-        with open(candidate, "r") as f:
-            data = json.load(f)
-        break
-
-# If no JSON found, try CSV fallback
-if data is None:
-    csv_candidates = [f for f in os.listdir(".") if f.endswith(".csv")]
-    if not csv_candidates:
-        for d in ["data", ".."]:
-            if os.path.isdir(d):
-                csv_candidates = [os.path.join(d, f) for f in os.listdir(d) if f.endswith(".csv")]
-                if csv_candidates:
-                    break
-    if csv_candidates:
-        csv_path = csv_candidates[0]
+try:
+    data = pd.read_json("train.json")
+except Exception:
+    try:
+        with open("train.json", "r") as f:
+            raw = json.load(f)
+        data = pd.DataFrame(raw)
+    except Exception:
         try:
-            df = pd.read_csv(csv_path)
+            data = pd.read_json("train.json", lines=True)
         except Exception:
-            df = pd.read_csv(csv_path, sep=";", decimal=",")
-        df.columns = [c.strip() for c in df.columns]
-        df = df[[c for c in df.columns if not c.startswith("Unnamed")]]
-        # Try to find text + label columns for a naive bayes text classifier
-        # or fall back to generic numeric classification
-        text_cols = df.select_dtypes(include=["object"]).columns.tolist()
-        num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-        if len(text_cols) >= 2:
-            target_col = text_cols[-1]
-            feature_col = text_cols[0]
-            le = LabelEncoder()
-            df = df.dropna(subset=[feature_col, target_col])
-            y = le.fit_transform(df[target_col].astype(str))
-            X_text = df[feature_col].astype(str)
-            X_train, X_test, y_train, y_test = train_test_split(X_text, y, test_size=0.2, random_state=42)
-            vec = CountVectorizer(max_features=5000)
-            X_train_v = vec.fit_transform(X_train)
-            X_test_v = vec.transform(X_test)
-            model = MultinomialNB()
-            model.fit(X_train_v, y_train)
-            accuracy = accuracy_score(y_test, model.predict(X_test_v))
-            print(f"ACCURACY={accuracy:.6f}")
-            exit()
-        elif len(num_cols) >= 2:
-            target_col = num_cols[-1]
-            feature_cols = [c for c in num_cols if c != target_col]
-            df = df[feature_cols + [target_col]].apply(pd.to_numeric, errors="coerce").dropna()
-            assert len(df) > 0
-            from sklearn.linear_model import LogisticRegression
-            X = df[feature_cols].values
-            y = df[target_col].values
-            unique_classes = np.unique(y)
-            if len(unique_classes) < 2:
-                accuracy = 1.0
-                print(f"ACCURACY={accuracy:.6f}")
-                exit()
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-            lr = LogisticRegression(max_iter=1000, random_state=42)
-            lr.fit(X_train, y_train)
-            accuracy = accuracy_score(y_test, lr.predict(X_test))
-            print(f"ACCURACY={accuracy:.6f
+            pass
+
+assert data is not None and len(data) > 0, "Failed to load dataset"
+
+# Step 2: Normalize column names
+data.columns = [str(c).strip() for c in data.columns]
+data = data[[c for c in data.columns if not c.startswith("Unnamed")]]
+
+# Step 3: Identify target and feature columns
+# Expected schema: id, cuisine (target), ingredients (list of strings)
+target_col = None
+ingredients_col = None
+
+for c in data.columns:
+    cl = c.lower()
+    if cl == "cuisine":
+        target_col = c
+    elif cl == "ingredients":
+        ingredients_col = c
+
+# Fallback: if no cuisine column, pick first string column with multiple unique values as target
+if target_col is None:
+    for c in data.columns:
+        if data[c].dtype == object and data[c].nunique() > 1 and data[c].nunique() < len(data) * 0.5:
+            target_col = c
+            break
+
+# Fallback for ingredients: pick a column that contains lists
+if ingredients_col is None:
+    for c in data.columns:
+        if c == target_col:
+            continue
+        sample = data[c].dropna().iloc[0] if len(data[c].dropna()) > 0 else None
+        if isinstance(sample, list):
+            ingredients_col = c
+            break
+
+assert target_col is not None, "Could not identify target column"
+assert ingredients_col is not None, "Could not identify ingredients column"
+
+# Step 4: Preprocessing
+# Convert ingredient lists to space-joined strings for TF-IDF
+data = data.dropna(subset=[target_col, ingredients_col]).reset_index(drop=True)
+
+def ingredients_to_text(ing):
+    if isinstance(ing, list):
+        return " ".join([str(i).lower().strip().replace(" ", "_") for i in ing])
+    return str(ing).lower()
+
+data["ingredients_text"] = data[ingredients_col].apply(ingredients_to_text)
+
+# Encode target
+le = LabelEncoder()
+data["target_encoded"] = le.fit_transform(data[target_col].astype(str))
+
+n_classes = data["target_encoded"].nunique()
+assert n_classes >= 2, "Need at least 2 classes for classification"
+
+# Step 5: Train/test split
+X_text = data["ingredients_text"]
+y = data["target_encoded"]
+
+X_train_text, X_test_text, y_train, y_test = train_test_split(
+    X_text, y, test_size=0.2, random_state=42, stratify=y
+)
+
+assert len(X_train_text) > 0 and len(X_test_text) > 0, "Empty split"
+
+# Step 6: TF-IDF vectorization (energy-efficient: limit features)
+tfidf = TfidfVectorizer(
+    max_features=3000,
+    sublinear_tf=True,
+    ngram_range=(1, 1),
+    token_pattern=r"[^\s]+",
+    dtype=np.float32
+)
+
+X_train = tfidf.fit_transform(X_train_text)
+X_test = tfidf.transform(X_test

@@ -8,7 +8,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pylab
 import os
-
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -16,10 +15,8 @@ from sklearn.metrics import confusion_matrix
 from sklearn.compose import make_column_transformer
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import classification_report
-
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
@@ -33,9 +30,7 @@ def main() -> None:
     x_data = df.drop(["target"], axis=1)
     x = (x_data - x_data.min()) / (x_data.max() - x_data.min())
 
-    x_train, x_test, y_train, y_test = train_test_split(
-        x, y, test_size=0.2, random_state=0
-    )
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=0)
 
     x_train = x_train.T
     y_train = y_train.T
@@ -47,7 +42,7 @@ def main() -> None:
 
     knn = KNeighborsClassifier(n_neighbors=2)
     knn.fit(x_train.T, y_train.T)
-    _ = knn.predict(x_test.T)
+    _prediction = knn.predict(x_test.T)
 
     scoreList = []
     for i in range(1, 20):
@@ -76,12 +71,12 @@ def main() -> None:
     y_head_dtc = dtc.predict(x_test.T)
     y_head_rf = rf.predict(x_test.T)
 
-    _ = confusion_matrix(y_test, y_head_lr)
-    _ = confusion_matrix(y_test, y_head_knn)
-    _ = confusion_matrix(y_test, y_head_svm)
-    _ = confusion_matrix(y_test, y_head_nb)
-    _ = confusion_matrix(y_test, y_head_dtc)
-    _ = confusion_matrix(y_test, y_head_rf)
+    _cm_lr = confusion_matrix(y_test, y_head_lr)
+    _cm_knn = confusion_matrix(y_test, y_head_knn)
+    _cm_svm = confusion_matrix(y_test, y_head_svm)
+    _cm_nb = confusion_matrix(y_test, y_head_nb)
+    _cm_dtc = confusion_matrix(y_test, y_head_dtc)
+    _cm_rf = confusion_matrix(y_test, y_head_rf)
 
     accuracy = lr.score(x_test.T, y_test.T)
     print(f"ACCURACY={accuracy:.6f}")

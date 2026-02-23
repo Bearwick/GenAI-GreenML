@@ -8,84 +8,35 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import accuracy_score
 
 
-DATASET_HEADERS = (
-    "Marital status;Application mode;Application order;Daytime/evening attendance;"
-    "Previous qualification;Previous qualification (grade);Nacionality;Mother's qualification;"
-    "Father's qualification;Mother's occupation;Father's occupation;Admission grade;Displaced;"
-    "Educational special needs;Debtor;Tuition fees up to date;Gender;Scholarship holder;"
-    "Age at enrollment;International;Curricular units 1st sem (credited);"
-    "Curricular units 1st sem (enrolled);Curricular units 1st sem (evaluations);"
-    "Curricular units 1st sem (approved);Curricular units 1st sem (grade);"
-    "Curricular units 1st sem (without evaluations);Curricular units 2nd sem (credited);"
-    "Curricular units 2nd sem (enrolled);Curricular units 2nd sem (evaluations);"
-    "Curricular units 2nd sem (approved);Curricular units 2nd sem (grade);"
-    "Curricular units 2nd sem (without evaluations);Unemployment rate;Inflation rate;GDP;"
-    "Graduated (target)"
-)
+RANDOM_SEED = 1
+DATASET_PATH = "data/students_graduate_predict.csv"
+TARGET_COL = "Graduated (target)"
 
 
 def _read_csv_robust(path: str) -> pd.DataFrame:
-    df_default = pd.read_csv(path)
-    expected_cols = len(DATASET_HEADERS.split(";"))
-
-    def _looks_wrong(d: pd.DataFrame) -> bool:
-        if d is None or d.empty:
-            return True
-        if d.shape[1] == 1:
-            return True
-        if d.shape[1] != expected_cols and any(";" in str(c) for c in d.columns):
-            return True
-        return False
-
-    if not _looks_wrong(df_default):
-        return df_default
-
-    df_fallback = pd.read_csv(path, sep=";", decimal=",")
-    return df_fallback
-
-
-def _align_columns(df: pd.DataFrame) -> pd.DataFrame:
-    expected = DATASET_HEADERS.split(";")
-
-    if df.shape[1] == len(expected):
-        if list(df.columns) != expected:
-            df = df.copy()
-            df.columns = expected
-        return df
-
-    if df.shape[1] == 1 and df.columns.size == 1 and ";" in str(df.columns[0]):
-        tmp = df.copy()
-        tmp = tmp[df.columns[0]].astype(str).str.split(";", expand=True)
-        if tmp.shape[1] == len(expected):
-            tmp.columns = expected
-            return tmp
-
+    df = pd.read_csv(path)
+    if df.shape[1] <= 1:
+        df = pd.read_csv(path, sep=";", decimal=",")
     return df
 
 
 def main() -> None:
-    seed = 1
-    df = _align_columns(_read_csv_robust("data/students_graduate_predict.csv"))
+    df = _read_csv_robust(DATASET_PATH)
 
-    target_col = "Graduated (target)"
-    if target_col not in df.columns:
-        candidates = [c for c in df.columns if "Graduated" in str(c)]
-        if not candidates:
-            raise KeyError("Target column not found in dataset.")
-        target_col = candidates[0]
+    if TARGET_COL not in df.columns:
+        raise ValueError(f"Target column not found: {TARGET_COL}. Available columns: {list(df.columns)}")
 
-    feature_cols = [c for c in df.columns if c != target_col]
-    X = df.loc[:, feature_cols]
-    y = df[target_col]
+    y = df[TARGET_COL]
+    X = df.drop(columns=[TARGET_COL])
 
-    x_train, x_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.15, random_state=seed
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.15, random_state=RANDOM_SEED
     )
 
-    model = MLPClassifier(hidden_layer_sizes=(5, 7), max_iter=800, random_state=seed)
-    model.fit(x_train, y_train)
+    model = MLPClassifier(hidden_layer_sizes=(5, 7), max_iter=800, random_state=RANDOM_SEED)
+    model.fit(X_train, y_train)
 
-    y_pred = model.predict(x_test)
+    y_pred = model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
 
     print(f"ACCURACY={accuracy:.6f}")
@@ -95,9 +46,9 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed dataframe displays, histogram, heatmap, and extra metric computations to avoid unnecessary CPU/GPU work and memory use while preserving the final evaluation intent (accuracy).
-# - Avoided redundant predictions and intermediate DataFrames (e.g., per-row predict and comparison table) to reduce compute and allocations.
-# - Used column selection via df.loc with a precomputed feature column list to minimize temporary copies and data movement.
-# - Added robust CSV parsing fallback (default read_csv, then retry with sep=';' and decimal=',') to prevent mis-parsing retries and ensure stable ingestion.
-# - Aligned schema to provided headers when shapes match, enabling consistent column handling without assuming exact columns at runtime.
-# - Ensured reproducibility by fixing random_state for both train/test split and MLPClassifier, yielding stable results across runs.
+# - Removed all exploratory/visual steps (DataFrame displays, histogram, confusion-matrix heatmap) to avoid extra computation and rendering overhead.
+# - Eliminated unused metrics (precision/recall/F1) and intermediate DataFrame construction to reduce redundant work and memory allocations.
+# - Avoided extra predictions on arbitrary rows (X.iloc[[0,1,2,3]]) since they do not affect the evaluated output.
+# - Added robust CSV parsing with a fallback separator/decimal strategy to prevent costly failures/retries and ensure reliable ingestion.
+# - Set fixed random_state for both train/test split and MLPClassifier for reproducible, stable results.
+# - Kept data as pandas/NumPy-backed structures without unnecessary copies to minimize data movement and memory footprint.

@@ -2,94 +2,101 @@
 # LLM: claude
 # Mode: autonomous
 
-import os
 import json
-import csv
-import re
-import numpy as np
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score
-from sklearn.pipeline import Pipeline
 
-# ---------------------------------------------------------------------------
-# This script adapts the provided zero-shot intent-classification source code
-# into an energy-efficient, CPU-friendly ML pipeline that:
-#   1. Generates a synthetic training dataset from the intent categories
-#      (since no labeled CSV dataset was provided, we create representative
-#       examples for each intent class).
-#   2. Trains a lightweight Logistic Regression model on TF-IDF features.
-#   3. Evaluates on a held-out test set and prints accuracy.
-#   4. Also provides the full predict_intents workflow writing JSON/CSV
-#      output, using the trained lightweight model instead of a heavy
-#      transformer.
-# ---------------------------------------------------------------------------
+# Load JSON data robustly
+data = None
+with open("data/input.json", "r", encoding="utf-8") as f:
+    data = json.load(f)
 
-# ---- Intent labels (same as source) ----
-INTENT_OPTIONS = [
-    "Book Appointment",
-    "Product Inquiry",
-    "Pricing Negotiation",
-    "Support Request",
-    "Follow-Up",
-]
+# data could be a list of records or a dict with a key containing records
+if isinstance(data, dict):
+    # Try to find the main list inside the dict
+    possible_keys = list(data.keys())
+    if len(possible_keys) == 1:
+        records = data[possible_keys[0]]
+    else:
+        # Try common keys
+        for k in ["data", "conversations", "records", "samples", "examples", "items"]:
+            if k in data:
+                records = data[k]
+                break
+        else:
+            # If dict values are all lists, pick the longest
+            list_vals = {k: v for k, v in data.items() if isinstance(v, list)}
+            if list_vals:
+                records = list_vals[max(list_vals, key=lambda k: len(list_vals[k]))]
+            else:
+                records = [data]
+elif isinstance(data, list):
+    records = data
+else:
+    records = [data]
 
-# ---- Synthetic training data ----
-# We create a small but diverse set of example utterances per intent.
-# This is necessary because no external labeled dataset was supplied.
-SYNTHETIC_DATA = {
-    "Book Appointment": [
-        "I would like to schedule an appointment for next Tuesday",
-        "Can I book a meeting with the sales team?",
-        "I need to set up an appointment with the doctor",
-        "Please reserve a slot for me tomorrow at 3 PM",
-        "Is there availability for an appointment this week?",
-        "I want to book a consultation for Friday morning",
-        "Schedule me in for a visit on Monday",
-        "Can we arrange a meeting sometime this week?",
-        "I'd like to make an appointment please",
-        "Book me a session with the advisor",
-        "How do I schedule a call with your team?",
-        "I need an appointment as soon as possible",
-        "Please book a time slot for me",
-        "Can I get an appointment for the 15th?",
-        "Set up a meeting for me with the manager",
-        "I want to reserve a spot for the workshop",
-        "Is it possible to arrange a visit tomorrow?",
-        "I need to see someone about my account, can I book a time?",
-        "Let me schedule a follow-up appointment",
-        "Can you pencil me in for next week?",
-    ],
-    "Product Inquiry": [
-        "Can you tell me more about the new product line?",
-        "What features does the premium plan include?",
-        "I'm interested in learning about your services",
-        "Do you have this item in stock?",
-        "What are the specifications of the latest model?",
-        "Can you send me the product catalog?",
-        "I want to know more about your offerings",
-        "What is the difference between the basic and pro versions?",
-        "Tell me about the warranty on this product",
-        "Is this product available in different colors?",
-        "What materials is this product made from?",
-        "Do you have any new arrivals?",
-        "Can I get more details about this service?",
-        "What options are available for customization?",
-        "I'd like information about your product range",
-        "How does this product compare to the competition?",
-        "What are the technical specs?",
-        "Do you offer a trial version of the software?",
-        "Tell me about the features of the enterprise plan",
-        "Is there a demo I can try before purchasing?",
-    ],
-    "Pricing Negotiation": [
-        "Can we discuss the pricing for a bulk order?",
-        "Is there a discount available for long-term contracts?",
-        "The price seems a bit high, can you offer something better?",
-        "What is your best price for this product?",
-        "We are looking at a large order, can we negotiate?",
-        "Are there any current promotions or deals?",
-        "Can you match the
+df = pd.DataFrame(records)
+
+# Strip/normalize column names
+df.columns = [str(c).strip() for c in df.columns]
+df = df[[c for c in df.columns if not c.startswith("Unnamed")]]
+
+# Identify text and target columns
+# For multi-turn intent classification, we expect some text field(s) and an intent/label field
+text_col = None
+target_col = None
+
+# Heuristics for target column (intent/label)
+target_candidates = ["intent", "label", "target", "class", "category", "prediction", "predicted_intent"]
+for candidate in target_candidates:
+    matches = [c for c in df.columns if candidate.lower() in c.lower()]
+    if matches:
+        target_col = matches[0]
+        break
+
+# Heuristics for text column (conversation/message/text)
+text_candidates = ["conversation", "text", "message", "messages", "input", "query", "utterance", "content", "turns"]
+for candidate in text_candidates:
+    matches = [c for c in df.columns if candidate.lower() in c.lower()]
+    if matches:
+        text_col = matches[0]
+        break
+
+# If we couldn't find a text column, try to construct text from available columns
+# For multi-turn conversations, the text might be nested (list of dicts with role/content)
+if text_col is None:
+    # Pick the first column that has string or list data
+    for c in df.columns:
+        if c == target_col:
+            continue
+        sample = df[c].dropna().iloc[0] if len(df[c].dropna()) > 0 else None
+        if isinstance(sample, (str, list)):
+            text_col = c
+            break
+
+# If target_col is still None, try to find a categorical column that isn't the text
+if target_col is None:
+    for c in df.columns:
+        if c == text_col:
+            continue
+        if df[c].dtype == object or df[c].nunique() < 50:
+            target_col = c
+            break
+
+# If still no target, check if there's a nested structure with intent inside conversations
+if target_col is None and text_col is not None:
+    # Maybe intent is embedded in the records themselves
+    sample_record = records[0] if records else {}
+    for k in sample_record:
+        if k != text_col and "intent" in k.lower() or k.lower() in ["label", "class", "category"]:
+            target_col = k
+            break
+
+# Fallback: if we truly have no target, look for any column with limited unique values
+if

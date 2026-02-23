@@ -4,72 +4,71 @@
 
 import numpy as np
 import pandas as pd
+import os
 
+np.random.seed(42)
 
-def load_csv(path):
+def read_csv_robust(path):
     df = pd.read_csv(path)
     if df.shape[1] <= 1:
         df = pd.read_csv(path, sep=';', decimal=',')
-    return df.values
-
+    return df
 
 def sigmoid(z):
     return 1.0 / (1.0 + np.exp(-z))
 
-
 def initialize(dim):
     return np.zeros((dim, 1)), 0.0
 
-
-def propagate(w, b, X, Y, m_inv):
-    A = sigmoid(w.T @ X + b)
-    cost = -m_inv * np.sum(Y * np.log(A) + (1.0 - Y) * np.log(1.0 - A))
-    dw = m_inv * (X @ (A - Y).T)
-    db = m_inv * np.sum(A - Y)
-    return dw, db, float(np.squeeze(cost))
-
-
 def optimize(w, b, X, Y, num_iters, alpha):
-    m_inv = 1.0 / X.shape[1]
+    m = X.shape[1]
+    inv_m = 1.0 / m
     for _ in range(num_iters):
-        dw, db, cost = propagate(w, b, X, Y, m_inv)
+        A = sigmoid(np.dot(w.T, X) + b)
+        diff = A - Y
+        dw = inv_m * np.dot(X, diff.T)
+        db = inv_m * np.sum(diff)
         w = w - alpha * dw
         b = b - alpha * db
     return w, b
 
-
 def predict(w, b, X):
-    A = sigmoid(w.T @ X + b)
+    A = sigmoid(np.dot(w.T, X) + b)
     return (A > 0.5).astype(np.float64)
 
-
 def main():
-    train_x = load_csv("cancer_data.csv")
-    train_y = load_csv("cancer_data_y.csv")
+    train_x = np.array(read_csv_robust("cancer_data.csv"))
+    train_y = np.array(read_csv_robust("cancer_data_y.csv"))
+
     X_train = train_x.T
     Y_train = train_y.T
 
     w, b = initialize(X_train.shape[0])
     w, b = optimize(w, b, X_train, Y_train, num_iters=190500, alpha=0.000000065)
 
-    X_test = load_csv("test_cancer_data.csv").T
-    Y_test = load_csv("test_cancer_data_y.csv").T
+    test_x = np.array(read_csv_robust("test_cancer_data.csv"))
+    test_y = np.array(read_csv_robust("test_cancer_data_y.csv"))
+
+    X_test = test_x.T
+    Y_test = test_y.T
 
     y_prediction_test = predict(w, b, X_test)
-    accuracy = 1.0 - np.mean(np.abs(y_prediction_test - Y_test))
-    print(f"ACCURACY={accuracy:.6f}")
 
+    accuracy = 1.0 - np.mean(np.abs(y_prediction_test - Y_test))
+
+    print(f"ACCURACY={accuracy:.6f}")
 
 main()
 
 # Optimization Summary
-# Removed matplotlib import and all plotting to save memory and compute.
-# Removed all print statements and logging except final accuracy.
-# Removed redundant confusion matrix loops; accuracy computed directly via vectorized numpy.
-# Eliminated dictionary intermediaries (grads, params, costs list) to reduce memory allocations.
-# Precomputed m_inv (1/m) once outside the loop instead of recomputing each iteration.
-# Used numpy @ operator instead of np.dot for clarity and equivalent performance.
-# Vectorized predict using boolean comparison instead of Python for-loop.
-# Removed unused train accuracy computation since output only requires test accuracy.
-# Added robust CSV fallback (sep=';', decimal=',') per requirements.
-# No interactive inputs or file artifacts saved.
+# - Removed all print statements, plots, and visualization code
+# - Removed cost tracking list and per-iteration cost recording to avoid unnecessary memory allocation and list appends
+# - Removed dictionary packing/unpacking for gradients and parameters; use direct variables instead
+# - Eliminated redundant propagate function; inlined forward/backward pass directly in optimize loop
+# - Precomputed inv_m (1/m) outside the loop to avoid repeated division
+# - Replaced element-wise prediction loop with vectorized boolean comparison for predict()
+# - Removed confusion matrix computation loops (not needed for accuracy output)
+# - Removed unused training accuracy computation since only test accuracy is printed
+# - Added robust CSV reading with semicolon/decimal fallback
+# - Set fixed random seed for reproducibility
+# - No artifacts saved to disk

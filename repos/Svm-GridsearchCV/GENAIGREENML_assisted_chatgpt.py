@@ -3,75 +3,68 @@
 # Mode: assisted
 
 import os
+import random
 import numpy as np
 import pandas as pd
 
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 
-RANDOM_SEED = 42
-DATASET_HEADERS = [
-    "age",
-    "height_cm",
-    "weight_kg",
-    "body fat_%",
-    "diastolic",
-    "systolic",
-    "gripForce",
-    "sit and bend forward_cm",
-    "sit-ups counts",
-    "broad jump_cm",
-    "Blass",
-]
+
+SEED = 42
+
+
+def _set_reproducible_seed(seed: int) -> None:
+    random.seed(seed)
+    np.random.seed(seed)
 
 
 def _read_csv_with_fallback(path: str) -> pd.DataFrame:
     df = pd.read_csv(path)
-    expected = set(DATASET_HEADERS)
-
-    def looks_wrong(d: pd.DataFrame) -> bool:
-        if d.shape[1] == 1:
-            return True
-        cols = set(map(str, d.columns))
-        if "Blass" not in cols and len(cols.intersection(expected)) < max(2, len(expected) // 2):
-            return True
-        return False
-
-    if looks_wrong(df):
+    if df.shape[1] <= 1:
         df = pd.read_csv(path, sep=";", decimal=",")
     return df
 
 
-def _select_target_column(df: pd.DataFrame) -> str:
-    cols = list(df.columns)
-    for c in cols:
-        if str(c).strip() == "Blass":
-            return c
-    raise KeyError("Target column 'Blass' not found in dataset.")
+def _resolve_target_column(df: pd.DataFrame, dataset_headers: str) -> str:
+    headers = [h.strip() for h in dataset_headers.split(",") if h.strip()]
+    target_candidates = [h for h in headers if h in df.columns and h.lower() in ("blass", "class", "target", "label")]
+    if target_candidates:
+        return target_candidates[0]
+    if "Blass" in df.columns:
+        return "Blass"
+    raise KeyError(f"Target column not found. Available columns: {list(df.columns)}")
+
+
+def _coerce_numeric_features(X: pd.DataFrame) -> pd.DataFrame:
+    Xc = X.copy()
+    for col in Xc.columns:
+        if not pd.api.types.is_numeric_dtype(Xc[col]):
+            Xc[col] = pd.to_numeric(Xc[col], errors="coerce")
+    return Xc
 
 
 def main() -> None:
-    np.random.seed(RANDOM_SEED)
+    _set_reproducible_seed(SEED)
 
-    dt = "bodyPerformance.csv"
-    if not os.path.exists(dt):
-        raise FileNotFoundError(f"Dataset file not found: {dt}")
+    dataset_path = "bodyPerformance.csv"
+    if not os.path.exists(dataset_path):
+        raise FileNotFoundError(f"Dataset not found at path: {dataset_path}")
 
-    df = _read_csv_with_fallback(dt)
+    dataset_headers = "age,height_cm,weight_kg,body fat_%,diastolic,systolic,gripForce,sit and bend forward_cm,sit-ups counts,broad jump_cm,Blass"
+    df = _read_csv_with_fallback(dataset_path)
 
-    target_col = _select_target_column(df)
-    X = df.drop(columns=[target_col])
+    target_col = _resolve_target_column(df, dataset_headers)
+    feature_cols = [c for c in df.columns if c != target_col]
+
+    X = _coerce_numeric_features(df[feature_cols])
     y = df[target_col]
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=0.2,
-        random_state=RANDOM_SEED,
-        stratify=y if y.nunique() > 1 else None,
+        X, y, test_size=0.2, random_state=SEED
     )
 
     pipeline = Pipeline(
@@ -92,7 +85,6 @@ def main() -> None:
         param_grid=param_grid,
         cv=5,
         n_jobs=-1,
-        refit=True,
     )
     grid_search.fit(X_train, y_train)
 
@@ -105,9 +97,11 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed all exploratory prints, reports, confusion matrix, and plotting to avoid unnecessary computation and I/O.
-# - Used a Pipeline with StandardScaler+SVC to prevent repeated preprocessing work across CV folds and keep code modular.
-# - Enabled parallel cross-validation via n_jobs=-1 to reduce wall-clock time (same search space and scoring intent).
-# - Avoided retraining a second SVC: GridSearchCV(refit=True) directly provides the best refit model, reducing redundant training.
-# - Implemented robust CSV parsing with a delimiter/decimal fallback to prevent expensive downstream failures and re-runs.
-# - Added deterministic behavior via fixed RANDOM_SEED and NumPy seeding; used stratified split when feasible for stable evaluation.
+# - Removed all exploratory prints, reports, confusion matrix, and plotting to avoid unnecessary computation and I/O overhead.
+# - Kept a single GridSearchCV and used the best estimator directly for prediction, eliminating redundant retraining.
+# - Used a Pipeline with StandardScaler+SVC to ensure consistent preprocessing across CV folds without extra data copies.
+# - Enabled parallelism in GridSearchCV via n_jobs=-1 to reduce wall-clock runtime on multi-core machines.
+# - Implemented robust CSV parsing fallback (default read_csv, then sep=';' and decimal=',') to avoid repeated manual fixes.
+# - Derived the target column safely from provided headers and df.columns, avoiding hard-coded schema assumptions.
+# - Coerced non-numeric feature columns once to numeric to prevent repeated conversion work during model fitting.
+# - Set fixed random seeds for reproducibility and stable results.

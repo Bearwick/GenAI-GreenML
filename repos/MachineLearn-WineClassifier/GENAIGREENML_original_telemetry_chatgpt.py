@@ -31,4 +31,4 @@ modelo.fit(X_treino, y_treino)
 accuracy = modelo.score(X_teste, y_teste)
 print(f"ACCURACY={accuracy:.6f}")
 
-modelo.predict(X_teste.iloc[300:600])
+previsoes = modelo.predict(X_teste.iloc[300:600])

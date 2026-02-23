@@ -5,90 +5,107 @@
 import numpy as np
 import pandas as pd
 
-DATASET_HEADERS = "sepal_length,sepal_width,petal_length,petal_width,species"
-
 np.random.seed(0)
 
-def read_csv_fallback(path, expected_headers):
-    def _read(**kwargs):
-        return pd.read_csv(path, **kwargs)
-    df = _read()
-    used_fallback = False
-    if df.shape[1] != len(expected_headers) or df.shape[1] == 1:
-        df_alt = _read(sep=';', decimal=',')
-        if df_alt.shape[1] == len(expected_headers):
-            df = df_alt
-            used_fallback = True
-    exp_lower = [h.strip().lower() for h in expected_headers]
-    act_lower = [str(c).strip().lower() for c in df.columns]
-    if not set(exp_lower).issubset(set(act_lower)):
-        numeric_like = True
-        for c in df.columns:
-            try:
-                float(str(c))
-            except ValueError:
-                numeric_like = False
-                break
-        if numeric_like:
-            if used_fallback:
-                df = _read(sep=';', decimal=',', header=None, names=expected_headers)
-            else:
-                df = _read(header=None, names=expected_headers)
-            act_lower = [str(c).strip().lower() for c in df.columns]
-    if set(exp_lower).issubset(set(act_lower)):
-        col_order = [df.columns[act_lower.index(h)] for h in exp_lower]
-        df = df[col_order]
-        df.columns = expected_headers
-    elif df.shape[1] == len(expected_headers):
-        df.columns = expected_headers
-    first_row = df.iloc[0].astype(str).str.strip().str.lower().tolist()
-    if first_row == exp_lower:
-        df = df.iloc[1:].reset_index(drop=True)
+DATASET_PATH = "iris.csv"
+DATASET_HEADERS = "sepal_length,sepal_width,petal_length,petal_width,species"
+
+
+def read_csv_robust(path, headers_str):
+    headers = [h.strip() for h in headers_str.split(",") if h.strip()]
+
+    def parse(cfg):
+        return pd.read_csv(path, **cfg)
+
+    cfg = {}
+    df = parse(cfg)
+    if df.shape[1] < len(headers):
+        cfg = {"sep": ";", "decimal": ","}
+        df = parse(cfg)
+    if df.shape[1] == len(headers) + 1 and str(df.columns[0]).lower().startswith("unnamed"):
+        df = df.iloc[:, 1:]
+
+    def numeric_like(x):
+        try:
+            float(str(x))
+            return True
+        except ValueError:
+            return False
+
+    if df.shape[1] == len(headers) and all(numeric_like(c) for c in df.columns):
+        df = parse({**cfg, "header": None})
+        df.columns = headers
+    elif df.shape[1] == len(headers) and not set(headers).issubset(df.columns):
+        df = df.copy()
+        df.columns = headers
     return df
 
-def map_labels(labels):
+
+def encode_labels(labels):
     if np.issubdtype(labels.dtype, np.number):
-        return labels.astype(int)
-    labels_str = np.char.lower(np.char.strip(labels.astype(str)))
-    labels_num = np.empty(labels_str.shape, dtype=float)
-    labels_num[labels_str == "setosa"] = 0
-    labels_num[labels_str == "versicolor"] = 1
-    labels_num[labels_str == "virginica"] = 2
-    mask_unknown = ~((labels_str == "setosa") | (labels_str == "versicolor") | (labels_str == "virginica"))
-    if np.any(mask_unknown):
-        labels_num[mask_unknown] = labels_str[mask_unknown].astype(float)
-    return labels_num.astype(int)
+        unique = np.unique(labels)
+        if np.array_equal(unique, np.arange(unique.size)):
+            return labels.astype(int)
+        return pd.factorize(labels)[0]
+    series = pd.Series(labels).astype(str).str.strip().str.lower()
+    label_map = {"setosa": 0, "versicolor": 1, "virginica": 2}
+    mapped = series.map(label_map)
+    if mapped.isna().any():
+        numeric = pd.to_numeric(series, errors="coerce")
+        if numeric.isna().any():
+            return pd.factorize(series)[0]
+        return numeric.astype(int).to_numpy()
+    return mapped.astype(int).to_numpy()
 
-def compute_centroids(features, labels, n_classes):
-    sums = np.zeros((n_classes, features.shape[1]), dtype=float)
-    np.add.at(sums, labels, features)
-    counts = np.bincount(labels, minlength=n_classes).astype(float).reshape(-1, 1)
-    return sums / counts
-
-def nearest_centroid_accuracy(features, labels, centroids):
-    feat_sq = np.sum(features * features, axis=1, keepdims=True)
-    cent_sq = np.sum(centroids * centroids, axis=1)
-    dist_sq = feat_sq + cent_sq - 2.0 * features.dot(centroids.T)
-    y_pred = np.argmin(dist_sq, axis=1)
-    return np.mean(y_pred == labels)
 
 def main():
-    expected_headers = [h.strip() for h in DATASET_HEADERS.split(",")]
-    df = read_csv_fallback("iris.csv", expected_headers)
-    feature_cols = expected_headers[2:4]
-    label_col = expected_headers[-1]
-    features = df[feature_cols].to_numpy(dtype=float, copy=False)
-    labels = map_labels(df[label_col].to_numpy())
-    centroids = compute_centroids(features, labels, 3)
-    accuracy = nearest_centroid_accuracy(features, labels, centroids)
+    headers = [h.strip() for h in DATASET_HEADERS.split(",") if h.strip()]
+    df = read_csv_robust(DATASET_PATH, DATASET_HEADERS)
+
+    if all(h in df.columns for h in headers):
+        df = df[headers]
+        label_col = headers[-1]
+        feature_cols = headers[:-1]
+    else:
+        label_col = df.columns[-1]
+        feature_cols = list(df.columns[:-1])
+
+    if all(h in df.columns for h in headers):
+        petal_cols = headers[-3:-1]
+    else:
+        petal_cols = feature_cols[-2:]
+
+    petal_features = df[petal_cols].to_numpy(dtype=np.float64, copy=False)
+    labels_raw = df[label_col].to_numpy()
+    labels_int = encode_labels(labels_raw)
+
+    n_classes = int(labels_int.max()) + 1
+    centroids = np.empty((n_classes, petal_features.shape[1]), dtype=np.float64)
+    for i in range(n_classes):
+        centroids[i] = petal_features[labels_int == i].mean(axis=0)
+
+    sample = np.array([3.1, 1.2], dtype=np.float64)
+    centroid_sq = np.sum(centroids ** 2, axis=1)
+    sample_sq = np.sum(sample ** 2)
+    dist_sq_sample = sample_sq + centroid_sq - 2 * centroids.dot(sample)
+    dist_sq_sample = np.maximum(dist_sq_sample, 0)
+    _ = int(np.argmin(dist_sq_sample))
+
+    feature_sq = np.sum(petal_features ** 2, axis=1, keepdims=True)
+    dist_sq = feature_sq + centroid_sq - 2 * petal_features.dot(centroids.T)
+    dist_sq = np.maximum(dist_sq, 0)
+    y_pred = np.argmin(dist_sq, axis=1)
+    accuracy = np.mean(y_pred == labels_int)
+
     print(f"ACCURACY={accuracy:.6f}")
+
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Implemented robust CSV loading with delimiter/decimal fallback and header alignment to prevent misparsing.
-# - Selected only required feature columns and used NumPy views to minimize memory use and data movement.
-# - Computed centroids with a single accumulation pass to reduce redundant indexing.
-# - Replaced SciPy distance computation with vectorized squared-distance math to cut dependencies and allocations.
-# - Removed plotting and extraneous computations and fixed the random seed for deterministic output.
+# - Removed visualization and file output to eliminate unnecessary computation and disk I/O.
+# - Replaced SciPy distance calculations with vectorized NumPy formulas to reduce dependencies and overhead.
+# - Used squared-distance algebra to avoid square roots and large intermediate tensors.
+# - Selected only required columns after robust CSV parsing to minimize data movement and memory use.
+# - Set a fixed random seed to ensure deterministic execution.

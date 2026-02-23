@@ -7,64 +7,91 @@ import numpy as np
 import random
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
-from sklearn.metrics import accuracy_score
 
-DATASET_HEADERS = "class,text"
 SEED = 42
 random.seed(SEED)
 np.random.seed(SEED)
 
-EXPECTED_HEADERS = [h.strip().lower() for h in DATASET_HEADERS.split(",") if h.strip()]
+DATASET_HEADERS = "class,text"
 
-def is_parsing_ok(df, expected_headers):
-    if df.shape[1] < len(expected_headers):
-        return False
-    cols = {str(c).strip().lower() for c in df.columns}
-    return any(h in cols for h in expected_headers)
+def _missing_expected_columns(df, expected_headers):
+    cols = [str(c).strip().lower() for c in df.columns]
+    for h in expected_headers:
+        if h.strip().lower() in cols:
+            return False
+    return True
 
-def read_csv_with_fallback(path, expected_headers):
-    df = pd.read_csv(path)
-    if not is_parsing_ok(df, expected_headers):
-        df = pd.read_csv(path, sep=";", decimal=",")
+def standardize_columns(df, expected_headers):
+    expected = [h.strip() for h in expected_headers if h.strip()]
+    lower_map = {str(col).strip().lower(): col for col in df.columns}
+    rename_map = {}
+    for exp in expected:
+        key = exp.lower()
+        if key in lower_map:
+            rename_map[lower_map[key]] = exp
+    if len(rename_map) == len(expected):
+        return df.rename(columns=rename_map)
+    if df.shape[1] >= len(expected):
+        df = df.iloc[:, :len(expected)].copy()
+        df.columns = expected
+        return df
     return df
 
-def select_column(df, expected_name, fallback_idx):
-    expected = expected_name.lower()
-    for col in df.columns:
-        if str(col).strip().lower() == expected:
-            return col
-    if fallback_idx < len(df.columns):
-        return df.columns[fallback_idx]
-    raise ValueError("Expected column not found")
-
-def load_dataset(path, expected_headers):
-    df = read_csv_with_fallback(path, expected_headers)
-    label_col = select_column(df, expected_headers[0], 0)
-    text_col = select_column(df, expected_headers[1], 1)
-    labels = df[label_col].map({"Neg": 0, "Pos": 1})
+def read_csv_robust(path, expected_headers):
+    df = None
     try:
-        labels = labels.astype("int8", copy=False)
-    except ValueError:
-        pass
-    texts = df[text_col]
+        df = pd.read_csv(path)
+    except Exception:
+        df = None
+    if df is None or df.shape[1] < len(expected_headers) or (_missing_expected_columns(df, expected_headers) and df.shape[1] == 1):
+        try:
+            df = pd.read_csv(path, sep=';', decimal=',')
+        except Exception:
+            if df is None:
+                raise
+    return standardize_columns(df, expected_headers)
+
+def prepare_features_labels(df, class_col, text_col):
+    texts = df[text_col].fillna('')
+    if texts.dtype != object:
+        texts = texts.astype(str)
+    labels = df[class_col].map({'Neg': 0, 'Pos': 1})
     return texts, labels
 
 def main():
-    X_train, y_train = load_dataset("movie_review_train.csv", EXPECTED_HEADERS)
-    X_test, y_test = load_dataset("movie_review_test.csv", EXPECTED_HEADERS)
-    vectorizer = CountVectorizer(stop_words="english", min_df=0.03, max_df=0.8)
+    expected_headers = [h.strip() for h in DATASET_HEADERS.split(',') if h.strip()]
+    train_df = read_csv_robust('movie_review_train.csv', expected_headers)
+    test_df = read_csv_robust('movie_review_test.csv', expected_headers)
+
+    if len(expected_headers) >= 2:
+        class_col, text_col = expected_headers[0], expected_headers[1]
+    elif len(train_df.columns) >= 2:
+        class_col, text_col = train_df.columns[0], train_df.columns[1]
+    else:
+        class_col = train_df.columns[0]
+        text_col = train_df.columns[0]
+
+    train_df = train_df[[class_col, text_col]]
+    test_df = test_df[[class_col, text_col]]
+
+    X_train, y_train = prepare_features_labels(train_df, class_col, text_col)
+    X_test, y_test = prepare_features_labels(test_df, class_col, text_col)
+
+    vectorizer = CountVectorizer(stop_words='english', min_df=0.03, max_df=0.8)
+    X_train_vec = vectorizer.fit_transform(X_train)
+
     model = MultinomialNB()
-    model.fit(vectorizer.fit_transform(X_train), y_train)
-    y_pred = model.predict(vectorizer.transform(X_test))
-    accuracy = accuracy_score(y_test, y_pred)
+    model.fit(X_train_vec, y_train)
+
+    accuracy = model.score(vectorizer.transform(X_test), y_test)
     print(f"ACCURACY={accuracy:.6f}")
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Centralized CSV loading with delimiter fallback and schema-based column selection to prevent redundant parsing.
-# - Removed exploratory computations, extra metrics, probability estimates, and plotting to reduce runtime.
-# - Fitted and transformed text directly without keeping large intermediate matrices, lowering memory use.
-# - Limited imports to essentials and compacted label dtype when possible while keeping outputs identical.
-# - Set fixed random seeds to ensure reproducible results.
+# - Combined fitting and transformation steps to minimize redundant data passes.
+# - Removed unused metric calculations, probability predictions, and plotting to cut computation.
+# - Standardized and trimmed columns to only required fields for lower memory usage.
+# - Used model.score with on-the-fly test transformation to avoid extra intermediate storage.
+# - Added robust CSV parsing with delimiter fallback for reliable input handling.

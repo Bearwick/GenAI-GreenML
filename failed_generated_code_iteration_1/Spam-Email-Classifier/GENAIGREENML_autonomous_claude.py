@@ -4,94 +4,94 @@
 
 import pandas as pd
 import numpy as np
-from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
-from sklearn.preprocessing import LabelEncoder
+from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
-import re
-import sys
-import warnings
-warnings.filterwarnings("ignore")
 
-# Robust CSV loading
+# --- Robust CSV Loading ---
 df = None
-for sep, decimal in [(',', '.'), (';', ','), ('\t', '.')]:
+for kwargs in [
+    {"encoding": "utf-8"},
+    {"encoding": "latin-1"},
+    {"encoding": "utf-8", "sep": ";", "decimal": ","},
+    {"encoding": "latin-1", "sep": ";", "decimal": ","},
+]:
     try:
-        df = pd.read_csv("spam.csv", sep=sep, decimal=decimal, encoding='utf-8')
+        df = pd.read_csv("spam.csv", **kwargs)
         if df.shape[1] >= 2:
             break
     except Exception:
         continue
 
-if df is None or df.shape[1] < 2:
-    try:
-        df = pd.read_csv("spam.csv", encoding='latin-1')
-    except Exception:
-        df = pd.read_csv("spam.csv", encoding='latin-1', sep=',')
+assert df is not None and df.shape[0] > 0, "Failed to load dataset"
 
-# Normalize column names
-df.columns = [re.sub(r'\s+', ' ', str(c).strip()) for c in df.columns]
-df = df[[c for c in df.columns if not c.startswith('Unnamed')]]
+# --- Column name normalization ---
+df.columns = [c.strip().replace("  ", " ") for c in df.columns]
+df = df[[c for c in df.columns if not c.startswith("Unnamed")]]
 
-# If there are extra columns (common in some spam.csv variants with extra unnamed cols), drop them
-if df.shape[1] > 2:
-    # Keep only first two columns if they look like category+message
-    first_two = df.iloc[:, :2].copy()
-    first_two.columns = ['Category', 'Message']
-    df = first_two
+# --- Identify target and text columns ---
+target_col = None
+text_col = None
 
-# Identify Category and Message columns
-cat_col = None
-msg_col = None
+# Try expected names first
 for c in df.columns:
-    cl = c.lower().strip()
-    if cl in ('category', 'label', 'class', 'v1', 'type', 'spam'):
-        cat_col = c
-    elif cl in ('message', 'text', 'v2', 'sms', 'email', 'content'):
-        msg_col = c
+    if c.lower() in ("category", "label", "class", "target", "spam"):
+        target_col = c
+    if c.lower() in ("message", "text", "sms", "email", "content"):
+        text_col = c
 
-if cat_col is None:
-    cat_col = df.columns[0]
-if msg_col is None:
-    msg_col = df.columns[1]
+# Fallback: first column as target, second as text
+if target_col is None:
+    target_col = df.columns[0]
+if text_col is None:
+    text_col = df.columns[1] if len(df.columns) > 1 else df.columns[0]
 
-# Drop rows with missing values in key columns
-df = df[[cat_col, msg_col]].dropna().reset_index(drop=True)
-df[msg_col] = df[msg_col].astype(str)
+# --- Drop rows with missing values in key columns ---
+df = df[[target_col, text_col]].dropna()
+assert df.shape[0] > 0, "No valid rows after dropping NaN"
 
-assert df.shape[0] > 0, "Dataset is empty after preprocessing"
+# --- Encode target ---
+# Map common spam/ham labels to binary; otherwise use label encoding
+label_map = {}
+unique_labels = df[target_col].astype(str).str.strip().str.lower().unique()
 
-# Simple lightweight stemming without NLTK dependency
-def simple_stem(word):
-    """Very lightweight suffix-stripping stemmer to avoid NLTK dependency."""
-    if len(word) > 5 and word.endswith('ing'):
-        return word[:-3]
-    if len(word) > 4 and word.endswith('ed'):
-        return word[:-2]
-    if len(word) > 4 and word.endswith('ly'):
-        return word[:-2]
-    if len(word) > 5 and word.endswith('tion'):
-        return word[:-4]
-    if len(word) > 3 and word.endswith('s') and not word.endswith('ss'):
-        return word[:-1]
-    return word
+if set(unique_labels) <= {"ham", "spam"}:
+    label_map = {"ham": 0, "spam": 1}
+    df["target"] = df[target_col].astype(str).str.strip().str.lower().map(label_map)
+else:
+    from sklearn.preprocessing import LabelEncoder
+    le = LabelEncoder()
+    df["target"] = le.fit_transform(df[target_col].astype(str).str.strip())
 
-def preprocess_text(text):
-    text = text.lower()
-    text = re.sub(r'[^a-z\s]', '', text)
-    tokens = text.split()
-    tokens = [simple_stem(t) for t in tokens if len(t) > 1]
-    return ' '.join(tokens)
+df = df.dropna(subset=["target"])
+df["target"] = df["target"].astype(int)
 
-df['processed'] = df[msg_col].apply(preprocess_text)
+assert df["target"].nunique() >= 2, "Target has fewer than 2 classes"
 
-# Encode target
-le = LabelEncoder()
-df['target'] = le.fit_transform(df[cat_col])
+# --- Ensure text is string ---
+df["text_clean"] = df[text_col].astype(str)
 
-assert df['target'].nunique() >= 2, "Need at least 2 classes for classification"
-
-# Train/test split with fixed random state for reproducibility
+# --- Train/Test Split ---
 X_train, X_test, y_train, y_test = train_test_split(
-    df['processed'], df['target'],
+    df["text_clean"], df["target"],
+    test_size=0.2, random_state=42, stratify=df["target"]
+)
+
+assert len(X_train) > 0 and len(X_test) > 0, "Empty split"
+
+# --- Energy-efficient Pipeline: TF-IDF + Multinomial Naive Bayes ---
+# TfidfVectorizer with sublinear_tf for better feature scaling,
+# limited max_features to keep memory/CPU low,
+# and MultinomialNB which is extremely fast and well-suited for text classification.
+pipeline = Pipeline([
+    ("tfidf", TfidfVectorizer(
+        max_features=5000,
+        sublinear_tf=True,
+        stop_words="english",
+        ngram_range=(1, 2),
+        min_df=2,
+        dtype=np.float32,  # use float32 to reduce memory
+    )),
+    ("

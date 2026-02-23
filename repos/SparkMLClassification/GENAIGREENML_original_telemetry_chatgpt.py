@@ -46,7 +46,9 @@ def diabetes():
         "SkinThickness",
         when(raw_data.SkinThickness == 0, np.nan).otherwise(raw_data.SkinThickness),
     )
-    raw_data = raw_data.withColumn("BMI", when(raw_data.BMI == 0, np.nan).otherwise(raw_data.BMI))
+    raw_data = raw_data.withColumn(
+        "BMI", when(raw_data.BMI == 0, np.nan).otherwise(raw_data.BMI)
+    )
     raw_data = raw_data.withColumn(
         "Insulin", when(raw_data.Insulin == 0, np.nan).otherwise(raw_data.Insulin)
     )
@@ -63,7 +65,9 @@ def diabetes():
     assembler = VectorAssembler(inputCols=cols, outputCol="features")
     raw_data = assembler.transform(raw_data)
 
-    standardscaler = StandardScaler().setInputCol("features").setOutputCol("Scaled_features")
+    standardscaler = StandardScaler().setInputCol("features").setOutputCol(
+        "Scaled_features"
+    )
     raw_data = standardscaler.fit(raw_data).transform(raw_data)
 
     train, test = raw_data.randomSplit([0.8, 0.2], seed=12345)
@@ -74,7 +78,8 @@ def diabetes():
 
     BalancingRatio = numNegatives / dataset_size
     train = train.withColumn(
-        "classWeights", when(train.Outcome == 1, BalancingRatio).otherwise(1 - BalancingRatio)
+        "classWeights",
+        when(train.Outcome == 1, BalancingRatio).otherwise(1 - BalancingRatio),
     )
 
     css = ChiSqSelector(
@@ -84,16 +89,18 @@ def diabetes():
     test = css.fit(test).transform(test)
 
     lr = LogisticRegression(
-        labelCol="Outcome", featuresCol="Aspect", weightCol="classWeights", maxIter=10
+        labelCol="Outcome",
+        featuresCol="Aspect",
+        weightCol="classWeights",
+        maxIter=10,
     )
     model = lr.fit(train)
     predict_test = model.transform(test)
 
-    predictions = predict_test
-    evaluator_acc = MulticlassClassificationEvaluator(
+    evaluator = MulticlassClassificationEvaluator(
         labelCol="Outcome", predictionCol="prediction", metricName="accuracy"
     )
-    accuracy = evaluator_acc.evaluate(predictions)
+    accuracy = evaluator.evaluate(predict_test)
     print(f"ACCURACY={accuracy:.6f}")
 
     sc.stop()

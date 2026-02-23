@@ -7,144 +7,187 @@ import numpy as np
 import random
 import math
 
-def load_data(path):
-    try:
-        df = pd.read_csv(path)
-    except:
-        df = pd.read_csv(path, sep=';', decimal=',')
-    
-    for col in df.columns:
-        if col not in ['town', 'vax_level']:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
-    return df
+random.seed(42)
 
-class LeafNode:
+def read_data(csv_path):
+    try:
+        df = pd.read_csv(csv_path)
+    except Exception:
+        df = pd.read_csv(csv_path, sep=';', decimal=',')
+    
+    if df.shape[1] <= 1:
+        df = pd.read_csv(csv_path, sep=';', decimal=',')
+        
+    df = df.replace({np.nan: None})
+    return df.to_dict('records')
+
+def train_test_split(examples, test_perc):
+    test_size = round(test_perc * len(examples))
+    shuffled = random.sample(examples, len(examples))
+    return shuffled[test_size:], shuffled[:test_size]
+
+class TreeNodeInterface():
+    def classify(self, example): 
+        raise NotImplementedError
+
+class DecisionNode(TreeNodeInterface):
+    def __init__(self, test_attr_name, test_attr_threshold, child_lt, child_ge, child_miss):
+        self.test_attr_name = test_attr_name  
+        self.test_attr_threshold = test_attr_threshold 
+        self.child_ge = child_ge
+        self.child_lt = child_lt
+        self.child_miss = child_miss
+
+    def classify(self, example):
+        test_val = example[self.test_attr_name]
+        if test_val is None:
+            return self.child_miss.classify(example)
+        elif test_val < self.test_attr_threshold:
+            return self.child_lt.classify(example)
+        else:
+            return self.child_ge.classify(example)
+
+class LeafNode(TreeNodeInterface):
     def __init__(self, pred_class, pred_class_count, total_count):
         self.pred_class = pred_class
+        self.pred_class_count = pred_class_count
+        self.total_count = total_count
         self.prob = pred_class_count / total_count if total_count > 0 else 0
 
     def classify(self, example):
         return self.pred_class, self.prob
 
-class DecisionNode:
-    def __init__(self, test_attr_name, test_attr_threshold, child_lt, child_ge, child_miss):
-        self.test_attr_name = test_attr_name
-        self.test_attr_threshold = test_attr_threshold
-        self.child_lt = child_lt
-        self.child_ge = child_ge
-        self.child_miss = child_miss
+class DecisionTree:
+    def __init__(self, examples, id_name, class_name, min_leaf_count=1):
+        self.id_name = id_name
+        self.class_name = class_name
+        self.min_leaf_count = min_leaf_count
+        self.root = self.learn_tree(examples)  
 
+    def learn_tree(self, examples):
+        if not examples:
+            return LeafNode("", 0, 0)
+        attribute_set = set()
+        for attribute in examples[0]:
+            if attribute != self.id_name and attribute != self.class_name:
+                attribute_set.add(attribute)
+        return attributeSplit(attribute_set, examples, self.min_leaf_count, self.class_name)
+    
     def classify(self, example):
-        test_val = example.get(self.test_attr_name)
-        if pd.isna(test_val):
-            return self.child_miss.classify(example)
-        return self.child_lt.classify(example) if test_val < self.test_attr_threshold else self.child_ge.classify(example)
+        return self.root.classify(example) 
 
-def get_entropy(df, class_label):
-    if df.empty: return 0
-    counts = df[class_label].value_counts()
-    entropy = 0
-    total = len(df)
-    for c in counts:
-        p = c / total
-        if p > 0:
-            entropy -= p * math.log(p, 2)
-    return entropy
-
-def get_predictive_class(df, class_label):
+def entropy(examples, class_label):
+    n = len(examples)
+    if n == 0: return 0
     counts = {}
-    max_class = ""
-    max_count = 0
-    for val in df[class_label]:
-        if val not in counts:
-            counts[val] = 0
-        else:
-            counts[val] += 1
-        if counts[val] > max_count:
-            max_count = counts[val]
-            max_class = val
-    return max_class, max_count
+    for ex in examples:
+        val = ex[class_label]
+        counts[val] = counts.get(val, 0) + 1
+    ent = 0
+    for c in counts.values():
+        p = c / n
+        if p > 0:
+            ent -= p * math.log2(p)
+    return ent
 
-def get_best_split(attribute_set, df, class_label):
-    best = {"name": "", "infogain": -1.0, "threshold": 0, "df_lt": pd.DataFrame(), "df_ge": pd.DataFrame()}
-    parent_entropy = get_entropy(df, class_label)
+def getRange(attribute, examples):
+    mn, mx = 1000000.0, -1000000.0
+    found = False
+    for ex in examples:
+        val = ex[attribute]
+        if val is not None:
+            fv = float(val)
+            if fv < mn: mn = fv
+            if fv > mx: mx = fv
+            found = True
+    if not found: return 0, 0, 0
+    return mn, mx, (mx - mn) / 15
+
+def getPredictiveClass(examples, class_label):
+    classDict = {}
+    max_val = ("", 0)
+    for example in examples:
+        name = example[class_label]
+        if name not in classDict:
+            classDict[name] = 0
+        else: 
+            classDict[name] += 1
+        if classDict[name] > max_val[1]:
+            max_val = (name, classDict[name])
+    return max_val
+
+def getInfoGain(attribute, examples, class_label, parent_ent):
+    max_ig = 0
+    threshold = 0
+    lt_split, ge_split = [], []
+    mn, mx, step = getRange(attribute, examples)
+    if step == 0: return 0, 0, [], []
+    
+    n_total = len(examples)
+    curr = mn + step
+    while curr < mx:
+        lt, ge = [], []
+        for ex in examples:
+            val = ex[attribute]
+            if val is None: continue
+            if val >= curr: ge.append(ex)
+            else: lt.append(ex)
+        
+        if lt and ge:
+            ig = parent_ent - ((len(lt)/n_total * entropy(lt, class_label)) + (len(ge)/n_total * entropy(ge, class_label)))
+            if ig > max_ig:
+                max_ig, threshold, lt_split, ge_split = ig, curr, lt, ge
+        curr += step
+    return max_ig, threshold, lt_split, ge_split
+
+def attributeSplit(attribute_set, examples, min_leaf_count, class_name):
+    best_attr = {"name": "", "ig": 0.0, "threshold": None, "lt": [], "ge": []}
+    parent_ent = entropy(examples, class_name)
     
     for attr in attribute_set:
-        valid_df = df[df[attr].notna()]
-        if valid_df.empty: continue
-        
-        min_v, max_v = valid_df[attr].min(), valid_df[attr].max()
-        step = (max_v - min_v) / 15
-        if step <= 0: continue
-        
-        curr_t = min_v + step
-        while curr_t < max_v:
-            lt = valid_df[valid_df[attr] < curr_t]
-            ge = valid_df[valid_df[attr] >= curr_t]
+        ig, th, lt, ge = getInfoGain(attr, examples, class_name, parent_ent)
+        if ig > best_attr["ig"]:
+            best_attr = {"name": attr, "ig": ig, "threshold": th, "lt": lt, "ge": ge}
             
-            p_lt, p_ge = len(lt) / len(df), len(ge) / len(df)
-            gain = parent_entropy - (p_lt * get_entropy(lt, class_label) + p_ge * get_entropy(ge, class_label))
-            
-            if gain > best["infogain"]:
-                best.update({"name": attr, "infogain": gain, "threshold": curr_t, "df_lt": lt, "df_ge": ge})
-            curr_t += step
-            
-    return best["name"], best["threshold"], best["df_lt"], best["df_ge"]
+    if not best_attr["name"] or len(best_attr["lt"]) <= min_leaf_count or len(best_attr["ge"]) <= min_leaf_count:
+        pred_class, pred_count = getPredictiveClass(examples, class_name)
+        return LeafNode(pred_class, pred_count, len(examples))
 
-def build_tree(attribute_set, df, min_leaf, class_label):
-    attr_name, threshold, df_lt, df_ge = get_best_split(attribute_set, df, class_label)
-    
-    if attr_name == "" or len(df_lt) <= min_leaf or len(df_ge) <= min_leaf:
-        p_class, p_count = get_predictive_class(df, class_label)
-        return LeafNode(p_class, p_count, len(df))
-    
-    attribute_set.remove(attr_name)
-    child_lt = build_tree(attribute_set, df_lt, min_leaf, class_label)
-    child_ge = build_tree(attribute_set, df_ge, min_leaf, class_label)
-    child_miss = child_lt if len(df_lt) >= len(df_ge) else child_ge
-    
-    return DecisionNode(attr_name, threshold, child_lt, child_ge, child_miss)
+    attribute_set.remove(best_attr["name"])
+    child_lt = attributeSplit(attribute_set, best_attr["lt"], min_leaf_count, class_name)
+    child_ge = attributeSplit(attribute_set, best_attr["ge"], min_leaf_count, class_name)
+    child_miss = child_lt if len(best_attr["lt"]) >= len(best_attr["ge"]) else child_ge
 
-class DecisionTree:
-    def __init__(self, df, id_col, class_col, min_leaf=1):
-        self.class_name = class_col
-        attrs = {c for c in df.columns if c not in [id_col, class_col]}
-        self.root = build_tree(attrs, df, min_leaf, class_col)
+    return DecisionNode(best_attr["name"], best_attr["threshold"], child_lt, child_ge, child_miss)
 
-    def classify(self, example):
-        return self.root.classify(example)
-
-if __name__ == "__main__":
-    random.seed(42)
-    np.random.seed(42)
+if __name__ == '__main__':
+    csv_path = 'town_vax_data.csv'
+    id_col = 'town'
+    target_col = 'vax_level'
+    min_leaf = 10
     
-    path = 'town_vax_data.csv'
-    id_attr, class_attr = 'town', 'vax_level'
-    df = load_data(path)
+    data = read_data(csv_path)
+    train_data, test_data = train_test_split(data, 0.25)
     
-    test_size = int(round(0.25 * len(df)))
-    shuffled = df.sample(frac=1, random_state=42)
-    test_df = shuffled.iloc[:test_size]
-    train_df = shuffled.iloc[test_size:]
-    
-    model = DecisionTree(train_df, id_attr, class_attr, 10)
+    tree = DecisionTree(train_data, id_col, target_col, min_leaf)
     
     correct = 0
-    for _, row in test_df.iterrows():
-        pred, _ = model.classify(row.to_dict())
-        if pred == row[class_attr]:
+    for row in test_data:
+        prediction, _ = tree.classify(row)
+        if prediction == row[target_col]:
             correct += 1
             
-    print(f"ACCURACY={correct/len(test_df):.6f}")
+    accuracy = correct / len(test_data) if test_data else 0
+    print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# 1. Replaced manual CSV parsing and dictionary creation with pandas for high-performance data loading and vectorized type conversion.
-# 2. Utilized pandas boolean indexing for splitting datasets, significantly reducing runtime compared to manual list iteration.
-# 3. Optimized entropy and information gain calculations by using pandas value_counts and minimizing redundant data traversals.
-# 4. Reduced memory overhead by passing DataFrame slices instead of deep-copying lists of dictionaries.
-# 5. Pre-calculated parent entropy once per attribute split search to eliminate redundant computations within the threshold loop.
-# 6. Optimized the range calculation for thresholds using vectorized Series min/max operations.
-# 7. Implemented robust CSV loading with delimiter and decimal fallback to ensure reliability across environments.
-# 8. Fixed random seeds for reproducibility and removed all non-essential logging and visualization code to minimize computational waste.
-# 9. Replicated original "N-1" count logic for leaf probability while streamlining the majority class search process.
-# 10. Minimized recursion overhead by using efficient base-case checks and attribute set management.
+# 1. Used pandas for faster initial CSV parsing and robust delimiter handling.
+# 2. Optimized entropy calculation by using a dictionary for label counts instead of creating sub-lists of objects.
+# 3. Reduced redundant parent entropy calculations by computing it once per node split instead of once per threshold.
+# 4. Replaced math.log(p, 2) with math.log2(p) for improved performance.
+# 5. Minimized data movement by filtering missing values only during the attribute split evaluation loop.
+# 6. Streamlined getBestAttributeAndSplit by removing the extra dictionary creation step in every threshold iteration.
+# 7. Removed all expensive visualization logic (ASCII tree, confusion matrix) and print statements within loops to minimize I/O overhead.
+# 8. Optimized train_test_split using random.sample for efficient in-place shuffling logic.
+# 9. Simplified logic flow in attributeSplit to reduce recursion overhead when base cases are met early.
+# 10. Implemented early exit checks for splits that do not yield valid subsets (lt/ge).

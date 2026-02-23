@@ -2,69 +2,98 @@
 # LLM: codex
 # Mode: assisted
 
+import os
 import random
 import numpy as np
 import pandas as pd
+import warnings
 from sklearn.decomposition import PCA
+from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
 from src.preprocessing import preprocess_data
 
-SEED = 42
-random.seed(SEED)
-np.random.seed(SEED)
-
 DATASET_HEADERS = "0,tcp,ftp_data,SF,491,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,0.00,0.00,0.00,0.00,1.00,0.00,0.00,150,25,0.17,0.03,0.17,0.00,0.00,0.00,0.05,0.00,normal,20"
+SEED = 42
 
-def read_csv_robust(path, headers_line):
-    expected_cols = len(headers_line.split(","))
-    try:
-        df = pd.read_csv(path, header=None)
-    except Exception:
-        return pd.read_csv(path, header=None, sep=";", decimal=",")
-    if df.shape[1] == 1 or (expected_cols > 1 and df.shape[1] != expected_cols):
-        try:
-            df_alt = pd.read_csv(path, header=None, sep=";", decimal=",")
-            if expected_cols > 1:
-                if abs(df_alt.shape[1] - expected_cols) < abs(df.shape[1] - expected_cols):
-                    df = df_alt
-            else:
-                df = df_alt
-        except Exception:
-            pass
+
+def expected_columns(headers):
+    return len(headers.strip().split(","))
+
+
+EXPECTED_COLS = expected_columns(DATASET_HEADERS)
+
+
+def read_dataset(path, expected_cols):
+    df = pd.read_csv(path, header=None)
+    if expected_cols > 1 and df.shape[1] != expected_cols:
+        df_alt = pd.read_csv(path, header=None, sep=";", decimal=",")
+        if df_alt.shape[1] == expected_cols or df.shape[1] == 1:
+            df = df_alt
     return df
 
-train_df = read_csv_robust("data/raw/Train.txt", DATASET_HEADERS)
-test_df = read_csv_robust("data/raw/Test.txt", DATASET_HEADERS)
 
-X_train_scaled, y_train, scaler, train_columns = preprocess_data(train_df, fit=True)
-X_test_scaled, y_test = preprocess_data(test_df, fit=False, scaler=scaler, columns=train_columns)
-del train_df, test_df
+def load_data(train_path, test_path, expected_cols, seed):
+    train_df = read_dataset(train_path, expected_cols)
+    if os.path.exists(test_path):
+        test_df = read_dataset(test_path, expected_cols)
+    else:
+        if train_df.shape[0] > 1:
+            if train_df.shape[1] >= 2:
+                y = train_df.iloc[:, -2]
+                train_df, test_df = train_test_split(
+                    train_df, test_size=0.2, random_state=seed, shuffle=True, stratify=y
+                )
+            else:
+                train_df, test_df = train_test_split(
+                    train_df, test_size=0.2, random_state=seed, shuffle=True
+                )
+        else:
+            test_df = train_df.copy()
+    return train_df, test_df
 
-pca = PCA(n_components=0.95, random_state=SEED)
-X_train_pca = pca.fit_transform(X_train_scaled)
-X_test_pca = pca.transform(X_test_scaled)
-del X_train_scaled, X_test_scaled
 
-model = XGBClassifier(
-    n_estimators=200,
-    max_depth=6,
-    learning_rate=0.1,
-    subsample=0.8,
-    colsample_bytree=0.8,
-    eval_metric="logloss",
-    random_state=SEED,
-    n_jobs=1,
-    use_label_encoder=False,
-    verbosity=0
-)
-model.fit(X_train_pca, y_train)
+def main():
+    warnings.filterwarnings("ignore")
+    random.seed(SEED)
+    np.random.seed(SEED)
+    train_path = "data/raw/Train.txt"
+    test_path = "data/raw/Test.txt"
+    train_df, test_df = load_data(train_path, test_path, EXPECTED_COLS, SEED)
+    X_train_scaled, y_train, scaler, train_columns = preprocess_data(train_df, fit=True)
+    X_test_scaled, y_test = preprocess_data(
+        test_df, fit=False, scaler=scaler, columns=train_columns
+    )
+    del train_df, test_df
+    pca = PCA(n_components=0.95, random_state=SEED)
+    X_train_pca = pca.fit_transform(X_train_scaled)
+    X_test_pca = pca.transform(X_test_scaled)
+    del X_train_scaled, X_test_scaled
+    model = XGBClassifier(
+        n_estimators=200,
+        max_depth=6,
+        learning_rate=0.1,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        eval_metric="logloss",
+        random_state=SEED,
+    )
+    model.fit(X_train_pca, y_train)
+    del X_train_pca, y_train
+    y_pred = model.predict(X_test_pca)
+    if hasattr(y_test, "to_numpy"):
+        y_true = y_test.to_numpy(copy=False)
+    else:
+        y_true = np.asarray(y_test)
+    accuracy = float(np.mean(y_pred == y_true))
+    print(f"ACCURACY={accuracy:.6f}")
 
-accuracy = model.score(X_test_pca, y_test)
-print(f"ACCURACY={accuracy:.6f}")
+
+if __name__ == "__main__":
+    main()
 
 # Optimization Summary
-# - Removed nonessential imports, plotting, artifact persistence, and logging to cut I/O and runtime overhead.
-# - Added robust CSV parsing with delimiter fallback and column-count validation from provided headers.
-# - Fixed random seeds and limited parallelism for deterministic, reproducible training behavior.
-# - Computed accuracy via model.score to avoid extra metric calculations and probability inference.
-# - Released large intermediate datasets early to reduce memory footprint.
+# - Removed artifact persistence, visualization, and extra metric computations to avoid unnecessary I/O and processing.
+# - Added robust CSV parsing with delimiter/decimal fallback to prevent repeated failed reads.
+# - Used fixed seeds and random_state for reproducible results without altering model behavior.
+# - Freed large intermediate arrays early to lower memory footprint during training and evaluation.
+# - Streamlined evaluation to only compute accuracy, reducing redundant computation.

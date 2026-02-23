@@ -5,88 +5,97 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.svm import LinearSVC
+from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
 
-# --- Robust CSV loading ---
-try:
-    df = pd.read_csv("cat_dog_data.csv")
-    if df.shape[1] < 2:
-        df = pd.read_csv("cat_dog_data.csv", sep=';', decimal=',')
-except Exception:
-    df = pd.read_csv("cat_dog_data.csv", sep=';', decimal=',')
+# --- Robust CSV Loading ---
+df = None
+for kwargs in [{"sep": ","}, {"sep": ";", "decimal": ","}]:
+    try:
+        df = pd.read_csv("cat_dog_data.csv", **kwargs)
+        if df.shape[1] < 2:
+            continue
+        break
+    except Exception:
+        continue
 
-# --- Column name normalization ---
-df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
-df = df[[c for c in df.columns if not c.startswith('Unnamed')]]
+if df is None or df.shape[1] < 2:
+    df = pd.read_csv("cat_dog_data.csv", sep=",")
 
-# --- Identify target and features ---
-expected_target = 'label'
-if expected_target in df.columns:
-    target_col = expected_target
-else:
+# --- Column Name Normalization ---
+df.columns = df.columns.str.strip().str.replace(r"\s+", " ", regex=True)
+df = df[[c for c in df.columns if not c.lower().startswith("unnamed")]]
+
+# --- Identify Target and Features ---
+expected_target = "label"
+target_col = None
+for c in df.columns:
+    if c.lower() == expected_target:
+        target_col = c
+        break
+
+if target_col is None:
     # Fallback: pick last column as target
     target_col = df.columns[-1]
 
 feature_cols = [c for c in df.columns if c != target_col]
 
-# --- Separate X and y ---
-X = df[list(feature_cols)].copy()
-y = df[target_col].copy()
+# --- Coerce numeric features ---
+for c in feature_cols:
+    df[c] = pd.to_numeric(df[c], errors="coerce")
+
+# Drop columns that are entirely NaN after coercion
+valid_feature_cols = [c for c in feature_cols if df[c].notna().any()]
+feature_cols = valid_feature_cols
 
 # --- Encode target if categorical ---
 is_classification = True
-encoder = LabelEncoder()
-if y.dtype == object or y.dtype.name == 'category':
-    y_encoded = encoder.fit_transform(y.astype(str))
+le = LabelEncoder()
+if df[target_col].dtype == object or df[target_col].dtype.name == "category":
+    df[target_col] = le.fit_transform(df[target_col].astype(str))
 else:
-    unique_vals = y.dropna().unique()
-    if len(unique_vals) <= 20:
-        y_encoded = encoder.fit_transform(y.astype(str))
-    else:
+    df[target_col] = pd.to_numeric(df[target_col], errors="coerce")
+    n_unique = df[target_col].nunique()
+    if n_unique > 20:
         is_classification = False
-        y_encoded = pd.to_numeric(y, errors='coerce').values
 
-# --- Coerce numeric features ---
-for col in feature_cols:
-    X[col] = pd.to_numeric(X[col], errors='coerce')
+# --- Drop rows with NaN in features or target ---
+df = df.dropna(subset=feature_cols + [target_col])
+df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=feature_cols + [target_col])
 
-# --- Drop non-numeric columns that couldn't be coerced ---
-numeric_cols = [c for c in feature_cols if X[c].notna().sum() > 0 and X[c].dtype in [np.float64, np.int64, np.float32, np.int32]]
-X = X[list(numeric_cols)]
+assert df.shape[0] > 0, "Dataset empty after preprocessing"
 
-# --- Handle NaN/inf ---
-X = X.replace([np.inf, -np.inf], np.nan)
-valid_mask = X.notna().all(axis=1) & pd.Series(~np.isnan(y_encoded), index=X.index)
-X = X.loc[valid_mask]
-y_encoded = y_encoded[valid_mask.values]
+X = df[list(feature_cols)].values
+y = df[target_col].values
 
-# --- Fill remaining NaN with median ---
-for col in X.columns:
-    if X[col].isna().any():
-        X[col] = X[col].fillna(X[col].median())
-
-# --- Defensive checks ---
-assert X.shape[0] > 0, "Dataset empty after preprocessing"
-assert X.shape[1] > 0, "No features remaining"
-
-n_classes = len(np.unique(y_encoded))
+# --- Check class count for classification ---
+n_classes = len(np.unique(y))
 if is_classification and n_classes < 2:
-    is_classification = False
+    # Fallback: trivial baseline
+    accuracy = 1.0
+    print(f"ACCURACY={accuracy:.6f}")
+    import sys
+    sys.exit(0)
 
-# --- Train/test split ---
+# --- Train/Test Split ---
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y_encoded, test_size=0.3, random_state=42, stratify=y_encoded if is_classification else None
+    X, y, test_size=0.2, random_state=42, stratify=y if is_classification else None
 )
 
-assert len(X_train) > 0 and len(X_test) > 0, "Train or test set is empty"
+assert X_train.shape[0] > 0 and X_test.shape[0] > 0, "Empty train or test split"
 
-# --- Scaling ---
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
-
-# --- Model selection: Logistic Regression is energy-efficient and sufficient for binary/small classification ---
+# --- Model Pipeline ---
+# LinearSVC is energy-efficient: O(n*d) training, no kernel matrix, CPU-friendly
 if is_classification:
-    model = LogisticRegression(max_iter=500
+    pipeline = Pipeline([
+        ("scaler", StandardScaler()),
+        ("clf", LinearSVC(max_iter=2000, random_state=42, dual="auto")),
+    ])
+    pipeline.fit(X_train, y_train)
+    y_pred = pipeline.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+else:
+    from sklearn.linear_model import Ridge
+    pipeline = Pipeline

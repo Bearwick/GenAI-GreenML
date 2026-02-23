@@ -2,6 +2,8 @@
 # LLM: chatgpt
 # Mode: assisted
 
+import os
+import random
 import numpy as np
 import pandas as pd
 
@@ -14,83 +16,58 @@ from imblearn.over_sampling import SMOTE
 import scipy.stats as stats
 
 
-RANDOM_SEED = 42
-DATASET_PATH = "diabetes2.csv"
-DATASET_HEADERS = [
-    "Pregnancies",
-    "Glucose",
-    "BloodPressure",
-    "SkinThickness",
-    "Insulin",
-    "BMI",
-    "DiabetesPedigreeFunction",
-    "Age",
-    "Outcome",
-]
+SEED = 42
 
 
-def load_csv_with_fallback(path: str, expected_headers: list[str]) -> pd.DataFrame:
+def set_reproducibility(seed: int = SEED) -> None:
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+
+
+def read_csv_robust(path: str, expected_headers=None) -> pd.DataFrame:
     df = pd.read_csv(path)
-    if not _looks_like_expected_schema(df, expected_headers):
-        df = pd.read_csv(path, sep=";", decimal=",")
+    if expected_headers is not None:
+        expected = [h.strip() for h in expected_headers]
+        cols = [c.strip() for c in df.columns.astype(str).tolist()]
+        if len(cols) == 1 or (len(expected) > 0 and cols != expected and not set(expected).issubset(set(cols))):
+            df = pd.read_csv(path, sep=";", decimal=",")
     return df
 
 
-def _looks_like_expected_schema(df: pd.DataFrame, expected_headers: list[str]) -> bool:
-    cols = [str(c).strip() for c in df.columns]
-    if cols == expected_headers:
-        return True
-    if len(cols) == 1:
-        only = cols[0]
-        if ";" in only or "," in only:
-            return False
-    if "Outcome" not in cols:
-        return False
-    if len(cols) < 2:
-        return False
-    return True
-
-
-def resolve_target_column(df: pd.DataFrame, expected_headers: list[str]) -> str:
-    if "Outcome" in df.columns:
+def infer_target_column(df: pd.DataFrame, dataset_headers) -> str:
+    cols = df.columns.astype(str).tolist()
+    if "Outcome" in cols:
         return "Outcome"
-    lower_map = {str(c).strip().lower(): c for c in df.columns}
-    if "outcome" in lower_map:
-        return lower_map["outcome"]
-    for h in expected_headers:
-        if h in df.columns and str(h).strip().lower() == "outcome":
-            return h
-    raise KeyError("Target column 'Outcome' not found in dataset columns.")
-
-
-def select_feature_columns(df: pd.DataFrame, target_col: str, expected_headers: list[str]) -> list[str]:
-    expected_features = [h for h in expected_headers if h != "Outcome"]
-    cols_set = set(df.columns)
-    features = [c for c in expected_features if c in cols_set]
-    if len(features) == 0:
-        features = [c for c in df.columns if c != target_col]
-    return features
+    if dataset_headers and dataset_headers[-1] in cols:
+        return dataset_headers[-1]
+    for c in reversed(cols):
+        lc = str(c).strip().lower()
+        if lc in {"outcome", "target", "label", "y"}:
+            return c
+    raise ValueError("Target column could not be inferred from dataset headers and df.columns.")
 
 
 def main() -> None:
-    np.random.seed(RANDOM_SEED)
+    set_reproducibility(SEED)
 
-    df = load_csv_with_fallback(DATASET_PATH, DATASET_HEADERS)
-    target_col = resolve_target_column(df, DATASET_HEADERS)
-    feature_cols = select_feature_columns(df, target_col, DATASET_HEADERS)
+    dataset_headers = [h.strip() for h in "Pregnancies,Glucose,BloodPressure,SkinThickness,Insulin,BMI,DiabetesPedigreeFunction,Age,Outcome".split(",")]
+    df = read_csv_robust("diabetes2.csv", expected_headers=dataset_headers)
 
-    X = df.loc[:, feature_cols]
-    y = df.loc[:, target_col]
+    target_col = infer_target_column(df, dataset_headers)
+
+    y = df[target_col]
+    X = df.drop(columns=[target_col])
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=RANDOM_SEED
+        X, y, test_size=0.3, random_state=SEED
     )
 
     scaler = MinMaxScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    smote = SMOTE(random_state=RANDOM_SEED)
+    smote = SMOTE(random_state=SEED)
     X_resampled, y_resampled = smote.fit_resample(X_train_scaled, y_train)
 
     param_distributions = {
@@ -105,14 +82,13 @@ def main() -> None:
         n_iter=50,
         cv=5,
         n_jobs=-1,
-        random_state=RANDOM_SEED,
+        random_state=SEED,
     )
     random_search.fit(X_resampled, y_resampled)
 
     best_model = random_search.best_estimator_
     y_pred = best_model.predict(X_test_scaled)
     accuracy = accuracy_score(y_test, y_pred)
-
     print(f"ACCURACY={accuracy:.6f}")
 
 
@@ -120,9 +96,8 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed unused imports and all plotting/extra metrics to reduce runtime, memory use, and dependencies while preserving the core task/output (accuracy on the test set).
-# - Implemented robust CSV parsing fallback (default read_csv, then retry with sep=';' and decimal=',') to avoid repeated manual fixes and prevent wasted runs.
-# - Derived feature/target columns from DATASET_HEADERS and df.columns (with case-insensitive fallback for target) to prevent schema assumptions and avoid error-driven reruns.
-# - Kept scaling and SMOTE strictly on the training split to avoid unnecessary data movement and preserve evaluation intent.
-# - Centralized random seed usage (NumPy + sklearn/imblearn random_state) for reproducibility and stable results across runs.
-# - Avoided unnecessary intermediate structures (used .loc with selected columns and reused transformed arrays) to reduce memory footprint.
+# - Removed all exploratory prints, reports, and plotting to reduce I/O overhead and runtime while keeping the same training/evaluation intent.
+# - Computed only the required final metric (accuracy) instead of multiple unused metrics/curves to avoid redundant computation.
+# - Implemented robust CSV parsing with a fast default read and a fallback (sep=';', decimal=',') only when header/schema looks wrong, minimizing unnecessary re-reads.
+# - Ensured reproducibility with fixed seeds for Python and NumPy and consistent random_state usage across split, SMOTE, and RandomizedSearchCV.
+# - Avoided unnecessary intermediate structures and kept data as NumPy arrays after scaling/SMOTE to reduce memory overhead and data movement.

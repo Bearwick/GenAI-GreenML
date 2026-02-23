@@ -8,32 +8,35 @@ from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.preprocessing import LabelEncoder
 from nltk.stem import PorterStemmer
-import numpy as np
 
-SEED = 42
-np.random.seed(SEED)
+RANDOM_SEED = 42
 
 ps = PorterStemmer()
 
-def convert(word):
-    return " ".join(ps.stem(token) for token in word.split(" "))
+
+def stem_text(text):
+    return " ".join(ps.stem(w) for w in text.split())
+
 
 try:
-    df = pd.read_csv("spam.csv")
-    if df.shape[1] < 2:
+    df = pd.read_csv("spam.csv", usecols=["Category", "Message"], encoding="latin-1")
+    if df.shape[1] != 2 or df.iloc[0].isnull().any():
         raise ValueError
-except (ValueError, pd.errors.ParserError):
-    df = pd.read_csv("spam.csv", sep=";", decimal=",")
+except Exception:
+    df = pd.read_csv("spam.csv", sep=";", decimal=",", encoding="latin-1")
+    df = df.iloc[:, :2]
+    df.columns = ["Category", "Message"]
 
-cat_col = df.columns[0]
-msg_col = df.columns[1]
+df.dropna(subset=["Category", "Message"], inplace=True)
 
 le = LabelEncoder()
-y = le.fit_transform(df[cat_col].values)
-messages = df[msg_col].apply(convert)
+y = le.fit_transform(df["Category"].values)
+X_stemmed = df["Message"].values
+for i in range(len(X_stemmed)):
+    X_stemmed[i] = stem_text(str(X_stemmed[i]))
 
 X_train, X_test, y_train, y_test = train_test_split(
-    messages, y, test_size=0.2, random_state=SEED
+    X_stemmed, y, test_size=0.2, random_state=RANDOM_SEED
 )
 
 cv = CountVectorizer(stop_words="english")
@@ -47,12 +50,13 @@ accuracy = model.score(X_test_count, y_test)
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Removed interactive input (is_spam) to eliminate manual intervention requirement.
-# Removed all print statements and visualizations except the required accuracy print.
-# Used generator expression in convert() instead of building an intermediate list.
-# Derived column names from df.columns rather than hardcoding, with robust CSV fallback.
-# Set fixed random seed for reproducibility in train_test_split and numpy.
-# Avoided redundant pd.set_option call.
-# Computed accuracy on the test set to provide the required metric output.
-# Reduced memory by not storing intermediate transformed arrays unnecessarily.
-# Imported PorterStemmer from nltk.stem directly for clarity.
+# 1. Removed interactive input (is_spam function) per requirements.
+# 2. Removed all prints, plots, and display settings.
+# 3. Fixed random seed for reproducibility in train_test_split.
+# 4. Used in-place numpy array mutation for stemming instead of df.apply + pandas overhead.
+# 5. Used usecols in read_csv to load only needed columns, reducing memory.
+# 6. Added robust CSV fallback with sep=';' and decimal=','.
+# 7. Replaced list-based stem function with generator expression to avoid intermediate list.
+# 8. Computed accuracy on test set and printed in required format.
+# 9. Dropped NaN rows early to avoid processing invalid data.
+# 10. Used .values to work with numpy arrays directly, reducing pandas overhead.

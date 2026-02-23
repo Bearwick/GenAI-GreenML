@@ -8,27 +8,32 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
+RANDOM_SEED = 8
+
 df = pd.read_csv("fetal_health.csv")
-if df.shape[1] == 1:
+if df.shape[1] <= 2:
     df = pd.read_csv("fetal_health.csv", sep=';', decimal=',')
 
 target_col = df.columns[-1]
-y = df[target_col].values
-X = df.drop(columns=[target_col]).values
+y = df[target_col]
+X = df.drop(columns=[target_col])
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=8)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=RANDOM_SEED)
 
 nv = GaussianNB()
-nv.fit(X, y)
-y_pred = nv.predict(X_test)
+nv.fit(X, y.values.ravel())
 
+y_pred = nv.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
+
 print(f"ACCURACY={accuracy:.6f}")
 
 # Optimization Summary
-# Removed file I/O: eliminated writing TestData.csv and re-reading it, avoiding unnecessary disk operations.
-# Used numpy arrays directly instead of DataFrame slicing to reduce memory overhead and data movement.
-# Removed redundant iloc slicing; extracted target column by name derived from last column.
-# Added robust CSV fallback with sep=';' and decimal=',' if initial parse yields single column.
+# Removed file I/O: eliminated saving test data to CSV and re-reading it, avoiding unnecessary disk operations.
+# Used X_test directly for prediction instead of round-tripping through CSV, reducing data movement and I/O overhead.
+# Extracted target column by index (last column) rather than hardcoding name, improving robustness.
+# Added CSV parsing fallback with sep=';' and decimal=',' for reliability.
+# Set fixed random_state for reproducibility.
 # Removed plots, prints, and artifact saving per requirements.
-# Preserved original behavior: model trained on full X, predicted on test split, accuracy computed against y_test.
+# Avoided creating intermediate copies (y as single-column DataFrame); used Series directly.
+# Kept original behavior: model trained on full dataset, tested on 30% split, using GaussianNB.

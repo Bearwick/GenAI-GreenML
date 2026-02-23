@@ -2,8 +2,6 @@
 # LLM: chatgpt
 # Mode: assisted
 
-import os
-import random
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -12,32 +10,35 @@ from sklearn.metrics import accuracy_score
 
 
 SEED = 1
+DATASET_PATH = "Sonar Data.csv"
 
 
-def set_reproducible(seed: int = SEED) -> None:
-    random.seed(seed)
-    np.random.seed(seed)
-    os.environ["PYTHONHASHSEED"] = str(seed)
-
-
-def read_csv_robust(path: str, expected_min_cols: int) -> pd.DataFrame:
+def _read_csv_robust(path: str) -> pd.DataFrame:
     df = pd.read_csv(path, header=None)
-    if df.shape[1] < expected_min_cols:
+    if df.shape[1] <= 1:
         df = pd.read_csv(path, header=None, sep=";", decimal=",")
-    if df.shape[1] < expected_min_cols:
-        raise ValueError(f"CSV parsing failed or unexpected schema: got {df.shape[1]} columns.")
     return df
 
 
+def _get_target_column_index(df: pd.DataFrame) -> int:
+    n_cols = df.shape[1]
+    if n_cols <= 1:
+        raise ValueError("Parsed dataset has too few columns; check CSV formatting.")
+    return n_cols - 1
+
+
+def _prepare_features_target(df: pd.DataFrame, target_col: int):
+    X = df.drop(columns=[target_col])
+    y = df[target_col]
+    return X, y
+
+
 def main() -> None:
-    set_reproducible(SEED)
+    np.random.seed(SEED)
 
-    dataset_path = "Sonar Data.csv"
-    df = read_csv_robust(dataset_path, expected_min_cols=2)
-
-    label_col = df.columns[-1]
-    X = df.drop(columns=[label_col])
-    y = df[label_col]
+    df = _read_csv_robust(DATASET_PATH)
+    target_col = _get_target_column_index(df)
+    X, y = _prepare_features_target(df, target_col)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X,
@@ -47,7 +48,7 @@ def main() -> None:
         random_state=SEED,
     )
 
-    model = LogisticRegression(max_iter=100, random_state=SEED)
+    model = LogisticRegression(max_iter=200, solver="liblinear", random_state=SEED)
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
@@ -59,10 +60,10 @@ if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Removed unused exploratory computations (describe/value_counts/groupby) to avoid redundant full-dataset passes.
-# - Eliminated training-set prediction/accuracy computation to reduce extra inference work while preserving evaluation intent (test accuracy).
-# - Derived the label column from df.columns[-1] to avoid hardcoding schema and prevent schema-related failures.
-# - Implemented robust CSV parsing fallback (default read_csv, then retry with sep=';' and decimal=',') to reduce reruns and parsing errors.
-# - Set fixed seeds (Python, NumPy, and PYTHONHASHSEED) and provided random_state to ensure reproducible splits and model behavior.
-# - Kept data as pandas DataFrame/Series without extra copies or conversions to minimize memory use and data movement.
-# - Added max_iter explicitly to keep solver work bounded and avoid potential non-convergence retries.
+# - Removed unused exploratory computations (describe/value_counts/groupby) to avoid redundant full-data scans.
+# - Eliminated all intermediate prints/logging; only final accuracy is printed as required.
+# - Added robust CSV parsing with a fallback delimiter/decimal to prevent costly mis-parses and rework.
+# - Derived target column index from df.shape instead of assuming fixed schema, reducing fragility and retries.
+# - Ensured reproducibility with a fixed seed for NumPy and train/test split; set model random_state.
+# - Computed accuracy only on the test split (single predict call) to reduce extra inference work.
+# - Chose a lightweight, deterministic-ish solver (liblinear) and bounded iterations to reduce runtime/energy while preserving task behavior.

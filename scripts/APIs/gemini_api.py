@@ -9,6 +9,7 @@ Env:
 from google import genai
 import os
 import sys
+from prompts.prompt_builder import build_prompt
 
 
 def load_env_file(path):
@@ -24,28 +25,6 @@ def load_env_file(path):
             val = val.strip().strip("\"'")  # strip optional quotes
             if key and key not in os.environ:
                 os.environ[key] = val
-
-
-def load_prompt_template(mode):
-    prompt_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "prompts"))
-    prompt_path = os.path.join(prompt_dir, f"{mode}.prompt")
-    if not os.path.isfile(prompt_path):
-        raise RuntimeError(f"Missing prompt template: {prompt_path}")
-    with open(prompt_path, "r", encoding="utf-8") as f:
-        return f.read().strip()
-
-
-def build_prompt(mode, source_code, dataset_headers):
-    template = load_prompt_template(mode)
-    parts = [template]
-    if dataset_headers:
-        parts.append("DATASET_HEADERS:")
-        parts.append(dataset_headers)
-    
-    #if mode != "autonomous":
-    parts.append("SOURCE_CODE:")
-    parts.append(source_code)
-    return "\n\n".join(parts)
 
 
 def call_gemini(prompt, model="gemini-3-flash-preview"):
@@ -75,10 +54,10 @@ if __name__ == "__main__":
         if idx + 1 < len(sys.argv):
             dataset_headers = sys.argv[idx + 1].strip()
 
-    prompt_text = build_prompt(mode, source_code, dataset_headers)
+    prompt_text = build_prompt(mode, source_code, dataset_headers, "", "", "")
     print(call_gemini(prompt_text))
 
 
-def generate_code(mode, source_code, dataset_headers=""):
-    prompt_text = build_prompt(mode, source_code, dataset_headers)
+def generate_code(mode, source_code, dataset_headers="", exampleRowDataset="", datasetPath="", projectContext=""):
+    prompt_text = build_prompt(mode, source_code, dataset_headers, exampleRowDataset, datasetPath, projectContext)
     return call_gemini(prompt_text)

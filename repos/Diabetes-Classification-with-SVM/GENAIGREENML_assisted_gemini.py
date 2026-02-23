@@ -4,68 +4,70 @@
 
 import pandas as pd
 import numpy as np
+import scipy.stats as stats
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 from imblearn.over_sampling import SMOTE
-from scipy.stats import loguniform
 
-def load_dataset(file_path):
+def run_optimized_pipeline():
+    filepath = 'diabetes2.csv'
     try:
-        df = pd.read_csv(file_path)
-        if df.shape[1] <= 1:
+        df = pd.read_csv(filepath)
+        if 'Outcome' not in df.columns:
             raise ValueError
-    except (ValueError, pd.errors.ParserError):
-        df = pd.read_csv(file_path, sep=';', decimal=',')
-    return df
+    except (pd.errors.ParserError, ValueError, KeyError):
+        df = pd.read_csv(filepath, sep=';', decimal=',')
 
-data = load_dataset('diabetes2.csv')
+    target_col = 'Outcome'
+    if target_col not in df.columns:
+        target_col = df.columns[-1]
 
-target_col = 'Outcome' if 'Outcome' in data.columns else data.columns[-1]
-X = data.drop(columns=[target_col])
-y = data[target_col]
+    X = df.drop(columns=[target_col]).values.astype('float32')
+    y = df[target_col].values
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.3, random_state=42, stratify=y
-)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.3, random_state=42
+    )
 
-scaler = MinMaxScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
+    scaler = MinMaxScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
 
-smote = SMOTE(random_state=42)
-X_resampled, y_resampled = smote.fit_resample(X_train_scaled, y_train)
+    smote = SMOTE(random_state=42)
+    X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
 
-param_distributions = {
-    'C': loguniform(1e-3, 1e3),
-    'gamma': loguniform(1e-3, 1e3),
-    'kernel': ['linear', 'rbf']
-}
+    param_distributions = {
+        'C': stats.loguniform(1e-3, 1e3),
+        'gamma': stats.loguniform(1e-3, 1e3),
+        'kernel': ['linear', 'rbf']
+    }
 
-random_search = RandomizedSearchCV(
-    SVC(random_state=42), 
-    param_distributions, 
-    n_iter=50, 
-    cv=5, 
-    n_jobs=-1, 
-    random_state=42,
-    scoring='accuracy'
-)
-random_search.fit(X_resampled, y_resampled)
+    search = RandomizedSearchCV(
+        SVC(cache_size=1000),
+        param_distributions=param_distributions,
+        n_iter=50,
+        cv=5,
+        n_jobs=-1,
+        random_state=42
+    )
+    search.fit(X_train_res, y_train_res)
 
-best_model = random_search.best_estimator_
-y_pred = best_model.predict(X_test_scaled)
-accuracy = accuracy_score(y_test, y_pred)
+    y_pred = search.best_estimator_.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    
+    print(f"ACCURACY={accuracy:.6f}")
 
-print(f"ACCURACY={accuracy:.6f}")
+if __name__ == "__main__":
+    run_optimized_pipeline()
 
 # Optimization Summary
-# 1. Removed heavy visualization libraries (Matplotlib, Seaborn) to reduce memory footprint and import time.
-# 2. Optimized CSV loading with a robust fallback mechanism and schema detection for reliability.
-# 3. Eliminated redundant metric computations (ROC, AUC, F1, Precision-Recall) and logging not required for the specific output.
-# 4. Leveraged parallel processing (n_jobs=-1) in hyperparameter search to reduce total execution time and energy-per-task.
-# 5. Minimized data duplication by avoiding unnecessary intermediate data structures and temporary variables.
-# 6. Used stratified splitting to ensure consistent class distribution and faster convergence during cross-validation.
-# 7. Removed all interactive inputs and file-saving side effects to streamline execution in automated environments.
-# 8. Maintained reproducibility using fixed random seeds while following green coding principles of minimal resource usage.
+# 1. Reduced memory footprint by converting features to float32 immediately after loading.
+# 2. Optimized data handling by using NumPy arrays instead of Pandas DataFrames for model training.
+# 3. Enhanced SVM training efficiency by increasing the kernel cache size (cache_size=1000) to minimize re-computations.
+# 4. Eliminated redundant metric calculations (AUC, ROC, F1, Precision-Recall) that were not required for the final output.
+# 5. Removed all visualization libraries (matplotlib, seaborn) and plotting logic to save CPU cycles and reduce dependencies.
+# 6. Streamlined preprocessing by combining operations and avoiding unnecessary intermediate data structures.
+# 7. Implemented robust CSV parsing with a single-pass fallback mechanism to prevent execution failures and redundant IO.
+# 8. Leveraged parallel processing (n_jobs=-1) for the hyperparameter search to reduce total execution time and maximize energy efficiency via 'race to sleep'.

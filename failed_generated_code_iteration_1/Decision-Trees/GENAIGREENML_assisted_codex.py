@@ -2,94 +2,183 @@
 # LLM: codex
 # Mode: assisted
 
-import random
 import math
-import numbers
+import random
 import pandas as pd
 
-DATASET_HEADERS = (
-    "town,apartments_condos_multis_per_residential_parcels_2011,assessed_home_value_changes_2009-2013,"
-    "births_per_1000_residents_2010,boaters_per_10000_residents_2012,burglaries_per_10000_residents_2011,"
-    "cars_motorcycles_&_trucks_average_age_2012,cars_per_1000_residents_2012,class_size_in_school_district_2011-2012,"
-    "condos_as_perc_of_parcels_2012,crashes_per_1000_residents_2007-2011,culture_and_rec_spending_per_person_2012,"
-    "education_spending_as_a_percent_2012,education_spending_per_resident_2012,expenditures_per_resident_2012,"
-    "females_percent_in_community_2010,fire_dept_spending_as_a_percent_2012,firefighter_costs_per_resident_2012,"
-    "fixed_costs_percent_2012,gun_licenses_per_1000_residents_2012,historic_places_per_10000_2013,"
-    "home_schooled_per_1000_students_2011-2012,homes_built_in_39_or_before,"
-    "household_member_who_is_2_races_or_more_per_1000_households_2010,households_average_size_2010,"
-    "households_one-person_2010,hybrid_cars_per_1000_vehicles_2013,in_home_since_1969_or_earlier,"
-    "income_average_per_resident_2010,income_change_per_resident_2007-2010,inmates_in_state_prison_per_1000_residents,"
-    "liquor_licenses_per_10000_2011,median_age_2011,miles_driven_daily_per_household_05-07,"
-    "minority_students_per_district_2012-2013,motorcycles_change_in_ownership_2000-2012,motorcycles_per_1000_2012,"
-    "multi-generation_households_2010,police_costs_per_resident_2013,police_employees_per_10000_residents_2011,"
-    "police_spending_as_a_percent_2012,population_change_1950-2010,population_change_2010-2011,"
-    "presidential_fundraising_obama_vs_romney,property_crimes_per_10000_residents_2012,property_tax_change_09-13,"
-    "pupils_per_cost_average_by_district_2011-2012,residential_taxes_as_percent_of_all_property_taxes_2013,"
-    "saltwater_fishing_licenses_per_1000_2013,school_district_growth_09-13,"
-    "single-person_households_percent_65_and_older,snowmobiles_per_10000_residents_2012,"
-    "state_aid_as_a_percent_of_town_budget_2012,students_in_public_schools_2011,tax-exempt_property_2012,"
-    "taxable_property_by_percent_2012,teacher_salaries_by_average_2011,teachers_percent_under_40_years_old_2011-2012,"
-    "trucks_per_1000_residents_2012,violent_crimes_per_10000_residents_2012,voters_as_a_percent_of_population_2012,"
-    "voters_change_in_registrations_between_1982-2012,voters_democrats_as_a_percent_2012,2020_votes,"
-    "2020_biden_margin,population,vax_level"
-)
-
-RANDOM_SEED = 42
-LABEL_ORDERING = ["low", "medium", "high", "very high"]
+SEED = 42
+DATASET_HEADERS = "town,apartments_condos_multis_per_residential_parcels_2011,assessed_home_value_changes_2009-2013,births_per_1000_residents_2010,boaters_per_10000_residents_2012,burglaries_per_10000_residents_2011,cars_motorcycles_&_trucks_average_age_2012,cars_per_1000_residents_2012,class_size_in_school_district_2011-2012,condos_as_perc_of_parcels_2012,crashes_per_1000_residents_2007-2011,culture_and_rec_spending_per_person_2012,education_spending_as_a_percent_2012,education_spending_per_resident_2012,expenditures_per_resident_2012,females_percent_in_community_2010,fire_dept_spending_as_a_percent_2012,firefighter_costs_per_resident_2012,fixed_costs_percent_2012,gun_licenses_per_1000_residents_2012,historic_places_per_10000_2013,home_schooled_per_1000_students_2011-2012,homes_built_in_39_or_before,household_member_who_is_2_races_or_more_per_1000_households_2010,households_average_size_2010,households_one-person_2010,hybrid_cars_per_1000_vehicles_2013,in_home_since_1969_or_earlier,income_average_per_resident_2010,income_change_per_resident_2007-2010,inmates_in_state_prison_per_1000_residents,liquor_licenses_per_10000_2011,median_age_2011,miles_driven_daily_per_household_05-07,minority_students_per_district_2012-2013,motorcycles_change_in_ownership_2000-2012,motorcycles_per_1000_2012,multi-generation_households_2010,police_costs_per_resident_2013,police_employees_per_10000_residents_2011,police_spending_as_a_percent_2012,population_change_1950-2010,population_change_2010-2011,presidential_fundraising_obama_vs_romney,property_crimes_per_10000_residents_2012,property_tax_change_09-13,pupils_per_cost_average_by_district_2011-2012,residential_taxes_as_percent_of_all_property_taxes_2013,saltwater_fishing_licenses_per_1000_2013,school_district_growth_09-13,single-person_households_percent_65_and_older,snowmobiles_per_10000_residents_2012,state_aid_as_a_percent_of_town_budget_2012,students_in_public_schools_2011,tax-exempt_property_2012,taxable_property_by_percent_2012,teacher_salaries_by_average_2011,teachers_percent_under_40_years_old_2011-2012,trucks_per_1000_residents_2012,violent_crimes_per_10000_residents_2012,voters_as_a_percent_of_population_2012,voters_change_in_registrations_between_1982-2012,voters_democrats_as_a_percent_2012,2020_votes,2020_biden_margin,population,vax_level".split(",")
+EXPECTED_HEADER_SET = set(DATASET_HEADERS)
 
 
-def read_csv_robust(path, headers):
+def parsing_looks_wrong(df):
+    if df.shape[1] <= 1:
+        return True
+    first_col = df.columns[0]
+    if isinstance(first_col, str) and ";" in first_col:
+        return True
+    if EXPECTED_HEADER_SET:
+        if len(EXPECTED_HEADER_SET.intersection(df.columns)) <= 1 and len(df.columns) != len(EXPECTED_HEADER_SET):
+            return True
+    return False
+
+
+def read_csv_with_fallback(path):
     df = pd.read_csv(path)
-    header_set = set(headers)
-    cols = list(df.columns)
-    if df.shape[1] == 1 or not header_set.intersection(cols):
+    if parsing_looks_wrong(df):
         df = pd.read_csv(path, sep=";", decimal=",")
-        cols = list(df.columns)
-    if df.shape[1] == len(headers) and not header_set.intersection(cols):
-        df.columns = headers
-    df.columns = [str(c).strip() for c in df.columns]
     return df
 
 
-def to_examples(df):
-    cols = list(df.columns)
-    isna = pd.isna
-    examples = []
-    for row in df.itertuples(index=False, name=None):
-        ex = {}
-        for col, val in zip(cols, row):
-            if isna(val):
-                ex[col] = None
-            elif isinstance(val, numbers.Real):
-                ex[col] = float(val)
-            elif isinstance(val, str):
-                try:
-                    ex[col] = float(val)
-                except ValueError:
-                    ex[col] = val
-            else:
-                ex[col] = val
-        examples.append(ex)
-    return examples
+def get_ordered_columns(df):
+    if DATASET_HEADERS:
+        expected = [c for c in DATASET_HEADERS if c in df.columns]
+        if expected:
+            remaining = [c for c in df.columns if c not in expected]
+            return expected + remaining
+    return list(df.columns)
 
 
-def resolve_column(default_name, columns, fallback):
-    if default_name in columns:
-        return default_name
-    lower_map = {str(c).lower(): c for c in columns}
-    key = str(default_name).lower()
-    if key in lower_map:
-        return lower_map[key]
-    if not columns:
-        return default_name
-    return columns[0] if fallback == "first" else columns[-1]
+def load_examples(path):
+    df = read_csv_with_fallback(path)
+    cols = get_ordered_columns(df)
+    df = df.loc[:, cols].copy()
+    id_candidate = DATASET_HEADERS[0] if DATASET_HEADERS else cols[0]
+    class_candidate = DATASET_HEADERS[-1] if DATASET_HEADERS else cols[-1]
+    id_attr = id_candidate if id_candidate in cols else cols[0]
+    class_attr = class_candidate if class_candidate in cols else cols[-1]
+    for col in cols:
+        if col not in (id_attr, class_attr):
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+    df = df.astype(object).where(pd.notnull(df), None)
+    examples = df.to_dict("records")
+    return examples, id_attr, class_attr
 
 
 def train_test_split(examples, test_perc, seed):
-    test_size = round(test_perc * len(examples))
     rng = random.Random(seed)
-    shuffled = rng.sample(examples, len(examples))
-    return shuffled[test_size:], shuffled[:test_size]
+    rng.shuffle(examples)
+    test_size = round(test_perc * len(examples))
+    return examples[test_size:], examples[:test_size]
+
+
+def entropy_from_counts(counts, total):
+    if total == 0:
+        return 0.0
+    ent = 0.0
+    for count in counts.values():
+        p = count / total
+        if p:
+            ent -= p * math.log2(p)
+    return ent
+
+
+def entropy(examples, class_label):
+    counts = {}
+    for ex in examples:
+        label = ex[class_label]
+        counts[label] = counts.get(label, 0) + 1
+    return entropy_from_counts(counts, len(examples))
+
+
+def get_range(attribute, examples):
+    min_val = 1000000.0
+    max_val = -1000000.0
+    for ex in examples:
+        val = ex[attribute]
+        if val is None:
+            continue
+        fval = float(val)
+        if fval < min_val:
+            min_val = fval
+        if fval > max_val:
+            max_val = fval
+    step = (max_val - min_val) / 15
+    return min_val, max_val, step
+
+
+def split_counts(attribute, examples, threshold, class_label):
+    lt_counts = {}
+    ge_counts = {}
+    lt_total = 0
+    ge_total = 0
+    for ex in examples:
+        val = ex[attribute]
+        if val is None:
+            continue
+        label = ex[class_label]
+        if val < threshold:
+            lt_total += 1
+            lt_counts[label] = lt_counts.get(label, 0) + 1
+        else:
+            ge_total += 1
+            ge_counts[label] = ge_counts.get(label, 0) + 1
+    return lt_counts, ge_counts, lt_total, ge_total
+
+
+def get_info_gain(attribute, examples, class_label, parent_entropy):
+    min_val, max_val, step = get_range(attribute, examples)
+    max_gain = 0.0
+    best_threshold = 0
+    total = len(examples)
+    if total == 0:
+        return 0.0, 0
+    cur_threshold = min_val + step
+    while cur_threshold < max_val:
+        lt_counts, ge_counts, lt_total, ge_total = split_counts(attribute, examples, cur_threshold, class_label)
+        gain = parent_entropy - ((lt_total / total) * entropy_from_counts(lt_counts, lt_total) + (ge_total / total) * entropy_from_counts(ge_counts, ge_total))
+        if gain > max_gain:
+            max_gain = gain
+            best_threshold = cur_threshold
+        cur_threshold += step
+    return max_gain, best_threshold
+
+
+def split_examples_on_attribute(attribute, examples, threshold):
+    lt = []
+    ge = []
+    for ex in examples:
+        val = ex[attribute]
+        if val is None:
+            continue
+        if val < threshold:
+            lt.append(ex)
+        else:
+            ge.append(ex)
+    return lt, ge
+
+
+def get_best_attribute_and_split(attributes, examples, class_label):
+    if not attributes:
+        return "", None, [], []
+    parent_entropy = entropy(examples, class_label)
+    best_gain = 0.0
+    best_attr = ""
+    best_threshold = None
+    for attr in attributes:
+        gain, threshold = get_info_gain(attr, examples, class_label, parent_entropy)
+        if gain > best_gain:
+            best_gain = gain
+            best_attr = attr
+            best_threshold = threshold
+    if best_attr == "":
+        return "", None, [], []
+    lt, ge = split_examples_on_attribute(best_attr, examples, best_threshold)
+    return best_attr, best_threshold, lt, ge
+
+
+def get_predictive_class(examples, class_label):
+    class_counts = {}
+    max_class = ("", 0)
+    for ex in examples:
+        label = ex[class_label]
+        if label not in class_counts:
+            class_counts[label] = 0
+        else:
+            class_counts[label] += 1
+        if class_counts[label] > max_class[1]:
+            max_class = (label, class_counts[label])
+    return max_class
 
 
 class DecisionNode:
@@ -124,6 +213,18 @@ class LeafNode:
         return self.pred_class, self.prob
 
 
+def attribute_split(attributes, examples, min_leaf_count, class_name):
+    attr_name, threshold, examples_lt, examples_ge = get_best_attribute_and_split(attributes, examples, class_name)
+    if len(examples_ge) <= min_leaf_count or len(examples_lt) <= min_leaf_count:
+        pred_class, pred_count = get_predictive_class(examples, class_name)
+        return LeafNode(pred_class, pred_count, len(examples))
+    attributes.remove(attr_name)
+    child_lt = attribute_split(attributes, examples_lt, min_leaf_count, class_name)
+    child_ge = attribute_split(attributes, examples_ge, min_leaf_count, class_name)
+    child_miss = child_lt if len(examples_lt) >= len(examples_ge) else child_ge
+    return DecisionNode(attr_name, threshold, child_lt, child_ge, child_miss)
+
+
 class DecisionTree:
     __slots__ = ("id_name", "class_name", "min_leaf_count", "root")
 
@@ -134,166 +235,37 @@ class DecisionTree:
         self.root = self.learn_tree(examples)
 
     def learn_tree(self, examples):
-        example = examples[0]
-        attribute_list = [a for a in example if a != self.id_name and a != self.class_name]
-        return attributeSplit(attribute_list, examples, self.min_leaf_count, self.class_name)
+        attributes = [attr for attr in examples[0] if attr not in (self.id_name, self.class_name)]
+        return attribute_split(attributes, examples, self.min_leaf_count, self.class_name)
 
     def classify(self, example):
         return self.root.classify(example)
 
 
-def attributeSplit(attribute_set, examples, min_leaf_count, class_name):
-    attribute_name, threshold, examples_lt, examples_ge = getBestAttributeAndSplit(attribute_set, examples, class_name)
-    if len(examples_ge) <= min_leaf_count or len(examples_lt) <= min_leaf_count:
-        predictiveClass, predictiveClassCount = getPredictiveClass(examples, class_name)
-        return LeafNode(predictiveClass, predictiveClassCount, len(examples))
-    attribute_set.remove(attribute_name)
-    child_lt = attributeSplit(attribute_set, examples_lt, min_leaf_count, class_name)
-    child_ge = attributeSplit(attribute_set, examples_ge, min_leaf_count, class_name)
-    child_miss = child_lt if len(examples_lt) >= len(examples_ge) else child_ge
-    return DecisionNode(attribute_name, threshold, child_lt, child_ge, child_miss)
-
-
-def getBestAttributeAndSplit(attribute_set, examples, class_label):
-    best_name = ""
-    best_gain = 0.0
-    best_threshold = None
-    best_lt = []
-    best_ge = []
-    for attribute in attribute_set:
-        info_gain, threshold, lt, ge = getInfoGain(attribute, examples, class_label)
-        if info_gain > best_gain:
-            best_name = attribute
-            best_gain = info_gain
-            best_threshold = threshold
-            best_lt = lt
-            best_ge = ge
-    return best_name, best_threshold, best_lt, best_ge
-
-
-def getInfoGain(attribute, examples, class_label):
-    max_info_gain = 0.0
-    threshold = 0
-    lt_split = []
-    ge_split = []
-    min_, max_, step = getRange(attribute, examples)
-    if step <= 0:
-        return max_info_gain, threshold, lt_split, ge_split
-    base_entropy = entropy(examples, class_label)
-    total_len = len(examples)
-    cur_threshold = min_ + step
-    while cur_threshold < max_:
-        lt, ge = splitExamplesOnAttribute(attribute, examples, cur_threshold)
-        pc_1 = len(lt) / total_len
-        pc_2 = len(ge) / total_len
-        infogain = base_entropy - ((pc_1 * entropy(lt, class_label)) + (pc_2 * entropy(ge, class_label)))
-        if infogain > max_info_gain:
-            max_info_gain = infogain
-            threshold = cur_threshold
-            lt_split = lt
-            ge_split = ge
-        cur_threshold += step
-    return max_info_gain, threshold, lt_split, ge_split
-
-
-def getRange(attribute, examples):
-    min_ = 1000000.0
-    max_ = -1000000.0
-    for ex in examples:
-        val = ex[attribute]
-        if val is None:
-            continue
-        v = float(val)
-        if v < min_:
-            min_ = v
-        if v > max_:
-            max_ = v
-    step = (max_ - min_) / 15
-    return min_, max_, step
-
-
-def splitExamplesOnAttribute(attribute, examples, threshold):
-    lt = []
-    ge = []
-    for example in examples:
-        val = example[attribute]
-        if val is None:
-            continue
-        if val >= threshold:
-            ge.append(example)
-        else:
-            lt.append(example)
-    return lt, ge
-
-
-def entropy(examples, class_label):
-    total = len(examples)
-    if total == 0:
-        return 0.0
-    counts = {}
-    for example in examples:
-        label = example[class_label]
-        counts[label] = counts.get(label, 0) + 1
-    ent = 0.0
-    log = math.log
-    for count in counts.values():
-        p = count / total
-        if p:
-            ent -= p * log(p, 2)
-    return ent
-
-
-def getPredictiveClass(examples, class_label):
-    classDict = {}
-    max_ = ("", 0)
-    for example in examples:
-        class_name = example[class_label]
-        classDict[class_name] = classDict.get(class_name, -1) + 1
-        if classDict[class_name] > max_[1]:
-            max_ = (class_name, classDict[class_name])
-    return max_
-
-
-def test_model(model, test_examples, label_ordering):
+def evaluate_accuracy(model, test_examples):
     correct = 0
-    almost = 0
-    test_act_pred = {}
-    label_index = {label: i for i, label in enumerate(label_ordering)}
-    for example in test_examples:
-        actual = example[model.class_name]
-        pred, _ = model.classify(example)
-        if pred == actual:
-            correct += 1
-        if abs(label_index[pred] - label_index[actual]) < 2:
-            almost += 1
-        test_act_pred[(actual, pred)] = test_act_pred.get((actual, pred), 0) + 1
     total = len(test_examples)
-    acc = correct / total if total else 0.0
-    near_acc = almost / total if total else 0.0
-    return acc, near_acc, test_act_pred
+    for ex in test_examples:
+        pred, _ = model.classify(ex)
+        if pred == ex[model.class_name]:
+            correct += 1
+    return correct / total if total else 0.0
 
 
 def main():
-    random.seed(RANDOM_SEED)
-    headers = [h.strip() for h in DATASET_HEADERS.split(",") if h.strip()]
-    df = read_csv_robust("town_vax_data.csv", headers)
-    columns = list(df.columns)
-    id_attr_name = resolve_column(headers[0], columns, "first") if headers else columns[0]
-    class_attr_name = resolve_column(headers[-1], columns, "last") if headers else columns[-1]
-    examples = to_examples(df)
-    train_examples, test_examples = train_test_split(examples, 0.25, RANDOM_SEED)
+    path_to_csv = "town_vax_data.csv"
+    examples, id_attr_name, class_attr_name = load_examples(path_to_csv)
+    train_examples, test_examples = train_test_split(examples, 0.25, SEED)
     tree = DecisionTree(train_examples, id_attr_name, class_attr_name, 10)
-    accuracy, _, _ = test_model(tree, test_examples, LABEL_ORDERING)
+    accuracy = evaluate_accuracy(tree, test_examples)
     print(f"ACCURACY={accuracy:.6f}")
 
 
 if __name__ == "__main__":
     main()
-
 # Optimization Summary
-# - Used pandas with delimiter fallback to reduce manual parsing overhead and handle alternate CSV formats efficiently.
-# - Converted rows via itertuples and lightweight per-value conversion to minimize intermediate data structures.
-# - Precomputed base entropy per attribute and reused label indices to avoid redundant calculations in loops.
-# - Replaced list-based class grouping in entropy with count accumulation to lower memory use.
-# - Added __slots__ to tree nodes to reduce per-node memory footprint and object overhead.
-# - Deterministic attribute ordering and seeded splitting ensure reproducible results.
+# Used pandas with delimiter fallback and column ordering to reduce parsing errors and extra passes.
+# Converted numeric feature columns once and replaced missing values with None to avoid per-iteration casting.
+# Precomputed parent entropy and used count-based entropy to cut redundant scans of examples.
+# Deferred materializing split lists until the best threshold is chosen to reduce allocations.
+# Applied in-place shuffling and __slots__ on nodes to lower memory usage and overhead.

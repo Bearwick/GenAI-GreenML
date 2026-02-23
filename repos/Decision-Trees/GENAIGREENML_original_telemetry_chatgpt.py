@@ -82,9 +82,11 @@ class DecisionTree:
     def learn_tree(self, examples):
         attribute_set = set()
         example = examples[0]
+
         for attribute in example:
             if attribute != self.id_name and attribute != self.class_name:
                 attribute_set.add(attribute)
+
         return attributeSplit(attribute_set, examples, self.min_leaf_count, self.class_name)
 
     def classify(self, example):
@@ -106,9 +108,7 @@ class DecisionTree:
             )
         else:
             child_ln_bef, child_ln, child_ln_aft = self._ascii_tree(node.child_ge)
-            lines_before = [
-                " " * indent * 2 + " " + " " * indent + line for line in child_ln_bef
-            ]
+            lines_before = [" " * indent * 2 + " " + " " * indent + line for line in child_ln_bef]
             lines_before.append(
                 " " * indent * 2
                 + "\u250c"
@@ -122,9 +122,7 @@ class DecisionTree:
             line_mid = node.test_attr_name
 
             child_ln_bef, child_ln, child_ln_aft = self._ascii_tree(node.child_lt)
-            lines_after = [
-                " " * indent * 2 + "|" + " " * indent + line for line in child_ln_bef
-            ]
+            lines_after = [" " * indent * 2 + "|" + " " * indent + line for line in child_ln_bef]
             lines_after.append(
                 " " * indent * 2
                 + "\u2514"

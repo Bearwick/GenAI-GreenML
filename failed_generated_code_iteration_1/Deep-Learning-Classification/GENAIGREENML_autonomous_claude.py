@@ -4,100 +4,91 @@
 
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-# Robust CSV loading
+# --- Robust CSV Loading ---
 try:
-    data = pd.read_csv('heart_failure.csv')
-    if data.shape[1] < 3:
-        data = pd.read_csv('heart_failure.csv', sep=';', decimal=',')
+    df = pd.read_csv("heart_failure.csv")
+    if df.shape[1] < 3:
+        raise ValueError("Too few columns, try alternative separator")
 except Exception:
-    data = pd.read_csv('heart_failure.csv', sep=';', decimal=',')
+    df = pd.read_csv("heart_failure.csv", sep=';', decimal=',')
 
-# Normalize column names
-data.columns = [c.strip().replace('  ', ' ') for c in data.columns]
-data = data[[c for c in data.columns if not c.startswith('Unnamed')]]
+# --- Column name normalization ---
+df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
+df = df[[c for c in df.columns if not c.startswith('Unnamed')]]
 
-# Determine target column
+# --- Target selection ---
+# The dataset has both 'DEATH_EVENT' (numeric) and 'death_event' (string yes/no).
+# Prefer 'DEATH_EVENT' as numeric target; fall back to 'death_event'.
 target_col = None
-for candidate in ['death_event', 'DEATH_EVENT']:
-    if candidate in data.columns:
-        target_col = candidate
-        break
-
-if target_col is None:
-    # Fallback: pick last numeric column
-    numeric_cols = data.select_dtypes(include=[np.number]).columns.tolist()
-    if numeric_cols:
-        target_col = numeric_cols[-1]
-    else:
-        raise ValueError("No suitable target column found")
-
-# If both death_event and DEATH_EVENT exist, prefer death_event and drop the other
-if 'death_event' in data.columns and 'DEATH_EVENT' in data.columns:
+if 'DEATH_EVENT' in df.columns:
+    target_col = 'DEATH_EVENT'
+elif 'death_event' in df.columns:
     target_col = 'death_event'
-    data = data.drop(columns=['DEATH_EVENT'])
-
-# Coerce numeric columns
-for col in data.columns:
-    if data[col].dtype == object:
-        try:
-            data[col] = pd.to_numeric(data[col], errors='coerce')
-        except Exception:
-            pass
-
-# Drop rows with NaN in target
-data = data.dropna(subset=[target_col])
-
-# Features
-feature_cols = [c for c in data.columns if c != target_col]
-
-# Separate numeric and categorical
-numeric_features = []
-categorical_features = []
-for c in feature_cols:
-    if data[c].dtype in [np.float64, np.int64, np.float32, np.int32, float, int]:
-        numeric_features.append(c)
-    else:
-        categorical_features.append(c)
-
-# Drop categorical with too many unique values or handle via one-hot
-if categorical_features:
-    data = pd.get_dummies(data, columns=categorical_features, drop_first=True)
-    feature_cols = [c for c in data.columns if c != target_col]
-    numeric_features = feature_cols
-
-# Handle NaN/inf in features
-data[feature_cols] = data[list(feature_cols)].replace([np.inf, -np.inf], np.nan)
-data = data.dropna()
-
-assert len(data) > 0, "Dataset empty after preprocessing"
-
-y = data[target_col].values
-X = data[list(feature_cols)].values
-
-# Determine if classification or regression
-unique_classes = np.unique(y)
-is_classification = len(unique_classes) >= 2 and len(unique_classes) <= 20
-
-if len(unique_classes) < 2:
-    # Trivial baseline
-    accuracy = 1.0
-    print(f"ACCURACY={accuracy:.6f}")
 else:
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=0, stratify=y if is_classification else None
-    )
+    # Pick last column as target
+    target_col = df.columns[-1]
 
-    assert len(X_train) > 0 and len(X_test) > 0, "Train/test split produced empty sets"
+# Encode target if it's categorical
+y = df[target_col].copy()
+if y.dtype == object:
+    y = y.str.strip().str.lower().map({'yes': 1, 'no': 0})
+    if y.isna().any():
+        # Try label encoding as fallback
+        from sklearn.preprocessing import LabelEncoder
+        y = LabelEncoder().fit_transform(df[target_col].astype(str))
+y = pd.Series(y, name=target_col)
 
-    if is_classification:
-        # Lightweight logistic regression with standardization
-        pipeline = Pipeline([
-            ('scaler', StandardScaler()),
-            ('clf', LogisticRegression(max_iter=500, random_state=
+# --- Feature selection ---
+# Drop both target columns and any index-like first unnamed column
+drop_cols = set()
+if 'DEATH_EVENT' in df.columns:
+    drop_cols.add('DEATH_EVENT')
+if 'death_event' in df.columns:
+    drop_cols.add('death_event')
+# Drop the first column if it looks like an index (monotonically increasing integers)
+first_col = df.columns[0]
+if first_col == '' or first_col.lower() in ('', 'index', 'id'):
+    drop_cols.add(first_col)
+else:
+    try:
+        vals = pd.to_numeric(df[first_col], errors='coerce')
+        if vals.is_monotonic_increasing and vals.notna().all() and len(vals.unique()) == len(vals):
+            drop_cols.add(first_col)
+    except Exception:
+        pass
+
+feature_cols = [c for c in df.columns if c not in drop_cols]
+X = df[feature_cols].copy()
+
+# --- Identify numeric vs categorical columns ---
+cat_cols = []
+num_cols = []
+for c in X.columns:
+    # Try to coerce to numeric
+    coerced = pd.to_numeric(X[c], errors='coerce')
+    if coerced.notna().mean() > 0.5:
+        X[c] = coerced
+        num_cols.append(c)
+    else:
+        cat_cols.append(c)
+
+# --- Handle NaN/inf in numeric columns ---
+for c in num_cols:
+    X[c] = X[c].replace([np.inf, -np.inf], np.nan)
+    X[c] = X[c].fillna(X[c].median())
+
+# Handle NaN in categorical columns
+for c in cat_cols:
+    X[c] = X[c].astype(str).fillna('missing')
+
+# Align X and y, drop any remaining NaN in y
+mask = y.notna()
+X = X.loc[mask].reset_index(drop=True)
+y = y.loc[mask].
