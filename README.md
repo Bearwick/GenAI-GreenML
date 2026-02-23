@@ -20,6 +20,7 @@ This dataset was developed as part of a master’s thesis at the **Norwegian Uni
 6. [Run Projects and Capture Telemetry](#run-projects-and-capture-telemetry)
 7. [Analyse Results](#analyse-results)
 8. [Generate Code Iterations (Failed Scripts)](#generate-code-iterations-failed-scripts)
+9. [Analyse Failed Code](#analyse-failed-code)
 
 ## Repository Information
 
@@ -163,4 +164,20 @@ The script `move_failed_scripts.py` moves ML projects with failed scripts, excep
 
 ```
 python ./scripts/move_failed_scripts.py
+```
+
+## Analyse Failed Code
+
+To analyse the errors occured in generated files. To analyse all iterations use:
+
+```
+python ./scripts/analyse_failed_scripts.py
+```
+
+### CLI Flag
+
+To analyse a specific iteration:
+
+```
+python ./scripts/analyse_failed_scripts.py --iteration failed_generated_code_iteration_1
 ```
