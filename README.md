@@ -111,6 +111,8 @@ Groq is a free LLM API but is currenlty commented out because of performance. If
 cd scripts
 source venv/bin/activate
 python ./generate_llm_code.py
+deactivate
+cd ..
 ```
 
 ### Delete Old Generated Code
