@@ -1,8 +1,8 @@
 # GenAI-GreenML
 
-**GenAI-GreenML** is an open-source dataset consisting of curated machine learning repositories collected for research on generative artificial intelligence and sustainable software development. The dataset includes 100 small-scale (<500 MB) GitHub projects focused on tabular and natural language processing (NLP) tasks. Each repository contains both source code and datasets that enable reproducible experiments on model performance, energy consumption, and green coding practices.
+**GenAI-GreenML** is an open-source dataset consisting of curated machine learning repositories collected for research on generative artificial intelligence and sustainable machine learning development. The dataset includes 51 small-scale (<500 MB) GitHub projects focused on tabular and natural language processing (NLP) tasks. Each repository contains both source code and datasets that enable reproducible experiments on model performance, energy consumption, and green coding practices.
 
-This dataset was developed as part of a master’s thesis at the **Norwegian University of Science and Technology (NTNU)**, investigating how large language models (LLMs) can assist in producing more energy-efficient machine learning code.
+This dataset was developed as part of a master’s thesis at the **Norwegian University of Science and Technology (NTNU)**, investigating how large language models (LLMs) can be utilised in producing more energy-efficient machine learning code.
 
 ## Table of Contents
 
@@ -26,7 +26,7 @@ This dataset was developed as part of a master’s thesis at the **Norwegian Uni
 
 ### Repository Content
 
-- 100 open-source ML repositories (tabular and NLP tasks)
+- 51 open-source ML repositories (tabular and NLP tasks)
 - Metadata on repository size, task type, and primary programming language
 - Experiment design and evaluation scripts for LLM-assisted code generation
 - Benchmarking tools for energy consumption, FLOPS, and model performance
@@ -50,7 +50,7 @@ If you use this dataset in academic work, please cite it as:
 To add a new ML project run the following from project root:
 
 ```
-./scripts/import_repo.sh [GitHub url]
+./scripts/import_repo.sh <repo_url>
 ```
 
 If the repository includes multiple python files, rename the correct file to `original.py`
@@ -64,7 +64,7 @@ cat <<'EOF' > API.env
 # Gemini
 GEMINI_API_KEY=
 
-# OpenAI
+# OpenAI (ChatGPT/Codex)
 OPENAI_API_KEY=
 
 # Claude
@@ -75,7 +75,7 @@ export GROQ_API_KEY=
 EOF
 ```
 
-Then source API.env:
+Add your API keys and source API.env:
 
 ```
 source API.env
@@ -83,17 +83,15 @@ source API.env
 
 ## Adding LLMs
 
-Add LLM APIs in scripts/APIs and make sure the module expose:<br>generate_code(mode, source_code, headers) -> str
+Add LLM APIs in `scripts/APIs` and make sure the module expose:<br>generate_code(mode, source_code, dataset_headers="", exampleRowDataset="", datasetPath="", projectContext="") -> str
 
 Then in [generate_llm_code.py](./scripts/generate_llm_code.py):
 
 1. Update DEFAULT_ALL_LLMS on line 75 with the LLM name.
 
-2. Register the module in load_llm_clients.<br>
-   Add a line in the registry section:
+2. Register the module at the bottom of the function **load_llm_clients**.<br>
+   Add a line in the registry section starting on line 509:<br>
    registry["newllm"] = \_try_load("newllm", "newllm_api")
-   The module must expose:
-   generate_code(mode, source_code, headers) -> str
 
 Finally, add API key to API.env and source from project root:
 
@@ -103,9 +101,11 @@ source API.env
 
 ### Free LLM Groq
 
-Groq is a free LLM API but is currenlty commented out because of performance. If wanted, uncomment where 'groq' appears in `generate_llm_code.py`
+Groq is a free LLM API but is currenlty commented out because of not satisfactory performance. If wanted, uncomment where 'groq' appears in `generate_llm_code.py`.
 
 ## Generate LLM Code
+
+To generate LLM code using the ML projects in `repos`, run the following from project root:
 
 ```
 cd scripts
@@ -114,6 +114,48 @@ python ./generate_llm_code.py
 deactivate
 cd ..
 ```
+
+### CLI Flags
+
+CLI flags can be used together.<br>
+
+To choose specific LLMs to run:
+
+```
+python ./generate_llm_code.py --llms <llm1_name llm2_name>
+```
+
+To only run one generation mode, i.e., assisted or autonomous:
+
+```
+python ./generate_llm_code.py --modes <mode>
+```
+
+To overwrite existing generated code:
+
+```
+python ./generate_llm_code.py --force
+```
+
+Generate specific ML projects:
+
+```
+python ./generate_llm_code.py --project-regex <directory_name>
+```
+
+To stop after processing N projects:
+
+```
+python ./generate_llm_code.py --max-projects <N>
+```
+
+When using Gemini Free Tier, Gemini needs to pause every 10th request:
+
+```
+python ./generate_llm_code.py --gemini-pause
+```
+
+Note: there exists more flags, check the code if interested.
 
 ### Delete Old Generated Code
 
@@ -142,6 +184,24 @@ python scripts/run_ml_projects.py
 
 See output in the results folder.
 
+### CLI Flags
+
+Flags can be used together.
+
+Timeout per script in seconds:
+
+```
+python scripts/run_ml_projects.py --timeout-s <s>
+```
+
+Stop after processing N projects
+
+```
+python scripts/run_ml_projects.py --max-projects <N>
+```
+
+Note: there exists more flags, check the code if interested.
+
 ## Analyse Results
 
 The analysis compares assisted and autonomous LLM code against the original code on accuracy, execution time and energy consumption, and prints if they have increased, decreased or are equal.
@@ -154,7 +214,7 @@ python ./scripts/analyse_results.py
 
 ### CLI Flag
 
-Select a specific CSV file from the results/ folder.
+Select a specific CSV file from the results folder:
 
 ```
 python3 ./scripts/analyse_results.py --results-file results_20260220_135839.csv
