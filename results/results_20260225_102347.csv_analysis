@@ -1,0 +1,142 @@
+Results file: results/results_20260225_102347.csv
+ML Projects: 51
+ML Projects with original OK: 47
+Distinct code files: 459
+Distinct code files (OK): 357
+Assisted + autonomous code files: 408
+Assisted + autonomous code files (OK): 310
+A+A OK with comparable original: 287
+
+Assisted vs Original
+accuracy: inc=32 dec=20 eq=109
+exec_time: inc=5 dec=164 eq=1
+energy: inc=5 dec=164 eq=1
+
+Autonomous vs Original
+accuracy: inc=48 dec=40 eq=16
+exec_time: inc=3 dec=114 eq=0
+energy: inc=3 dec=114 eq=0
+
+Assisted + Autonomous (combined)
+accuracy: inc=80 dec=60 eq=125
+exec_time: inc=8 dec=278 eq=1
+energy: inc=8 dec=278 eq=1
+
+By LLM
+chatgpt:
+assisted: accuracy inc=9 dec=5 eq=28 | exec_time inc=1 dec=41 eq=1 | energy inc=1 dec=41 eq=1
+autonomous: accuracy inc=12 dec=16 eq=4 | exec_time inc=1 dec=32 eq=0 | energy inc=1 dec=32 eq=0
+claude:
+assisted: accuracy inc=11 dec=4 eq=25 | exec_time inc=1 dec=44 eq=0 | energy inc=1 dec=44 eq=0
+autonomous: accuracy inc=5 dec=4 eq=1 | exec_time inc=0 dec=20 eq=0 | energy inc=0 dec=20 eq=0
+codex:
+assisted: accuracy inc=7 dec=5 eq=27 | exec_time inc=2 dec=39 eq=0 | energy inc=2 dec=39 eq=0
+autonomous: accuracy inc=15 dec=14 eq=3 | exec_time inc=1 dec=32 eq=0 | energy inc=1 dec=32 eq=0
+gemini:
+assisted: accuracy inc=5 dec=6 eq=29 | exec_time inc=1 dec=40 eq=0 | energy inc=1 dec=40 eq=0
+autonomous: accuracy inc=16 dec=6 eq=8 | exec_time inc=1 dec=30 eq=0 | energy inc=1 dec=30 eq=0
+
+Failed runs: 102
+Failed list:
+Air-Quality-Health-Prediction: GENAIGREENML_assisted_gemini.py
+Air-Quality-Health-Prediction: GENAIGREENML_autonomous_claude.py
+Algorithms_KnnClasifier: GENAIGREENML_autonomous_claude.py
+animals-classification: GENAIGREENML_autonomous_chatgpt.py
+Annotated_Colab_Notebook: GENAIGREENML_autonomous_claude.py
+Annotated_Colab_Notebook: GENAIGREENML_autonomous_codex.py
+BreastCancer_Classification: GENAIGREENML_autonomous_claude.py
+BreastCancer_Classification: GENAIGREENML_autonomous_gemini.py
+CodeAlpha_IrisClassification: GENAIGREENML_autonomous_claude.py
+Cuisine-Predictor: GENAIGREENML_autonomous_chatgpt.py
+Cuisine-Predictor: GENAIGREENML_autonomous_claude.py
+Cuisine-Predictor: GENAIGREENML_autonomous_codex.py
+Cuisine-Predictor: GENAIGREENML_autonomous_gemini.py
+Decision-Trees: GENAIGREENML_assisted_codex.py
+Decision-Trees: GENAIGREENML_assisted_gemini.py
+Decision-Trees: GENAIGREENML_autonomous_chatgpt.py
+Decision-Trees: GENAIGREENML_autonomous_claude.py
+Decision-Trees: GENAIGREENML_autonomous_codex.py
+Decision-Trees: GENAIGREENML_autonomous_gemini.py
+Deep-Learning-Classification: GENAIGREENML_autonomous_claude.py
+Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity: GENAIGREENML_autonomous_claude.py
+dyslexia-randomforest: GENAIGREENML_autonomous_claude.py
+FakeNewsPrediction: GENAIGREENML_autonomous_chatgpt.py
+HWStudentGradPredictor: GENAIGREENML_autonomous_claude.py
+Iris-Classification-ML-problem: GENAIGREENML_autonomous_chatgpt.py
+Iris-Classification-ML-problem: GENAIGREENML_autonomous_claude.py
+Iris-Classification-ML-problem: GENAIGREENML_autonomous_codex.py
+Iris-Classification-ML-problem: GENAIGREENML_autonomous_gemini.py
+Iris-Flower-Classification-Codealpha: GENAIGREENML_autonomous_claude.py
+Iris-Flower-Classification-Codealpha: GENAIGREENML_autonomous_gemini.py
+Iris-Flower-Classification-Codealpha2: GENAIGREENML_autonomous_claude.py
+Iris-Flower-Classification-Codealpha3: GENAIGREENML_autonomous_claude.py
+Iris-Flower-Classification-Codealpha3: GENAIGREENML_autonomous_codex.py
+Iris-Flower-Classification-Codealpha3: GENAIGREENML_autonomous_gemini.py
+Iris-ML-Lab: GENAIGREENML_assisted_codex.py
+Iris-ML-Lab: GENAIGREENML_autonomous_chatgpt.py
+Iris-ML-Lab: GENAIGREENML_autonomous_claude.py
+Iris-ML-Lab: GENAIGREENML_autonomous_codex.py
+Iris-ML-Lab: GENAIGREENML_autonomous_gemini.py
+JunctionalClassifier: GENAIGREENML_assisted_chatgpt.py
+JunctionalClassifier: GENAIGREENML_assisted_gemini.py
+JunctionalClassifier: GENAIGREENML_autonomous_chatgpt.py
+JunctionalClassifier: GENAIGREENML_autonomous_claude.py
+JunctionalClassifier: GENAIGREENML_autonomous_codex.py
+JunctionalClassifier: GENAIGREENML_autonomous_gemini.py
+JunctionalClassifier2: GENAIGREENML_assisted_chatgpt.py
+JunctionalClassifier2: GENAIGREENML_assisted_codex.py
+JunctionalClassifier2: GENAIGREENML_assisted_gemini.py
+JunctionalClassifier2: GENAIGREENML_autonomous_chatgpt.py
+JunctionalClassifier2: GENAIGREENML_autonomous_claude.py
+JunctionalClassifier2: GENAIGREENML_autonomous_codex.py
+JunctionalClassifier2: GENAIGREENML_autonomous_gemini.py
+JunctionalClassifier3: GENAIGREENML_assisted_chatgpt.py
+JunctionalClassifier3: GENAIGREENML_assisted_codex.py
+JunctionalClassifier3: GENAIGREENML_autonomous_chatgpt.py
+JunctionalClassifier3: GENAIGREENML_autonomous_claude.py
+JunctionalClassifier3: GENAIGREENML_autonomous_codex.py
+JunctionalClassifier3: GENAIGREENML_autonomous_gemini.py
+K-Nearest-Neighbor-Algorithm: GENAIGREENML_assisted_chatgpt.py
+K-Nearest-Neighbor-Algorithm: GENAIGREENML_assisted_claude.py
+K-Nearest-Neighbor-Algorithm: GENAIGREENML_assisted_codex.py
+K-Nearest-Neighbor-Algorithm: GENAIGREENML_assisted_gemini.py
+K-Nearest-Neighbor-Algorithm: GENAIGREENML_autonomous_chatgpt.py
+K-Nearest-Neighbor-Algorithm: GENAIGREENML_autonomous_claude.py
+K-Nearest-Neighbor-Algorithm: GENAIGREENML_autonomous_codex.py
+K-Nearest-Neighbor-Algorithm: GENAIGREENML_autonomous_gemini.py
+MachineLearn-WineClassifier: GENAIGREENML_autonomous_gemini.py
+MaliciousSoftwareClassification: GENAIGREENML_autonomous_chatgpt.py
+MaliciousSoftwareClassification: GENAIGREENML_autonomous_claude.py
+ML_CSV_Classification: GENAIGREENML_autonomous_claude.py
+ML_CSV_Classification: GENAIGREENML_autonomous_codex.py
+Multi-Turn-Intent-Classification: GENAIGREENML_original_telemetry_chatgpt.py
+Multi-Turn-Intent-Classification: GENAIGREENML_assisted_chatgpt.py
+Multi-Turn-Intent-Classification: GENAIGREENML_assisted_claude.py
+Multi-Turn-Intent-Classification: GENAIGREENML_assisted_codex.py
+Multi-Turn-Intent-Classification: GENAIGREENML_assisted_gemini.py
+Multi-Turn-Intent-Classification: GENAIGREENML_autonomous_chatgpt.py
+Multi-Turn-Intent-Classification: GENAIGREENML_autonomous_claude.py
+Na-ve-bayes-algorithm-to-classify-the-fetal-health-: GENAIGREENML_original_telemetry_chatgpt.py
+Network_Intrusion_Detection_System: GENAIGREENML_assisted_claude.py
+Network_Intrusion_Detection_System: GENAIGREENML_assisted_gemini.py
+Network_Intrusion_Detection_System: GENAIGREENML_autonomous_codex.py
+Predicting-heart-diseases-: GENAIGREENML_autonomous_claude.py
+Spam-Email-Classifier: GENAIGREENML_autonomous_claude.py
+SparkMLClassification: GENAIGREENML_assisted_codex.py
+SparkMLClassification: GENAIGREENML_autonomous_chatgpt.py
+SparkMLClassification: GENAIGREENML_autonomous_claude.py
+SparkMLClassification: GENAIGREENML_autonomous_codex.py
+SparkMLClassification: GENAIGREENML_autonomous_gemini.py
+SparkMLClassification2: GENAIGREENML_autonomous_chatgpt.py
+SparkMLClassification2: GENAIGREENML_autonomous_claude.py
+SparkMLClassification2: GENAIGREENML_autonomous_codex.py
+SparkMLClassification2: GENAIGREENML_autonomous_gemini.py
+student-math-ml-analysis: analysis/GENAIGREENML_autonomous_chatgpt.py
+student-math-ml-analysis: analysis/GENAIGREENML_autonomous_claude.py
+student-math-ml-analysis: analysis/GENAIGREENML_autonomous_gemini.py
+Supervised-Data-mining-Customer-satisfaction-prediction-: GENAIGREENML_original_telemetry_chatgpt.py
+Supervised-Data-mining-Customer-satisfaction-prediction-: GENAIGREENML_autonomous_claude.py
+Supervised-Data-mining-Customer-satisfaction-prediction-: GENAIGREENML_autonomous_codex.py
+Svm-GridsearchCV: GENAIGREENML_autonomous_gemini.py
+Voting-Data-Classification: GENAIGREENML_original_telemetry_chatgpt.py
+Voting-Data-Classification: GENAIGREENML_autonomous_gemini.py

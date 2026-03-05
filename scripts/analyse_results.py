@@ -61,6 +61,7 @@ def rounded(val, places):
 def main():
     args = parse_args()
     latest = resolve_results_file(args.results_file)
+    analysis_output = RESULTS_DIR / f"{latest.name}_analysis"
     all_rows = []
     ok_rows = []
     failed = []
@@ -120,14 +121,15 @@ def main():
         if "assisted" in r.get("script", "") or "autonomous" in r.get("script", "")
     )
 
-    print(f"Results file: {latest}")
-    print(f"ML Projects: {len(projects_all)}")
-    print(f"ML Projects with original OK: {len(original_by_project)}")
-    print(f"Distinct code files: {len(scripts_all)}")
-    print(f"Distinct code files (OK): {len(scripts_ok)}")
-    print(f"Assisted + autonomous code files: {len(assisted_autonomous_all)}")
-    print(f"Assisted + autonomous code files (OK): {len(assisted_autonomous_ok)}")
-    print(f"A+A OK with comparable original: {aa_ok_with_comparable_original}")
+    lines = []
+    lines.append(f"Results file: {latest}")
+    lines.append(f"ML Projects: {len(projects_all)}")
+    lines.append(f"ML Projects with original OK: {len(original_by_project)}")
+    lines.append(f"Distinct code files: {len(scripts_all)}")
+    lines.append(f"Distinct code files (OK): {len(scripts_ok)}")
+    lines.append(f"Assisted + autonomous code files: {len(assisted_autonomous_all)}")
+    lines.append(f"Assisted + autonomous code files (OK): {len(assisted_autonomous_ok)}")
+    lines.append(f"A+A OK with comparable original: {aa_ok_with_comparable_original}")
 
     def init_counts():
         return {"inc": 0, "dec": 0, "eq": 0}
@@ -194,10 +196,10 @@ def main():
         update_llm("energy", energy, energy0)
 
     for mode in ("assisted", "autonomous"):
-        print(f"\n{mode.capitalize()} vs Original")
+        lines.append(f"\n{mode.capitalize()} vs Original")
         for metric in ("accuracy", "exec_time", "energy"):
             c = counts[mode][metric]
-            print(f"{metric}: inc={c['inc']} dec={c['dec']} eq={c['eq']}")
+            lines.append(f"{metric}: inc={c['inc']} dec={c['dec']} eq={c['eq']}")
 
     combined = {"accuracy": init_counts(), "exec_time": init_counts(), "energy": init_counts()}
     for metric in combined:
@@ -206,28 +208,30 @@ def main():
             combined[metric]["dec"] += counts[mode][metric]["dec"]
             combined[metric]["eq"] += counts[mode][metric]["eq"]
 
-    print("\nAssisted + Autonomous (combined)")
+    lines.append("\nAssisted + Autonomous (combined)")
     for metric in ("accuracy", "exec_time", "energy"):
         c = combined[metric]
-        print(f"{metric}: inc={c['inc']} dec={c['dec']} eq={c['eq']}")
+        lines.append(f"{metric}: inc={c['inc']} dec={c['dec']} eq={c['eq']}")
 
     if counts_by_llm:
-        print("\nBy LLM")
+        lines.append("\nBy LLM")
         for llm in sorted(counts_by_llm.keys()):
-            print(f"{llm}:")
+            lines.append(f"{llm}:")
             for mode in ("assisted", "autonomous"):
-                print(f"{mode}: ", end="")
                 parts = []
                 for metric in ("accuracy", "exec_time", "energy"):
                     c = counts_by_llm[llm][mode][metric]
                     parts.append(f"{metric} inc={c['inc']} dec={c['dec']} eq={c['eq']}")
-                print(" | ".join(parts))
+                lines.append(f"{mode}: {' | '.join(parts)}")
 
-    print(f"\nFailed runs: {len(failed)}")
+    lines.append(f"\nFailed runs: {len(failed)}")
     if failed:
-        print("Failed list:")
+        lines.append("Failed list:")
         for item in failed:
-            print(item)
+            lines.append(item)
+
+    analysis_output.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Wrote analysis: {analysis_output}")
 
 
 if __name__ == "__main__":
