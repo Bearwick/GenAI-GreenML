@@ -1,0 +1,298 @@
+Results file: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260225_102347.csv
+ML Projects: 51
+ML Projects with original OK: 47
+Distinct code files: 459
+Distinct code files (OK): 357
+Assisted + autonomous code files: 408
+Assisted + autonomous code files (OK): 310
+A+A OK with comparable original: 287
+
+Assisted vs Original
+accuracy: inc=32 dec=20 eq=109
+exec_time: inc=5 dec=164 eq=1
+energy: inc=5 dec=164 eq=1
+
+Autonomous vs Original
+accuracy: inc=48 dec=40 eq=16
+exec_time: inc=3 dec=114 eq=0
+energy: inc=3 dec=114 eq=0
+
+Assisted + Autonomous (combined)
+accuracy: inc=80 dec=60 eq=125
+exec_time: inc=8 dec=278 eq=1
+energy: inc=8 dec=278 eq=1
+
+By LLM
+chatgpt:
+assisted: accuracy inc=9 dec=5 eq=28 | exec_time inc=1 dec=41 eq=1 | energy inc=1 dec=41 eq=1
+autonomous: accuracy inc=12 dec=16 eq=4 | exec_time inc=1 dec=32 eq=0 | energy inc=1 dec=32 eq=0
+claude:
+assisted: accuracy inc=11 dec=4 eq=25 | exec_time inc=1 dec=44 eq=0 | energy inc=1 dec=44 eq=0
+autonomous: accuracy inc=5 dec=4 eq=1 | exec_time inc=0 dec=20 eq=0 | energy inc=0 dec=20 eq=0
+codex:
+assisted: accuracy inc=7 dec=5 eq=27 | exec_time inc=2 dec=39 eq=0 | energy inc=2 dec=39 eq=0
+autonomous: accuracy inc=15 dec=14 eq=3 | exec_time inc=1 dec=32 eq=0 | energy inc=1 dec=32 eq=0
+gemini:
+assisted: accuracy inc=5 dec=6 eq=29 | exec_time inc=1 dec=40 eq=0 | energy inc=1 dec=40 eq=0
+autonomous: accuracy inc=16 dec=6 eq=8 | exec_time inc=1 dec=30 eq=0 | energy inc=1 dec=30 eq=0
+
+Quantitative Analysis
+Delta definition: accuracy = generated-original; exec_time/energy = original-generated (positive means improvement)
+
+Box Plots
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260225_102347.csv_analysis_boxplot_accuracy.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260225_102347.csv_analysis_boxplot_exec_time.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260225_102347.csv_analysis_boxplot_energy.png
+
+Paired t-tests: Assisted vs Autonomous by model
+(paired by project, tested on delta values)
+
+Metric: accuracy
+chatgpt: n=32 | t=0.44371 | p_ttest=0.660331 | mean(assisted-autonomous)=0.028470
+claude: n=10 | t=0.86854 | p_ttest=0.407661 | mean(assisted-autonomous)=0.088534
+codex: n=32 | t=1.01342 | p_ttest=0.318704 | mean(assisted-autonomous)=2.256795
+gemini: n=28 | t=0.08722 | p_ttest=0.931144 | mean(assisted-autonomous)=0.004600
+
+Metric: exec_time
+chatgpt: n=33 | t=-1.97849 | p_ttest=0.056535 | mean(assisted-autonomous)=-1.542922
+claude: n=19 | t=-1.95206 | p_ttest=0.066665 | mean(assisted-autonomous)=-0.885273
+codex: n=33 | t=-1.80901 | p_ttest=0.079853 | mean(assisted-autonomous)=-8.263219
+gemini: n=29 | t=-1.53822 | p_ttest=0.135220 | mean(assisted-autonomous)=-3.408360
+
+Metric: energy
+chatgpt: n=33 | t=-1.97849 | p_ttest=0.056535 | mean(assisted-autonomous)=-30.858455
+claude: n=19 | t=-1.95206 | p_ttest=0.066665 | mean(assisted-autonomous)=-17.705421
+codex: n=33 | t=-1.80901 | p_ttest=0.079853 | mean(assisted-autonomous)=-165.264364
+gemini: n=29 | t=-1.53822 | p_ttest=0.135221 | mean(assisted-autonomous)=-68.167138
+
+Paired t-tests: Original vs Assisted by model
+(paired by project and model)
+
+Metric: accuracy
+chatgpt: n=42 | t=-1.00745 | p_ttest=0.319629 | mean(generated-original)=-2.183329
+claude: n=40 | t=-0.98991 | p_ttest=0.328319 | mean(generated-original)=-2.253563
+codex: n=39 | t=-0.16634 | p_ttest=0.868772 | mean(generated-original)=-0.499402
+gemini: n=40 | t=-0.99633 | p_ttest=0.325230 | mean(generated-original)=-2.267631
+
+Metric: exec_time
+chatgpt: n=43 | t=-3.44196 | p_ttest=0.001319 | mean(original-generated)=2.360971
+claude: n=45 | t=-3.83277 | p_ttest=0.000399 | mean(original-generated)=2.214696
+codex: n=41 | t=0.50575 | p_ttest=0.615809 | mean(original-generated)=-1.390466
+gemini: n=41 | t=0.58885 | p_ttest=0.559276 | mean(original-generated)=-4.125635
+
+Metric: energy
+chatgpt: n=43 | t=-3.44195 | p_ttest=0.001319 | mean(original-generated)=47.219349
+claude: n=45 | t=-3.83277 | p_ttest=0.000399 | mean(original-generated)=44.293933
+codex: n=41 | t=0.50575 | p_ttest=0.615810 | mean(original-generated)=-27.809293
+gemini: n=41 | t=0.58885 | p_ttest=0.559275 | mean(original-generated)=-82.512780
+
+Paired t-tests: Original vs Autonomous by model
+(paired by project and model)
+
+Metric: accuracy
+chatgpt: n=32 | t=-1.02054 | p_ttest=0.315373 | mean(generated-original)=-2.901171
+claude: n=10 | t=0.66034 | p_ttest=0.525574 | mean(generated-original)=0.056289
+codex: n=32 | t=-1.01251 | p_ttest=0.319132 | mean(generated-original)=-2.877817
+gemini: n=30 | t=0.42913 | p_ttest=0.671000 | mean(generated-original)=0.023597
+
+Metric: exec_time
+chatgpt: n=33 | t=-3.13500 | p_ttest=0.003669 | mean(original-generated)=3.804808
+claude: n=20 | t=-2.38757 | p_ttest=0.027507 | mean(original-generated)=3.541396
+codex: n=33 | t=-2.40886 | p_ttest=0.021934 | mean(original-generated)=6.190878
+gemini: n=31 | t=-2.09178 | p_ttest=0.045025 | mean(original-generated)=5.548348
+
+Metric: energy
+chatgpt: n=33 | t=-3.13500 | p_ttest=0.003669 | mean(original-generated)=76.096091
+claude: n=20 | t=-2.38757 | p_ttest=0.027506 | mean(original-generated)=70.827950
+codex: n=33 | t=-2.40885 | p_ttest=0.021934 | mean(original-generated)=123.817545
+gemini: n=31 | t=-2.09178 | p_ttest=0.045025 | mean(original-generated)=110.966871
+
+ANOVA by mode per metric (factor: model)
+(one-way ANOVA + Tukey HSD post-hoc)
+
+Mode: assisted
+accuracy: F=0.12396 p_anova=0.945841
+accuracy Tukey HSD:
+ Multiple Comparison of Means - Tukey HSD, FWER=0.05 
+=====================================================
+ group1 group2 meandiff p-adj   lower   upper  reject
+-----------------------------------------------------
+chatgpt claude  -0.0702    1.0 -8.9499  8.8095  False
+chatgpt  codex   1.6839 0.9614 -7.2539 10.6217  False
+chatgpt gemini  -0.0843    1.0  -8.964  8.7954  False
+ claude  codex   1.7542 0.9581 -7.2906 10.7989  False
+ claude gemini  -0.0141    1.0 -9.0014  8.9733  False
+  codex gemini  -1.7682 0.9572 -10.813  7.2765  False
+-----------------------------------------------------
+exec_time: F=0.72315 p_anova=0.539501
+exec_time Tukey HSD:
+ Multiple Comparison of Means - Tukey HSD, FWER=0.05  
+======================================================
+ group1 group2 meandiff p-adj   lower    upper  reject
+------------------------------------------------------
+chatgpt claude  -0.1463    1.0 -13.3452 13.0527  False
+chatgpt  codex  -3.7514 0.8888 -17.2613  9.7585  False
+chatgpt gemini  -6.4866 0.5985 -19.9965  7.0233  False
+ claude  codex  -3.6052 0.8969 -16.9677  9.7574  False
+ claude gemini  -6.3403 0.6078 -19.7029  7.0222  False
+  codex gemini  -2.7352 0.9544 -16.4049 10.9346  False
+------------------------------------------------------
+energy: F=0.72315 p_anova=0.539501
+energy Tukey HSD:
+   Multiple Comparison of Means - Tukey HSD, FWER=0.05   
+=========================================================
+ group1 group2  meandiff p-adj    lower    upper   reject
+---------------------------------------------------------
+chatgpt claude   -2.9254    1.0 -266.9043 261.0535  False
+chatgpt  codex  -75.0286 0.8888 -345.2265 195.1692  False
+chatgpt gemini -129.7321 0.5985   -399.93 140.4657  False
+ claude  codex  -72.1032 0.8969 -339.3543 195.1478  False
+ claude gemini -126.8067 0.6078 -394.0578 140.4443  False
+  codex gemini  -54.7035 0.9544 -328.0991 218.6921  False
+---------------------------------------------------------
+
+Mode: autonomous
+accuracy: F=0.43674 p_anova=0.727191
+accuracy Tukey HSD:
+ Multiple Comparison of Means - Tukey HSD, FWER=0.05  
+======================================================
+ group1 group2 meandiff p-adj   lower    upper  reject
+------------------------------------------------------
+chatgpt claude   2.9575 0.9172  -9.0284 14.9433  False
+chatgpt  codex   0.0234    1.0  -8.2477  8.2944  False
+chatgpt gemini   2.9248 0.8001   -5.483 11.3325  False
+ claude  codex  -2.9341 0.9189   -14.92  9.0518  False
+ claude gemini  -0.0327    1.0 -12.1133 12.0479  False
+  codex gemini   2.9014  0.804  -5.5063 11.3092  False
+------------------------------------------------------
+exec_time: F=0.34215 p_anova=0.794885
+exec_time Tukey HSD:
+ Multiple Comparison of Means - Tukey HSD, FWER=0.05 
+=====================================================
+ group1 group2 meandiff p-adj   lower   upper  reject
+-----------------------------------------------------
+chatgpt claude  -0.2634 0.9998 -9.0316  8.5048  False
+chatgpt  codex   2.3861 0.8464 -5.2312 10.0034  False
+chatgpt gemini   1.7435 0.9357 -5.9956  9.4827  False
+ claude  codex   2.6495 0.8598 -6.1187 11.4176  False
+ claude gemini    2.007  0.935 -6.8673 10.8812  False
+  codex gemini  -0.6425 0.9964 -8.3817  7.0967  False
+-----------------------------------------------------
+energy: F=0.34215 p_anova=0.794885
+energy Tukey HSD:
+  Multiple Comparison of Means - Tukey HSD, FWER=0.05   
+========================================================
+ group1 group2 meandiff p-adj    lower    upper   reject
+--------------------------------------------------------
+chatgpt claude  -5.2681 0.9998 -180.6315 170.0952  False
+chatgpt  codex  47.7215 0.8464 -104.6245 200.0674  False
+chatgpt gemini  34.8708 0.9357 -119.9129 189.6544  False
+ claude  codex  52.9896 0.8598 -122.3738  228.353  False
+ claude gemini  40.1389  0.935 -137.3463 217.6241  False
+  codex gemini -12.8507 0.9964 -167.6343  141.933  False
+--------------------------------------------------------
+
+Failed runs: 102
+Failed list:
+Air-Quality-Health-Prediction: GENAIGREENML_assisted_gemini.py
+Air-Quality-Health-Prediction: GENAIGREENML_autonomous_claude.py
+Algorithms_KnnClasifier: GENAIGREENML_autonomous_claude.py
+animals-classification: GENAIGREENML_autonomous_chatgpt.py
+Annotated_Colab_Notebook: GENAIGREENML_autonomous_claude.py
+Annotated_Colab_Notebook: GENAIGREENML_autonomous_codex.py
+BreastCancer_Classification: GENAIGREENML_autonomous_claude.py
+BreastCancer_Classification: GENAIGREENML_autonomous_gemini.py
+CodeAlpha_IrisClassification: GENAIGREENML_autonomous_claude.py
+Cuisine-Predictor: GENAIGREENML_autonomous_chatgpt.py
+Cuisine-Predictor: GENAIGREENML_autonomous_claude.py
+Cuisine-Predictor: GENAIGREENML_autonomous_codex.py
+Cuisine-Predictor: GENAIGREENML_autonomous_gemini.py
+Decision-Trees: GENAIGREENML_assisted_codex.py
+Decision-Trees: GENAIGREENML_assisted_gemini.py
+Decision-Trees: GENAIGREENML_autonomous_chatgpt.py
+Decision-Trees: GENAIGREENML_autonomous_claude.py
+Decision-Trees: GENAIGREENML_autonomous_codex.py
+Decision-Trees: GENAIGREENML_autonomous_gemini.py
+Deep-Learning-Classification: GENAIGREENML_autonomous_claude.py
+Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity: GENAIGREENML_autonomous_claude.py
+dyslexia-randomforest: GENAIGREENML_autonomous_claude.py
+FakeNewsPrediction: GENAIGREENML_autonomous_chatgpt.py
+HWStudentGradPredictor: GENAIGREENML_autonomous_claude.py
+Iris-Classification-ML-problem: GENAIGREENML_autonomous_chatgpt.py
+Iris-Classification-ML-problem: GENAIGREENML_autonomous_claude.py
+Iris-Classification-ML-problem: GENAIGREENML_autonomous_codex.py
+Iris-Classification-ML-problem: GENAIGREENML_autonomous_gemini.py
+Iris-Flower-Classification-Codealpha: GENAIGREENML_autonomous_claude.py
+Iris-Flower-Classification-Codealpha: GENAIGREENML_autonomous_gemini.py
+Iris-Flower-Classification-Codealpha2: GENAIGREENML_autonomous_claude.py
+Iris-Flower-Classification-Codealpha3: GENAIGREENML_autonomous_claude.py
+Iris-Flower-Classification-Codealpha3: GENAIGREENML_autonomous_codex.py
+Iris-Flower-Classification-Codealpha3: GENAIGREENML_autonomous_gemini.py
+Iris-ML-Lab: GENAIGREENML_assisted_codex.py
+Iris-ML-Lab: GENAIGREENML_autonomous_chatgpt.py
+Iris-ML-Lab: GENAIGREENML_autonomous_claude.py
+Iris-ML-Lab: GENAIGREENML_autonomous_codex.py
+Iris-ML-Lab: GENAIGREENML_autonomous_gemini.py
+JunctionalClassifier: GENAIGREENML_assisted_chatgpt.py
+JunctionalClassifier: GENAIGREENML_assisted_gemini.py
+JunctionalClassifier: GENAIGREENML_autonomous_chatgpt.py
+JunctionalClassifier: GENAIGREENML_autonomous_claude.py
+JunctionalClassifier: GENAIGREENML_autonomous_codex.py
+JunctionalClassifier: GENAIGREENML_autonomous_gemini.py
+JunctionalClassifier2: GENAIGREENML_assisted_chatgpt.py
+JunctionalClassifier2: GENAIGREENML_assisted_codex.py
+JunctionalClassifier2: GENAIGREENML_assisted_gemini.py
+JunctionalClassifier2: GENAIGREENML_autonomous_chatgpt.py
+JunctionalClassifier2: GENAIGREENML_autonomous_claude.py
+JunctionalClassifier2: GENAIGREENML_autonomous_codex.py
+JunctionalClassifier2: GENAIGREENML_autonomous_gemini.py
+JunctionalClassifier3: GENAIGREENML_assisted_chatgpt.py
+JunctionalClassifier3: GENAIGREENML_assisted_codex.py
+JunctionalClassifier3: GENAIGREENML_autonomous_chatgpt.py
+JunctionalClassifier3: GENAIGREENML_autonomous_claude.py
+JunctionalClassifier3: GENAIGREENML_autonomous_codex.py
+JunctionalClassifier3: GENAIGREENML_autonomous_gemini.py
+K-Nearest-Neighbor-Algorithm: GENAIGREENML_assisted_chatgpt.py
+K-Nearest-Neighbor-Algorithm: GENAIGREENML_assisted_claude.py
+K-Nearest-Neighbor-Algorithm: GENAIGREENML_assisted_codex.py
+K-Nearest-Neighbor-Algorithm: GENAIGREENML_assisted_gemini.py
+K-Nearest-Neighbor-Algorithm: GENAIGREENML_autonomous_chatgpt.py
+K-Nearest-Neighbor-Algorithm: GENAIGREENML_autonomous_claude.py
+K-Nearest-Neighbor-Algorithm: GENAIGREENML_autonomous_codex.py
+K-Nearest-Neighbor-Algorithm: GENAIGREENML_autonomous_gemini.py
+MachineLearn-WineClassifier: GENAIGREENML_autonomous_gemini.py
+MaliciousSoftwareClassification: GENAIGREENML_autonomous_chatgpt.py
+MaliciousSoftwareClassification: GENAIGREENML_autonomous_claude.py
+ML_CSV_Classification: GENAIGREENML_autonomous_claude.py
+ML_CSV_Classification: GENAIGREENML_autonomous_codex.py
+Multi-Turn-Intent-Classification: GENAIGREENML_original_telemetry_chatgpt.py
+Multi-Turn-Intent-Classification: GENAIGREENML_assisted_chatgpt.py
+Multi-Turn-Intent-Classification: GENAIGREENML_assisted_claude.py
+Multi-Turn-Intent-Classification: GENAIGREENML_assisted_codex.py
+Multi-Turn-Intent-Classification: GENAIGREENML_assisted_gemini.py
+Multi-Turn-Intent-Classification: GENAIGREENML_autonomous_chatgpt.py
+Multi-Turn-Intent-Classification: GENAIGREENML_autonomous_claude.py
+Na-ve-bayes-algorithm-to-classify-the-fetal-health-: GENAIGREENML_original_telemetry_chatgpt.py
+Network_Intrusion_Detection_System: GENAIGREENML_assisted_claude.py
+Network_Intrusion_Detection_System: GENAIGREENML_assisted_gemini.py
+Network_Intrusion_Detection_System: GENAIGREENML_autonomous_codex.py
+Predicting-heart-diseases-: GENAIGREENML_autonomous_claude.py
+Spam-Email-Classifier: GENAIGREENML_autonomous_claude.py
+SparkMLClassification: GENAIGREENML_assisted_codex.py
+SparkMLClassification: GENAIGREENML_autonomous_chatgpt.py
+SparkMLClassification: GENAIGREENML_autonomous_claude.py
+SparkMLClassification: GENAIGREENML_autonomous_codex.py
+SparkMLClassification: GENAIGREENML_autonomous_gemini.py
+SparkMLClassification2: GENAIGREENML_autonomous_chatgpt.py
+SparkMLClassification2: GENAIGREENML_autonomous_claude.py
+SparkMLClassification2: GENAIGREENML_autonomous_codex.py
+SparkMLClassification2: GENAIGREENML_autonomous_gemini.py
+student-math-ml-analysis: analysis/GENAIGREENML_autonomous_chatgpt.py
+student-math-ml-analysis: analysis/GENAIGREENML_autonomous_claude.py
+student-math-ml-analysis: analysis/GENAIGREENML_autonomous_gemini.py
+Supervised-Data-mining-Customer-satisfaction-prediction-: GENAIGREENML_original_telemetry_chatgpt.py
+Supervised-Data-mining-Customer-satisfaction-prediction-: GENAIGREENML_autonomous_claude.py
+Supervised-Data-mining-Customer-satisfaction-prediction-: GENAIGREENML_autonomous_codex.py
+Svm-GridsearchCV: GENAIGREENML_autonomous_gemini.py
+Voting-Data-Classification: GENAIGREENML_original_telemetry_chatgpt.py
+Voting-Data-Classification: GENAIGREENML_autonomous_gemini.py
