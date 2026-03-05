@@ -33,7 +33,7 @@ IGNORE_DIR_NAMES = {
     ".vscode",
 }
 
-TRACEBACK_ERR_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_\.]*)(?::|\s*$)")
+TRACEBACK_ERR_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_\.]*)(?::\s*(.*))?$")
 
 
 @dataclass
@@ -43,6 +43,7 @@ class ScriptFailure:
     mode: str
     llm: str
     error_type: str
+    error_cause: str
 
 
 def parse_args() -> argparse.Namespace:
@@ -98,9 +99,11 @@ def detect_llm(script_name: str) -> str:
     return stem.rsplit("_", 1)[-1].lower()
 
 
-def extract_error_type(output: str, returncode: int | None, timed_out: bool) -> str:
+def extract_error_details(
+    output: str, returncode: int | None, timed_out: bool
+) -> Tuple[str, str]:
     if timed_out:
-        return "TimeoutExpired"
+        return "TimeoutExpired", "Script timed out"
 
     lines = [ln.strip() for ln in output.splitlines() if ln.strip()]
     for line in reversed(lines):
@@ -110,11 +113,14 @@ def extract_error_type(output: str, returncode: int | None, timed_out: bool) -> 
         name = m.group(1)
         # Avoid classifying file paths or plain words as exceptions.
         if "." in name or name.endswith("Error") or name.endswith("Exception"):
-            return name
+            cause = (m.group(2) or "").strip()
+            if cause:
+                return name, cause
+            return name, name
 
     if returncode is None:
-        return "UnknownError"
-    return f"NonZeroExit({returncode})"
+        return "UnknownError", "UnknownError"
+    return f"NonZeroExit({returncode})", f"Exited with code {returncode}"
 
 
 def iter_generated_scripts(project_dir: Path) -> Iterable[Path]:
@@ -132,7 +138,7 @@ def select_python(project_dir: Path) -> Path:
     return Path(sys.executable)
 
 
-def run_script(project_dir: Path, script_path: Path, timeout_s: float) -> Tuple[bool, str]:
+def run_script(project_dir: Path, script_path: Path, timeout_s: float) -> Tuple[bool, str, str]:
     py = select_python(project_dir)
     timed_out = False
     rc: int | None = None
@@ -153,12 +159,14 @@ def run_script(project_dir: Path, script_path: Path, timeout_s: float) -> Tuple[
         timed_out = True
         out = f"{e.stdout or ''}\n{e.stderr or ''}"
     except Exception as e:
-        return False, type(e).__name__
+        exc = type(e).__name__
+        return False, exc, str(e) or exc
 
     if rc == 0 and not timed_out:
-        return True, ""
+        return True, "", ""
 
-    return False, extract_error_type(out, rc, timed_out)
+    error_type, error_cause = extract_error_details(out, rc, timed_out)
+    return False, error_type, error_cause
 
 
 def find_iteration_dirs(root_dir: Path, only_name: str | None) -> List[Path]:
@@ -187,6 +195,13 @@ def format_analysis(
     by_llm_count: Counter[str] = Counter()
     by_llm_types: DefaultDict[str, Counter[str]] = defaultdict(Counter)
     by_error_projects: DefaultDict[str, List[str]] = defaultdict(list)
+    by_mode_llm_count: DefaultDict[str, Counter[str]] = defaultdict(Counter)
+    by_mode_llm_types: DefaultDict[str, DefaultDict[str, Counter[str]]] = defaultdict(
+        lambda: defaultdict(Counter)
+    )
+    by_error_cause_projects: DefaultDict[str, DefaultDict[str, List[str]]] = defaultdict(
+        lambda: defaultdict(list)
+    )
 
     for f in failures:
         by_mode_count[f.mode] += 1
@@ -194,6 +209,9 @@ def format_analysis(
         by_llm_count[f.llm] += 1
         by_llm_types[f.llm][f.error_type] += 1
         by_error_projects[f.error_type].append(f"{f.project}:{f.script}")
+        by_mode_llm_count[f.mode][f.llm] += 1
+        by_mode_llm_types[f.mode][f.llm][f.error_type] += 1
+        by_error_cause_projects[f.error_type][f.error_cause].append(f"{f.project}:{f.script}")
 
     def fmt_counter(counter: Counter[str]) -> str:
         if not counter:
@@ -210,6 +228,18 @@ def format_analysis(
     lines.append(f"Type of Error by assisted: {fmt_counter(by_mode_types.get('assisted', Counter()))}")
     lines.append(f"Type of Error by autonomous: {fmt_counter(by_mode_types.get('autonomous', Counter()))}")
     lines.append(f"Total Errors per LLM: {fmt_counter(by_llm_count)}")
+    lines.append(
+        "Total Errors per LLM by original: "
+        f"{fmt_counter(by_mode_llm_count.get('original', Counter()))}"
+    )
+    lines.append(
+        "Total Errors per LLM by assisted: "
+        f"{fmt_counter(by_mode_llm_count.get('assisted', Counter()))}"
+    )
+    lines.append(
+        "Total Errors per LLM by autonomous: "
+        f"{fmt_counter(by_mode_llm_count.get('autonomous', Counter()))}"
+    )
 
     llm_type_parts: List[str] = []
     for llm in sorted(by_llm_types.keys()):
@@ -218,6 +248,14 @@ def format_analysis(
         "Type of Error per LLM: "
         + (" | ".join(llm_type_parts) if llm_type_parts else "none")
     )
+    for mode in ("original", "assisted", "autonomous"):
+        mode_parts: List[str] = []
+        for llm in sorted(by_mode_llm_types.get(mode, {}).keys()):
+            mode_parts.append(f"{llm} -> {fmt_counter(by_mode_llm_types[mode][llm])}")
+        lines.append(
+            f"Type of Error per LLM by {mode}: "
+            + (" | ".join(mode_parts) if mode_parts else "none")
+        )
 
     lines.append("Error type with list of projects:script")
     if not by_error_projects:
@@ -226,6 +264,18 @@ def format_analysis(
         for err in sorted(by_error_projects.keys(), key=lambda k: (-len(by_error_projects[k]), k)):
             entries = sorted(by_error_projects[err])
             lines.append(f"{err}: {', '.join(entries)}")
+
+    lines.append("Error type with exact causes and list of projects:script")
+    if not by_error_cause_projects:
+        lines.append("none")
+    else:
+        for err in sorted(by_error_cause_projects.keys(), key=lambda k: (-len(by_error_projects[k]), k)):
+            lines.append(f"{err}:")
+            cause_map = by_error_cause_projects[err]
+            sorted_causes = sorted(cause_map.keys(), key=lambda c: (-len(cause_map[c]), c))
+            for cause in sorted_causes:
+                entries = sorted(cause_map[cause])
+                lines.append(f"  {cause}: {', '.join(entries)}")
 
     lines.append("")
     return "\n".join(lines)
@@ -242,7 +292,7 @@ def analyze_iteration(iteration_dir: Path, timeout_s: float) -> Tuple[int, int]:
             total_scripts += 1
             rel_script = script_path.relative_to(project_dir).as_posix()
             logging.info("▶ Running %s / %s", project_dir.name, rel_script)
-            ok, error_type = run_script(project_dir, script_path, timeout_s)
+            ok, error_type, error_cause = run_script(project_dir, script_path, timeout_s)
             if ok:
                 continue
 
@@ -254,6 +304,7 @@ def analyze_iteration(iteration_dir: Path, timeout_s: float) -> Tuple[int, int]:
                     mode=detect_mode(script_name),
                     llm=detect_llm(script_name),
                     error_type=error_type,
+                    error_cause=error_cause,
                 )
             )
 
