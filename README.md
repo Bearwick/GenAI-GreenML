@@ -204,7 +204,7 @@ Note: there exists more flags, check the code if interested.
 
 ## Analyse Results
 
-The analysis compares assisted and autonomous LLM code against the original code on accuracy, execution time and energy consumption, and prints if they have increased, decreased or are equal.
+The analysis compares assisted and autonomous LLM code against the original code on accuracy, execution time and energy consumption to show if they have increased, decreased or are equal. The output is saved in `results/` with naming convention: <input_file>\_analysis.
 
 From project root:
 
@@ -217,7 +217,7 @@ python ./scripts/analyse_results.py
 Select a specific CSV file from the results folder:
 
 ```
-python3 ./scripts/analyse_results.py --results-file results_20260220_135839.csv
+python ./scripts/analyse_results.py --results-file results_20260220_135839.csv
 ```
 
 ## Generate Code Iterations (Failed Scripts)
