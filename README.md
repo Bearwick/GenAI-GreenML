@@ -206,18 +206,29 @@ Note: there exists more flags, check the code if interested.
 
 The analysis compares assisted and autonomous LLM code against the original code on accuracy, execution time and energy consumption to show if they have increased, decreased or are equal. The output is saved in `results/` with naming convention: <input_file>\_analysis.
 
+It also does a quantitative analysis of the data and produces box plots.
+
 From project root:
 
 ```
-python ./scripts/analyse_results.py
+cd scripts
+source venv/bin/activate
+python ./analyse_results.py
+deactivate
+cd ..
 ```
+
+### Box Plot Variables
+
+- `showfliers` show/remove outliers from visuals.
+- `showmeans` show/remove means from visuals.
 
 ### CLI Flag
 
 Select a specific CSV file from the results folder:
 
 ```
-python ./scripts/analyse_results.py --results-file results_20260220_135839.csv
+python ./analyse_results.py --results-file results_20260220_135839.csv
 ```
 
 ## Generate Code Iterations (Failed Scripts)
