@@ -28,7 +28,8 @@ def import_external_libs():
         from matplotlib.lines import Line2D  # type: ignore
         from scipy import stats  # type: ignore
         from statsmodels.stats.multicomp import pairwise_tukeyhsd  # type: ignore
-        return np, plt, Line2D, stats, pairwise_tukeyhsd
+        from statsmodels.stats.multitest import multipletests  # type: ignore
+        return np, plt, Line2D, stats, pairwise_tukeyhsd, multipletests
     except ModuleNotFoundError as e:
         pkg = str(e).split("'")[-2] if "'" in str(e) else str(e)
         raise SystemExit(
@@ -89,6 +90,47 @@ def rounded(val, places):
     return round(val, places)
 
 
+def paired_cohens_d(diff):
+    arr = np.asarray(diff, dtype=float)
+    arr = arr[~np.isnan(arr)]
+    if arr.size < 2:
+        return float("nan")
+    denom = arr.std(ddof=1)
+    if denom == 0:
+        return float("nan")
+    return float(arr.mean() / denom)
+
+
+def paired_ci_mean(diff, alpha=0.05):
+    arr = np.asarray(diff, dtype=float)
+    arr = arr[~np.isnan(arr)]
+    n = arr.size
+    if n < 2:
+        return (float("nan"), float("nan"))
+
+    mean_diff = arr.mean()
+    sd = arr.std(ddof=1)
+    if sd == 0:
+        return (mean_diff, mean_diff)
+
+    se = sd / np.sqrt(n)
+    t_crit = stats.t.ppf(1 - alpha / 2, n - 1)
+    half_width = t_crit * se
+    return float(mean_diff - half_width), float(mean_diff + half_width)
+
+
+def holm_adjust_pvalues(p_values):
+    arr = np.asarray(p_values, dtype=float)
+    if arr.size == 0:
+        return []
+
+    out = np.full(arr.shape, np.nan, dtype=float)
+    valid = ~np.isnan(arr)
+    if np.any(valid):
+        out[valid] = multipletests(arr[valid], alpha=0.05, method="holm")[1]
+    return out.tolist()
+
+
 def detect_mode(script: str) -> str | None:
     s = script.lower()
     if "assisted" in s:
@@ -113,7 +155,8 @@ def compute_delta(metric: str, gen: float, orig: float) -> float:
 
 
 def main():
-    np, plt, Line2D, stats, pairwise_tukeyhsd = import_external_libs()
+    np, plt, Line2D, stats, pairwise_tukeyhsd, multipletests = import_external_libs()
+    globals().update({"np": np, "stats": stats, "multipletests": multipletests})
 
     args = parse_args()
     latest = resolve_results_file(args.results_file)
@@ -365,10 +408,11 @@ def main():
 
     lines.append("\nPaired t-tests: Assisted vs Autonomous by model")
     lines.append("(paired by project, tested on delta values)")
+    lines.append("Holm correction: per metric, across LLMs in this section")
     for metric in METRICS:
         lines.append(f"\nMetric: {metric}")
         all_llms = sorted(set(deltas_by_mode_metric_llm["assisted"][metric].keys()) | set(deltas_by_mode_metric_llm["autonomous"][metric].keys()))
-        any_row = False
+        rows = []
         for llm in all_llms:
             assisted = []
             autonomous = []
@@ -382,30 +426,62 @@ def main():
             n_pairs = len(assisted)
             if n_pairs == 0:
                 continue
-            any_row = True
+
+            row = {"llm": llm, "n": n_pairs}
             if n_pairs < 2:
-                lines.append(f"{llm}: n={n_pairs} | insufficient pairs for t-test")
+                row["status"] = "insufficient_pairs"
+                rows.append(row)
                 continue
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 t_stat, p_val = stats.ttest_rel(np.array(assisted), np.array(autonomous), nan_policy="omit")
 
+            row["t_stat"] = float(t_stat)
             if np.isnan(t_stat) or np.isnan(p_val):
-                lines.append(f"{llm}: n={n_pairs} | insufficient variance for t-test")
+                row["status"] = "insufficient_variance"
+                rows.append(row)
             else:
-                mean_diff = float(np.mean(np.array(assisted) - np.array(autonomous)))
-                lines.append(
-                    f"{llm}: n={n_pairs} | t={t_stat:.5f} | p_ttest={p_val:.6f} | mean(assisted-autonomous)={mean_diff:.6f}"
-                )
-        if not any_row:
+                diff = np.array(assisted) - np.array(autonomous)
+                mean_diff = float(np.mean(diff))
+                cohen_d = paired_cohens_d(diff)
+                ci_low, ci_high = paired_ci_mean(diff)
+                row["p_raw"] = float(p_val)
+                row["mean"] = mean_diff
+                row["cohen_d"] = cohen_d
+                row["ci_low"] = ci_low
+                row["ci_high"] = ci_high
+                rows.append(row)
+
+        p_raw = [r["p_raw"] for r in rows if "p_raw" in r]
+        p_adj = holm_adjust_pvalues(p_raw)
+        p_adj_iter = iter(p_adj)
+
+        for r in rows:
+            llm = r["llm"]
+            n_pairs = r["n"]
+            if "status" in r:
+                if r["status"] == "insufficient_pairs":
+                    lines.append(f"{llm}: n={n_pairs} | insufficient pairs for t-test")
+                elif r["status"] == "insufficient_variance":
+                    lines.append(f"{llm}: n={n_pairs} | insufficient variance for t-test")
+                continue
+            p_adj_val = next(p_adj_iter)
+            lines.append(
+                f"{llm}: n={n_pairs} | t={r['t_stat']:.5f} | p_ttest={r['p_raw']:.6f} | "
+                f"p_ttest_holm={p_adj_val:.6f} | mean(assisted-autonomous)={r['mean']:.2f} | "
+                f"cohen_d={r['cohen_d']:.4f} | 95% CI [{r['ci_low']:.2f}, {r['ci_high']:.2f}]"
+            )
+
+        if len(rows) == 0:
             lines.append("No paired data.")
 
     lines.append("\nPaired t-tests: Original vs Assisted by model")
     lines.append("(paired by project and model)")
+    lines.append("Holm correction: per metric, across LLMs in this section")
     for metric in METRICS:
         lines.append(f"\nMetric: {metric}")
-        any_row = False
+        rows = []
         for llm in sorted(paired_vs_original["assisted"][metric].keys()):
             pairs = paired_vs_original["assisted"][metric][llm]
             generated = np.array([g for g, _ in pairs], dtype=float)
@@ -413,37 +489,70 @@ def main():
             n_pairs = len(generated)
             if n_pairs == 0:
                 continue
-            any_row = True
+
+            row = {"llm": llm, "n": n_pairs}
             if n_pairs < 2:
-                lines.append(f"{llm}: n={n_pairs} | insufficient pairs for t-test")
+                row["status"] = "insufficient_pairs"
+                rows.append(row)
                 continue
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 t_stat, p_val = stats.ttest_rel(generated, original, nan_policy="omit")
 
+            row["t_stat"] = float(t_stat)
             if np.isnan(t_stat) or np.isnan(p_val):
-                lines.append(f"{llm}: n={n_pairs} | insufficient variance for t-test")
+                row["status"] = "insufficient_variance"
+                rows.append(row)
+                continue
+            diff = generated - original if metric == "accuracy" else original - generated
+            mean_delta = float(np.mean(diff))
+            cohen_d = paired_cohens_d(diff)
+            ci_low, ci_high = paired_ci_mean(diff)
+            row["p_raw"] = float(p_val)
+            row["mean"] = mean_delta
+            row["cohen_d"] = cohen_d
+            row["ci_low"] = ci_low
+            row["ci_high"] = ci_high
+            rows.append(row)
+
+        p_raw = [r["p_raw"] for r in rows if "p_raw" in r]
+        p_adj = holm_adjust_pvalues(p_raw)
+        p_adj_iter = iter(p_adj)
+
+        for r in rows:
+            llm = r["llm"]
+            n_pairs = r["n"]
+            if "status" in r:
+                if r["status"] == "insufficient_pairs":
+                    lines.append(f"{llm}: n={n_pairs} | insufficient pairs for t-test")
+                elif r["status"] == "insufficient_variance":
+                    lines.append(f"{llm}: n={n_pairs} | insufficient variance for t-test")
                 continue
 
+            p_adj_val = next(p_adj_iter)
             if metric == "accuracy":
-                mean_delta = float(np.mean(generated - original))
                 lines.append(
-                    f"{llm}: n={n_pairs} | t={t_stat:.5f} | p_ttest={p_val:.6f} | mean(generated-original)={mean_delta:.6f}"
+                    f"{llm}: n={n_pairs} | t={r['t_stat']:.5f} | p_ttest={r['p_raw']:.6f} | "
+                    f"p_ttest_holm={p_adj_val:.6f} | mean(generated-original)={r['mean']:.2f} | "
+                    f"cohen_d={r['cohen_d']:.4f} | 95% CI [{r['ci_low']:.2f}, {r['ci_high']:.2f}]"
                 )
             else:
-                mean_delta = float(np.mean(original - generated))
                 lines.append(
-                    f"{llm}: n={n_pairs} | t={t_stat:.5f} | p_ttest={p_val:.6f} | mean(original-generated)={mean_delta:.6f}"
+                    f"{llm}: n={n_pairs} | t={r['t_stat']:.5f} | p_ttest={r['p_raw']:.6f} | "
+                    f"p_ttest_holm={p_adj_val:.6f} | mean(original-generated)={r['mean']:.2f} | "
+                    f"cohen_d={r['cohen_d']:.4f} | 95% CI [{r['ci_low']:.2f}, {r['ci_high']:.2f}]"
                 )
-        if not any_row:
+
+        if len(rows) == 0:
             lines.append("No paired data.")
 
     lines.append("\nPaired t-tests: Original vs Autonomous by model")
     lines.append("(paired by project and model)")
+    lines.append("Holm correction: per metric, across LLMs in this section")
     for metric in METRICS:
         lines.append(f"\nMetric: {metric}")
-        any_row = False
+        rows = []
         for llm in sorted(paired_vs_original["autonomous"][metric].keys()):
             pairs = paired_vs_original["autonomous"][metric][llm]
             generated = np.array([g for g, _ in pairs], dtype=float)
@@ -451,30 +560,62 @@ def main():
             n_pairs = len(generated)
             if n_pairs == 0:
                 continue
-            any_row = True
+
+            row = {"llm": llm, "n": n_pairs}
             if n_pairs < 2:
-                lines.append(f"{llm}: n={n_pairs} | insufficient pairs for t-test")
+                row["status"] = "insufficient_pairs"
+                rows.append(row)
                 continue
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 t_stat, p_val = stats.ttest_rel(generated, original, nan_policy="omit")
 
+            row["t_stat"] = float(t_stat)
             if np.isnan(t_stat) or np.isnan(p_val):
-                lines.append(f"{llm}: n={n_pairs} | insufficient variance for t-test")
+                row["status"] = "insufficient_variance"
+                rows.append(row)
+                continue
+            diff = generated - original if metric == "accuracy" else original - generated
+            mean_delta = float(np.mean(diff))
+            cohen_d = paired_cohens_d(diff)
+            ci_low, ci_high = paired_ci_mean(diff)
+            row["p_raw"] = float(p_val)
+            row["mean"] = mean_delta
+            row["cohen_d"] = cohen_d
+            row["ci_low"] = ci_low
+            row["ci_high"] = ci_high
+            rows.append(row)
+
+        p_raw = [r["p_raw"] for r in rows if "p_raw" in r]
+        p_adj = holm_adjust_pvalues(p_raw)
+        p_adj_iter = iter(p_adj)
+
+        for r in rows:
+            llm = r["llm"]
+            n_pairs = r["n"]
+            if "status" in r:
+                if r["status"] == "insufficient_pairs":
+                    lines.append(f"{llm}: n={n_pairs} | insufficient pairs for t-test")
+                elif r["status"] == "insufficient_variance":
+                    lines.append(f"{llm}: n={n_pairs} | insufficient variance for t-test")
                 continue
 
+            p_adj_val = next(p_adj_iter)
             if metric == "accuracy":
-                mean_delta = float(np.mean(generated - original))
                 lines.append(
-                    f"{llm}: n={n_pairs} | t={t_stat:.5f} | p_ttest={p_val:.6f} | mean(generated-original)={mean_delta:.6f}"
+                    f"{llm}: n={n_pairs} | t={r['t_stat']:.5f} | p_ttest={r['p_raw']:.6f} | "
+                    f"p_ttest_holm={p_adj_val:.6f} | mean(generated-original)={r['mean']:.2f} | "
+                    f"cohen_d={r['cohen_d']:.4f} | 95% CI [{r['ci_low']:.2f}, {r['ci_high']:.2f}]"
                 )
             else:
-                mean_delta = float(np.mean(original - generated))
                 lines.append(
-                    f"{llm}: n={n_pairs} | t={t_stat:.5f} | p_ttest={p_val:.6f} | mean(original-generated)={mean_delta:.6f}"
+                    f"{llm}: n={n_pairs} | t={r['t_stat']:.5f} | p_ttest={r['p_raw']:.6f} | "
+                    f"p_ttest_holm={p_adj_val:.6f} | mean(original-generated)={r['mean']:.2f} | "
+                    f"cohen_d={r['cohen_d']:.4f} | 95% CI [{r['ci_low']:.2f}, {r['ci_high']:.2f}]"
                 )
-        if not any_row:
+
+        if len(rows) == 0:
             lines.append("No paired data.")
 
     lines.append("\nANOVA by mode per metric (factor: model)")
