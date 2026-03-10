@@ -89,6 +89,35 @@ def rounded(val, places):
     return round(val, places)
 
 
+def paired_cohens_d(diff):
+    arr = np.asarray(diff, dtype=float)
+    arr = arr[~np.isnan(arr)]
+    if arr.size < 2:
+        return float("nan")
+    denom = arr.std(ddof=1)
+    if denom == 0:
+        return float("nan")
+    return float(arr.mean() / denom)
+
+
+def paired_ci_mean(diff, alpha=0.05):
+    arr = np.asarray(diff, dtype=float)
+    arr = arr[~np.isnan(arr)]
+    n = arr.size
+    if n < 2:
+        return (float("nan"), float("nan"))
+
+    mean_diff = arr.mean()
+    sd = arr.std(ddof=1)
+    if sd == 0:
+        return (mean_diff, mean_diff)
+
+    se = sd / np.sqrt(n)
+    t_crit = stats.t.ppf(1 - alpha / 2, n - 1)
+    half_width = t_crit * se
+    return float(mean_diff - half_width), float(mean_diff + half_width)
+
+
 def detect_mode(script: str) -> str | None:
     s = script.lower()
     if "assisted" in s:
@@ -114,6 +143,7 @@ def compute_delta(metric: str, gen: float, orig: float) -> float:
 
 def main():
     np, plt, Line2D, stats, pairwise_tukeyhsd = import_external_libs()
+    globals().update({"np": np, "stats": stats})
 
     args = parse_args()
     latest = resolve_results_file(args.results_file)
@@ -394,9 +424,14 @@ def main():
             if np.isnan(t_stat) or np.isnan(p_val):
                 lines.append(f"{llm}: n={n_pairs} | insufficient variance for t-test")
             else:
-                mean_diff = float(np.mean(np.array(assisted) - np.array(autonomous)))
+                diff = np.array(assisted) - np.array(autonomous)
+                mean_diff = float(np.mean(diff))
+                cohen_d = paired_cohens_d(diff)
+                ci_low, ci_high = paired_ci_mean(diff)
                 lines.append(
-                    f"{llm}: n={n_pairs} | t={t_stat:.5f} | p_ttest={p_val:.6f} | mean(assisted-autonomous)={mean_diff:.6f}"
+                    f"{llm}: n={n_pairs} | t={t_stat:.5f} | p_ttest={p_val:.6f} | "
+                    f"mean(assisted-autonomous)={mean_diff:.2f} | cohen_d={cohen_d:.4f} | "
+                    f"95% CI [{ci_low:.2f}, {ci_high:.2f}]"
                 )
         if not any_row:
             lines.append("No paired data.")
@@ -427,14 +462,24 @@ def main():
                 continue
 
             if metric == "accuracy":
-                mean_delta = float(np.mean(generated - original))
+                diff = generated - original
+                mean_delta = float(np.mean(diff))
+                cohen_d = paired_cohens_d(diff)
+                ci_low, ci_high = paired_ci_mean(diff)
                 lines.append(
-                    f"{llm}: n={n_pairs} | t={t_stat:.5f} | p_ttest={p_val:.6f} | mean(generated-original)={mean_delta:.6f}"
+                    f"{llm}: n={n_pairs} | t={t_stat:.5f} | p_ttest={p_val:.6f} | "
+                    f"mean(generated-original)={mean_delta:.2f} | cohen_d={cohen_d:.4f} | "
+                    f"95% CI [{ci_low:.2f}, {ci_high:.2f}]"
                 )
             else:
-                mean_delta = float(np.mean(original - generated))
+                diff = original - generated
+                mean_delta = float(np.mean(diff))
+                cohen_d = paired_cohens_d(diff)
+                ci_low, ci_high = paired_ci_mean(diff)
                 lines.append(
-                    f"{llm}: n={n_pairs} | t={t_stat:.5f} | p_ttest={p_val:.6f} | mean(original-generated)={mean_delta:.6f}"
+                    f"{llm}: n={n_pairs} | t={t_stat:.5f} | p_ttest={p_val:.6f} | "
+                    f"mean(original-generated)={mean_delta:.2f} | cohen_d={cohen_d:.4f} | "
+                    f"95% CI [{ci_low:.2f}, {ci_high:.2f}]"
                 )
         if not any_row:
             lines.append("No paired data.")
@@ -465,14 +510,24 @@ def main():
                 continue
 
             if metric == "accuracy":
-                mean_delta = float(np.mean(generated - original))
+                diff = generated - original
+                mean_delta = float(np.mean(diff))
+                cohen_d = paired_cohens_d(diff)
+                ci_low, ci_high = paired_ci_mean(diff)
                 lines.append(
-                    f"{llm}: n={n_pairs} | t={t_stat:.5f} | p_ttest={p_val:.6f} | mean(generated-original)={mean_delta:.6f}"
+                    f"{llm}: n={n_pairs} | t={t_stat:.5f} | p_ttest={p_val:.6f} | "
+                    f"mean(generated-original)={mean_delta:.2f} | cohen_d={cohen_d:.4f} | "
+                    f"95% CI [{ci_low:.2f}, {ci_high:.2f}]"
                 )
             else:
-                mean_delta = float(np.mean(original - generated))
+                diff = original - generated
+                mean_delta = float(np.mean(diff))
+                cohen_d = paired_cohens_d(diff)
+                ci_low, ci_high = paired_ci_mean(diff)
                 lines.append(
-                    f"{llm}: n={n_pairs} | t={t_stat:.5f} | p_ttest={p_val:.6f} | mean(original-generated)={mean_delta:.6f}"
+                    f"{llm}: n={n_pairs} | t={t_stat:.5f} | p_ttest={p_val:.6f} | "
+                    f"mean(original-generated)={mean_delta:.2f} | cohen_d={cohen_d:.4f} | "
+                    f"95% CI [{ci_low:.2f}, {ci_high:.2f}]"
                 )
         if not any_row:
             lines.append("No paired data.")
