@@ -32,6 +32,7 @@ import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
+import platform
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 # ----------------------------
@@ -135,19 +136,157 @@ def script_priority(path: Path) -> Tuple[int, str]:
         return (2, path.name)
     return (3, path.name)
 
+# ----------------------------
+# Ensure Project Venv
+# ----------------------------
+
+def ensure_project_venv(project_dir: Path) -> Tuple[Optional[Path], str]:
+    venv_dir = project_dir / "venv"
+    venv_python = venv_dir / "bin" / "python"
+
+    if venv_python.is_file() and os.access(str(venv_python), os.X_OK):
+        return venv_python, ""
+
+    candidates = [sys.executable, "python3", "python"]
+    last_error = ""
+
+    for py in candidates:
+        if not py:
+            continue
+        try:
+            logging.info("[i] Creating venv for %s using %s", project_dir.name, py)
+            result = subprocess.run(
+                [py, "-m", "venv", str(venv_dir)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False,
+            )
+
+            if result.returncode != 0:
+                stderr = (result.stderr or "").strip()
+                stdout = (result.stdout or "").strip()
+                msg = stderr or stdout or f"venv creation failed with exit code {result.returncode}"
+                last_error = f"{py}: {msg}"
+                continue
+
+            # bootstrap pip inside venv
+            pip_result = subprocess.run(
+                [str(venv_python), "-m", "ensurepip", "--upgrade"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False,
+            )
+
+            if venv_python.is_file() and os.access(str(venv_python), os.X_OK):
+                note = "venv auto-created"
+                if pip_result.returncode != 0:
+                    pip_err = (pip_result.stderr or "").strip() or (pip_result.stdout or "").strip()
+                    if pip_err:
+                        note += f" | ensurepip issue: {pip_err[:200].replace(chr(10), ' ')}"
+                return venv_python, note
+
+        except Exception as e:
+            last_error = f"{py}: {repr(e)}"
+
+    return None, f"venv creation failed ({last_error})"
+
+
+# ----------------------------
+# Sanitize Requirements
+# ----------------------------
+
+def sanitize_requirements_text(text: str) -> str:
+    """
+    Relax exact pins from 'pkg==x.y.z' to 'pkg' for portability.
+    Keeps comments, blank lines, and non-exact specifiers unchanged.
+    """
+    lines = []
+    for raw in text.splitlines():
+        line = raw.strip()
+
+        if not line or line.startswith("#"):
+            lines.append(raw)
+            continue
+
+        if "==" in line and not line.startswith("-e "):
+            pkg = line.split("==", 1)[0].strip()
+            lines.append(pkg)
+        else:
+            lines.append(raw)
+
+    return "\n".join(lines) + "\n"
 
 # ----------------------------
 # Requirements (optional)
 # ----------------------------
 
-def ensure_requirements(project_dir: Path) -> None:
+def ensure_requirements(project_dir: Path, venv_python: Path) -> Tuple[bool, str]:
     req = project_dir / "requirements.txt"
-    pip = project_dir / "venv" / "bin" / "pip"
-    if req.is_file() and pip.is_file():
-        # Keep quiet by default; enable --verbose to see install attempts
-        logging.debug("[i] Installing requirements for %s", project_dir.name)
-        subprocess.run([str(pip), "install", "-r", str(req)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+    if not req.is_file():
+        return True, ""
 
+    logging.debug("[i] Installing requirements for %s", project_dir.name)
+
+    subprocess.run(
+        [str(venv_python), "-m", "ensurepip", "--upgrade"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=False,
+    )
+
+    # First try original requirements
+    result = subprocess.run(
+        [str(venv_python), "-m", "pip", "install", "-r", str(req)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=False,
+    )
+
+    if result.returncode == 0:
+        return True, "requirements installed"
+
+    # Retry with relaxed requirements
+    try:
+        original = req.read_text(encoding="utf-8")
+        relaxed = sanitize_requirements_text(original)
+
+        fd, temp_req = tempfile.mkstemp(prefix="relaxed_requirements_", suffix=".txt")
+        os.close(fd)
+        temp_req_path = Path(temp_req)
+        temp_req_path.write_text(relaxed, encoding="utf-8")
+
+        retry = subprocess.run(
+            [str(venv_python), "-m", "pip", "install", "-r", str(temp_req_path)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+
+        try:
+            temp_req_path.unlink()
+        except OSError:
+            pass
+
+        if retry.returncode == 0:
+            return True, "requirements installed (relaxed pins)"
+
+        err = (retry.stderr or "").strip()
+        out = (retry.stdout or "").strip()
+        msg = err or out or f"relaxed pip install failed with exit code {retry.returncode}"
+        msg = msg.replace("\n", " ")[:500]
+        return False, f"requirements install failed after relaxing pins: {msg}"
+
+    except Exception as e:
+        err = (result.stderr or "").strip()
+        out = (result.stdout or "").strip()
+        msg = err or out or repr(e)
+        msg = msg.replace("\n", " ")[:500]
+        return False, f"requirements install failed: {msg}"
 
 # ----------------------------
 # Energy measurement
@@ -369,9 +508,15 @@ def run_script(
             energy_j = ""
             notes = (notes + " | " if notes else "") + "energy not available (RAPL read failed)"
     else:
-        # Keep macOS approximation fallback with explicit note
         energy_j = f"{(exec_time_s * macos_avg_power_w):.3f}"
-        notes = (notes + " | " if notes else "") + f"energy approx on macOS using {macos_avg_power_w}W"
+        system_name = platform.system()
+        if system_name == "Darwin":
+            note = f"energy approx on macOS using {macos_avg_power_w}W"
+        elif system_name == "Linux":
+            note = f"energy approx on Linux because RAPL unavailable, using {macos_avg_power_w}W fallback"
+        else:
+            note = f"energy approx on {system_name} using {macos_avg_power_w}W fallback"
+        notes = (notes + " | " if notes else "") + note
 
     return RunResult(
         status=status,
@@ -454,11 +599,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 f.flush()
                 continue
 
-            if not args.no_requirements:
-                ensure_requirements(project_dir)
+            venv_python, venv_note = ensure_project_venv(project_dir)
 
-            venv_python = project_dir / "venv" / "bin" / "python"
-            if not (venv_python.is_file() and os.access(str(venv_python), os.X_OK)):
+            req_ok = True
+            req_note = ""
+            if venv_python is not None and not args.no_requirements:
+                req_ok, req_note = ensure_requirements(project_dir, venv_python)
+
+            if venv_python is None:
                 for script_path in scripts:
                     writer.writerow(
                         {
@@ -471,7 +619,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                             "mem_delta_mb": "",
                             "exec_time_s": "",
                             "energy_j": "",
-                            "notes": "venv python missing",
+                             "notes": venv_note or "venv python missing",
                         }
                     )
                     f.flush()
@@ -501,7 +649,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                         "mem_delta_mb": f"{result.mem_delta_mb:.3f}",
                         "exec_time_s": f"{result.exec_time_s:.9f}",
                         "energy_j": result.energy_j,
-                        "notes": result.notes,
+                        "notes": " | ".join(x for x in [venv_note, req_note, result.notes] if x),
                     }
                 )
                 f.flush()
