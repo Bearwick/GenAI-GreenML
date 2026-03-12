@@ -1,0 +1,202 @@
+Results file: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_104819.csv
+ML Projects: 51
+ML Projects with original OK: 47
+Distinct code files: 360
+Distinct code files (OK): 357
+Assisted + autonomous code files: 313
+Assisted + autonomous code files (OK): 310
+A+A OK with comparable original: 287
+
+Assisted vs Original
+accuracy: inc=26 dec=27 eq=108
+exec_time: inc=6 dec=164 eq=0
+energy: inc=6 dec=164 eq=0
+
+Autonomous vs Original
+accuracy: inc=47 dec=40 eq=17
+exec_time: inc=1 dec=116 eq=0
+energy: inc=1 dec=116 eq=0
+
+Assisted + Autonomous (combined)
+accuracy: inc=73 dec=67 eq=125
+exec_time: inc=7 dec=280 eq=0
+energy: inc=7 dec=280 eq=0
+
+By LLM
+chatgpt:
+assisted: accuracy inc=7 dec=8 eq=27 | exec_time inc=2 dec=41 eq=0 | energy inc=2 dec=41 eq=0
+autonomous: accuracy inc=12 dec=16 eq=4 | exec_time inc=1 dec=32 eq=0 | energy inc=1 dec=32 eq=0
+claude:
+assisted: accuracy inc=8 dec=5 eq=27 | exec_time inc=1 dec=44 eq=0 | energy inc=1 dec=44 eq=0
+autonomous: accuracy inc=4 dec=4 eq=2 | exec_time inc=0 dec=20 eq=0 | energy inc=0 dec=20 eq=0
+codex:
+assisted: accuracy inc=6 dec=6 eq=27 | exec_time inc=2 dec=39 eq=0 | energy inc=2 dec=39 eq=0
+autonomous: accuracy inc=15 dec=13 eq=4 | exec_time inc=0 dec=33 eq=0 | energy inc=0 dec=33 eq=0
+gemini:
+assisted: accuracy inc=5 dec=8 eq=27 | exec_time inc=1 dec=40 eq=0 | energy inc=1 dec=40 eq=0
+autonomous: accuracy inc=16 dec=7 eq=7 | exec_time inc=0 dec=31 eq=0 | energy inc=0 dec=31 eq=0
+
+Quantitative Analysis
+Delta definition: accuracy = generated-original; exec_time/energy = original-generated (positive means improvement)
+
+Box Plots
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_104819.csv_analysis_boxplot_accuracy.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_104819.csv_analysis_boxplot_exec_time.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_104819.csv_analysis_boxplot_energy.png
+
+Paired t-tests: Assisted vs Autonomous by model
+(paired by project, tested on delta values)
+Holm correction: per metric, across LLMs in this section
+
+Metric: accuracy
+chatgpt: n=32 | t=0.44371 | p_ttest=0.660331 | p_ttest_holm=1.000000 | mean(assisted-autonomous)=0.03 | cohen_d=0.0784 | 95% CI [-0.10, 0.16]
+claude: n=10 | t=0.86854 | p_ttest=0.407661 | p_ttest_holm=1.000000 | mean(assisted-autonomous)=0.09 | cohen_d=0.2747 | 95% CI [-0.14, 0.32]
+codex: n=32 | t=1.01342 | p_ttest=0.318704 | p_ttest_holm=1.000000 | mean(assisted-autonomous)=2.26 | cohen_d=0.1791 | 95% CI [-2.29, 6.80]
+gemini: n=28 | t=0.07645 | p_ttest=0.939627 | p_ttest_holm=1.000000 | mean(assisted-autonomous)=0.00 | cohen_d=0.0144 | 95% CI [-0.10, 0.11]
+
+Metric: exec_time
+chatgpt: n=33 | t=-1.90576 | p_ttest=0.065699 | p_ttest_holm=0.262797 | mean(assisted-autonomous)=-1.56 | cohen_d=-0.3317 | 95% CI [-3.22, 0.11]
+claude: n=19 | t=-1.87704 | p_ttest=0.076819 | p_ttest_holm=0.262797 | mean(assisted-autonomous)=-0.97 | cohen_d=-0.4306 | 95% CI [-2.05, 0.12]
+codex: n=33 | t=-1.81949 | p_ttest=0.078204 | p_ttest_holm=0.262797 | mean(assisted-autonomous)=-8.04 | cohen_d=-0.3167 | 95% CI [-17.04, 0.96]
+gemini: n=29 | t=-1.51312 | p_ttest=0.141456 | p_ttest_holm=0.262797 | mean(assisted-autonomous)=-3.62 | cohen_d=-0.2810 | 95% CI [-8.51, 1.28]
+
+Metric: energy
+chatgpt: n=33 | t=-1.90575 | p_ttest=0.065700 | p_ttest_holm=0.262798 | mean(assisted-autonomous)=-31.13 | cohen_d=-0.3317 | 95% CI [-64.40, 2.14]
+claude: n=19 | t=-1.87703 | p_ttest=0.076820 | p_ttest_holm=0.262798 | mean(assisted-autonomous)=-19.33 | cohen_d=-0.4306 | 95% CI [-40.96, 2.31]
+codex: n=33 | t=-1.81949 | p_ttest=0.078204 | p_ttest_holm=0.262798 | mean(assisted-autonomous)=-160.78 | cohen_d=-0.3167 | 95% CI [-340.78, 19.21]
+gemini: n=29 | t=-1.51312 | p_ttest=0.141456 | p_ttest_holm=0.262798 | mean(assisted-autonomous)=-72.34 | cohen_d=-0.2810 | 95% CI [-170.26, 25.59]
+
+Paired t-tests: Original vs Assisted by model
+(paired by project and model)
+Holm correction: per metric, across LLMs in this section
+
+Metric: accuracy
+chatgpt: n=42 | t=-1.01736 | p_ttest=0.314948 | p_ttest_holm=1.000000 | mean(generated-original)=-2.20 | cohen_d=-0.1570 | 95% CI [-6.58, 2.17]
+claude: n=40 | t=-0.99931 | p_ttest=0.323803 | p_ttest_holm=1.000000 | mean(generated-original)=-2.27 | cohen_d=-0.1580 | 95% CI [-6.88, 2.33]
+codex: n=39 | t=-0.17353 | p_ttest=0.863156 | p_ttest_holm=1.000000 | mean(generated-original)=-0.52 | cohen_d=-0.0278 | 95% CI [-6.60, 5.56]
+gemini: n=40 | t=-1.00602 | p_ttest=0.320607 | p_ttest_holm=1.000000 | mean(generated-original)=-2.29 | cohen_d=-0.1591 | 95% CI [-6.89, 2.31]
+
+Metric: exec_time
+chatgpt: n=43 | t=-5.52070 | p_ttest=0.000002 | p_ttest_holm=0.000006 | mean(original-generated)=4.09 | cohen_d=0.8419 | 95% CI [2.60, 5.59]
+claude: n=45 | t=-5.65480 | p_ttest=0.000001 | p_ttest_holm=0.000004 | mean(original-generated)=3.84 | cohen_d=0.8430 | 95% CI [2.47, 5.21]
+codex: n=41 | t=-0.21897 | p_ttest=0.827790 | p_ttest_holm=1.000000 | mean(original-generated)=0.61 | cohen_d=0.0342 | 95% CI [-4.99, 6.20]
+gemini: n=41 | t=0.32603 | p_ttest=0.746099 | p_ttest_holm=1.000000 | mean(original-generated)=-2.18 | cohen_d=-0.0509 | 95% CI [-15.69, 11.33]
+
+Metric: energy
+chatgpt: n=43 | t=-5.52070 | p_ttest=0.000002 | p_ttest_holm=0.000006 | mean(original-generated)=81.89 | cohen_d=0.8419 | 95% CI [51.96, 111.83]
+claude: n=45 | t=-5.65481 | p_ttest=0.000001 | p_ttest_holm=0.000004 | mean(original-generated)=76.76 | cohen_d=0.8430 | 95% CI [49.40, 104.12]
+codex: n=41 | t=-0.21897 | p_ttest=0.827790 | p_ttest_holm=1.000000 | mean(original-generated)=12.13 | cohen_d=0.0342 | 95% CI [-99.83, 124.08]
+gemini: n=41 | t=0.32603 | p_ttest=0.746098 | p_ttest_holm=1.000000 | mean(original-generated)=-43.58 | cohen_d=-0.0509 | 95% CI [-313.75, 226.59]
+
+Paired t-tests: Original vs Autonomous by model
+(paired by project and model)
+Holm correction: per metric, across LLMs in this section
+
+Metric: accuracy
+chatgpt: n=32 | t=-1.02876 | p_ttest=0.311553 | p_ttest_holm=1.000000 | mean(generated-original)=-2.92 | cohen_d=-0.1819 | 95% CI [-8.72, 2.87]
+claude: n=10 | t=-0.51314 | p_ttest=0.620214 | p_ttest_holm=1.000000 | mean(generated-original)=-0.02 | cohen_d=-0.1623 | 95% CI [-0.10, 0.06]
+codex: n=32 | t=-1.02085 | p_ttest=0.315229 | p_ttest_holm=1.000000 | mean(generated-original)=-2.90 | cohen_d=-0.1805 | 95% CI [-8.70, 2.89]
+gemini: n=30 | t=-0.02517 | p_ttest=0.980095 | p_ttest_holm=1.000000 | mean(generated-original)=-0.00 | cohen_d=-0.0046 | 95% CI [-0.10, 0.10]
+
+Metric: exec_time
+chatgpt: n=33 | t=-4.09816 | p_ttest=0.000266 | p_ttest_holm=0.001062 | mean(original-generated)=5.86 | cohen_d=0.7134 | 95% CI [2.95, 8.78]
+claude: n=20 | t=-3.27540 | p_ttest=0.003980 | p_ttest_holm=0.007960 | mean(original-generated)=5.44 | cohen_d=0.7324 | 95% CI [1.96, 8.92]
+codex: n=33 | t=-3.28566 | p_ttest=0.002471 | p_ttest_holm=0.007414 | mean(original-generated)=8.10 | cohen_d=0.5720 | 95% CI [3.08, 13.11]
+gemini: n=31 | t=-2.97781 | p_ttest=0.005699 | p_ttest_holm=0.007960 | mean(original-generated)=7.50 | cohen_d=0.5348 | 95% CI [2.36, 12.65]
+
+Metric: energy
+chatgpt: n=33 | t=-4.09816 | p_ttest=0.000266 | p_ttest_holm=0.001062 | mean(original-generated)=117.29 | cohen_d=0.7134 | 95% CI [58.99, 175.59]
+claude: n=20 | t=-3.27540 | p_ttest=0.003980 | p_ttest_holm=0.007960 | mean(original-generated)=108.81 | cohen_d=0.7324 | 95% CI [39.28, 178.35]
+codex: n=33 | t=-3.28566 | p_ttest=0.002471 | p_ttest_holm=0.007414 | mean(original-generated)=161.91 | cohen_d=0.5720 | 95% CI [61.53, 262.28]
+gemini: n=31 | t=-2.97781 | p_ttest=0.005699 | p_ttest_holm=0.007960 | mean(original-generated)=150.07 | cohen_d=0.5348 | 95% CI [47.15, 253.00]
+
+ANOVA by mode per metric (factor: model)
+(one-way ANOVA + Tukey HSD post-hoc)
+
+Mode: assisted
+accuracy: F=0.12393 p_anova=0.945857
+accuracy Tukey HSD:
+ Multiple Comparison of Means - Tukey HSD, FWER=0.05  
+======================================================
+ group1 group2 meandiff p-adj   lower    upper  reject
+------------------------------------------------------
+chatgpt claude  -0.0701    1.0  -8.9481  8.8078  False
+chatgpt  codex   1.6832 0.9614  -7.2528 10.6193  False
+chatgpt gemini  -0.0848    1.0  -8.9628  8.7931  False
+ claude  codex   1.7534 0.9581  -7.2896 10.7964  False
+ claude gemini  -0.0147    1.0  -9.0003  8.9709  False
+  codex gemini  -1.7681 0.9572 -10.8111  7.2749  False
+------------------------------------------------------
+exec_time: F=0.70507 p_anova=0.550264
+exec_time Tukey HSD:
+ Multiple Comparison of Means - Tukey HSD, FWER=0.05  
+======================================================
+ group1 group2 meandiff p-adj   lower    upper  reject
+------------------------------------------------------
+chatgpt claude  -0.2565 0.9999 -12.9812 12.4683  False
+chatgpt  codex  -3.4881 0.8989 -16.5126  9.5364  False
+chatgpt gemini  -6.2737  0.596 -19.2982  6.7508  False
+ claude  codex  -3.2316 0.9151 -16.1141  9.6508  False
+ claude gemini  -6.0172   0.62 -18.8997  6.8652  False
+  codex gemini  -2.7856 0.9468 -15.9643  10.393  False
+------------------------------------------------------
+energy: F=0.70507 p_anova=0.550264
+energy Tukey HSD:
+   Multiple Comparison of Means - Tukey HSD, FWER=0.05   
+=========================================================
+ group1 group2  meandiff p-adj    lower    upper   reject
+---------------------------------------------------------
+chatgpt claude   -5.1297 0.9999 -259.6245 249.3651  False
+chatgpt  codex  -69.7622 0.8989 -330.2525 190.7281  False
+chatgpt gemini -125.4744  0.596 -385.9647 135.0159  False
+ claude  codex  -64.6325 0.9151 -322.2819 193.0168  False
+ claude gemini -120.3447   0.62 -377.9941 137.3046  False
+  codex gemini  -55.7122 0.9468 -319.2853 207.8609  False
+---------------------------------------------------------
+
+Mode: autonomous
+accuracy: F=0.43263 p_anova=0.730095
+accuracy Tukey HSD:
+ Multiple Comparison of Means - Tukey HSD, FWER=0.05  
+======================================================
+ group1 group2 meandiff p-adj   lower    upper  reject
+------------------------------------------------------
+chatgpt claude   2.9052  0.921  -9.0772 14.8877  False
+chatgpt  codex   0.0233    1.0  -8.2454   8.292  False
+chatgpt gemini   2.9227 0.8003  -5.4826 11.3281  False
+ claude  codex  -2.8819 0.9227 -14.8644  9.1005  False
+ claude gemini   0.0175    1.0 -12.0597 12.0946  False
+  codex gemini   2.8994 0.8042  -5.5059 11.3048  False
+------------------------------------------------------
+exec_time: F=0.33040 p_anova=0.803374
+exec_time Tukey HSD:
+ Multiple Comparison of Means - Tukey HSD, FWER=0.05 
+=====================================================
+ group1 group2 meandiff p-adj   lower   upper  reject
+-----------------------------------------------------
+chatgpt claude   -0.424 0.9993  -9.086  8.2381  False
+chatgpt  codex   2.2308 0.8665 -5.2943  9.7559  False
+chatgpt gemini   1.6391 0.9439 -6.0064  9.2847  False
+ claude  codex   2.6547 0.8546 -6.0073 11.3168  False
+ claude gemini   2.0631 0.9275 -6.7038   10.83  False
+  codex gemini  -0.5916 0.9971 -8.2372  7.0539  False
+-----------------------------------------------------
+energy: F=0.33040 p_anova=0.803374
+energy Tukey HSD:
+  Multiple Comparison of Means - Tukey HSD, FWER=0.05   
+========================================================
+ group1 group2 meandiff p-adj    lower    upper   reject
+--------------------------------------------------------
+chatgpt claude  -8.4791 0.9993   -181.72 164.7619  False
+chatgpt  codex  44.6158 0.8665 -105.8864 195.1179  False
+chatgpt gemini  32.7827 0.9439 -120.1276 185.6931  False
+ claude  codex  53.0949 0.8546 -120.1461 226.3358  False
+ claude gemini  41.2618 0.9275 -134.0753 216.5989  False
+  codex gemini  -11.833 0.9971 -164.7433 141.0773  False
+--------------------------------------------------------
+
+Failed runs: 3
+Failed list:
+student-math-ml-analysis: analysis/GENAIGREENML_autonomous_chatgpt.py
+student-math-ml-analysis: analysis/GENAIGREENML_autonomous_claude.py
+student-math-ml-analysis: analysis/GENAIGREENML_autonomous_gemini.py
