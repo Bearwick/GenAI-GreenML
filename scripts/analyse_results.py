@@ -160,7 +160,9 @@ def main():
 
     args = parse_args()
     latest = resolve_results_file(args.results_file)
-    analysis_output = RESULTS_DIR / f"{latest.name}_analysis"
+    analysis_dir = RESULTS_DIR / f"{latest.name}_analysis"
+    analysis_dir.mkdir(parents=True, exist_ok=True)
+    analysis_output = analysis_dir / f"{latest.name}_analysis.txt"
 
     all_rows = []
     ok_rows = []
@@ -368,6 +370,51 @@ def main():
 
     delta_plot_paths = []
     raw_plot_paths = []
+    ttest_tvalue_plot_paths = []
+
+    def save_tvalue_plot(section_label: str, variant: str, metric: str, entries: list[dict]):
+        section_slug = section_label.replace(" ", "_").lower()
+        fig, ax = plt.subplots(figsize=(12, 6))
+        ax.set_title(f"{section_label} [t-values, {variant}] - {metric}")
+        ax.set_ylabel("t statistic")
+        if not entries:
+            ax.text(0.5, 0.5, "No paired data", ha="center", va="center", transform=ax.transAxes)
+        else:
+            x = np.arange(len(entries))
+            llms = [e["llm"] for e in entries]
+            t_values = [e["t"] for e in entries]
+            colors = ["tab:blue" if t >= 0 else "tab:orange" for t in t_values]
+            bars = ax.bar(x, t_values, color=colors, edgecolor="black", linewidth=0.7)
+            ax.axhline(0, color="gray", linestyle="--", linewidth=1)
+            ax.set_xticks(x, llms)
+            ax.tick_params(axis="x", rotation=35)
+            ax.set_ylim(-max(abs(np.max(t_values)), abs(np.min(t_values)), 1.0) * 1.4, max(abs(np.max(t_values)), abs(np.min(t_values)), 1.0) * 1.4)
+            for bar, entry in zip(bars, entries):
+                bar_height = bar.get_height()
+                x_pos = bar.get_x() + bar.get_width() / 2
+                ax.text(
+                    x_pos,
+                    bar_height + (0.05 if bar_height >= 0 else -0.05),
+                    f"n={entry['n']}\np={entry['p_adj']:.4f}",
+                    ha="center",
+                    va="bottom" if bar_height >= 0 else "top",
+                    fontsize=8,
+                    rotation=0,
+                )
+            ax.legend(
+                handles=[
+                    Line2D([0], [0], color="tab:blue", linewidth=2, label="t >= 0"),
+                    Line2D([0], [0], color="tab:orange", linewidth=2, label="t < 0"),
+                ],
+                loc="upper right",
+                frameon=True,
+            )
+
+        plot_path = analysis_dir / f"{latest.name}_analysis_tvalues_{variant}_{section_slug}_{metric}.png"
+        fig.tight_layout()
+        fig.savefig(plot_path, dpi=160)
+        plt.close(fig)
+        ttest_tvalue_plot_paths.append((variant, str(plot_path)))
 
     lines.append("\nBox Plots")
     for metric in METRICS:
@@ -416,7 +463,7 @@ def main():
                 ax.axhline(0, color="gray", linestyle="--", linewidth=1)
 
         fig.tight_layout(rect=[0, 0, 1, 0.96])
-        plot_path = RESULTS_DIR / f"{latest.name}_analysis_boxplot_{metric}.png"
+        plot_path = analysis_dir / f"{latest.name}_analysis_boxplot_{metric}.png"
         fig.savefig(plot_path, dpi=160)
         plt.close(fig)
         delta_plot_paths.append(plot_path)
@@ -489,7 +536,7 @@ def main():
                 )
 
         fig.tight_layout(rect=[0, 0, 1, 0.96])
-        plot_path = RESULTS_DIR / f"{latest.name}_analysis_boxplot_raw_{metric}.png"
+        plot_path = analysis_dir / f"{latest.name}_analysis_boxplot_raw_{metric}.png"
         fig.savefig(plot_path, dpi=160)
         plt.close(fig)
         raw_plot_paths.append(plot_path)
@@ -505,10 +552,12 @@ def main():
     lines.append("\nPaired t-tests [delta]: Assisted vs Autonomous by model")
     lines.append("(paired by project, tested on delta values)")
     lines.append("Holm correction: per metric, across LLMs in this section")
+    section_tvals = {}
     for metric in METRICS:
         lines.append(f"\nMetric: {metric}")
         all_llms = sorted(set(deltas_by_mode_metric_llm["assisted"][metric].keys()) | set(deltas_by_mode_metric_llm["autonomous"][metric].keys()))
         rows = []
+        metric_tvals = []
         for llm in all_llms:
             assisted = []
             autonomous = []
@@ -568,16 +617,23 @@ def main():
                 f"p_ttest_holm={p_adj_val:.6f} | mean(assisted-autonomous)={r['mean']:.2f} | "
                 f"cohen_d={r['cohen_d']:.4f} | 95% CI [{r['ci_low']:.2f}, {r['ci_high']:.2f}]"
             )
+            metric_tvals.append({"llm": llm, "n": n_pairs, "t": r["t_stat"], "p_adj": p_adj_val})
 
         if len(rows) == 0:
             lines.append("No paired data.")
+        else:
+            section_tvals[metric] = metric_tvals
+    for metric in METRICS:
+        save_tvalue_plot("Assisted vs Autonomous", "delta", metric, section_tvals.get(metric, []))
 
     lines.append("\nPaired t-tests [delta]: Original vs Assisted by model")
     lines.append("(paired by project and model)")
     lines.append("Holm correction: per metric, across LLMs in this section")
+    section_tvals = {}
     for metric in METRICS:
         lines.append(f"\nMetric: {metric}")
         rows = []
+        metric_tvals = []
         for llm in sorted(paired_vs_original["assisted"][metric].keys()):
             pairs = paired_vs_original["assisted"][metric][llm]
             generated = np.array([g for g, _ in pairs], dtype=float)
@@ -639,16 +695,23 @@ def main():
                     f"p_ttest_holm={p_adj_val:.6f} | mean(original-generated)={r['mean']:.2f} | "
                     f"cohen_d={r['cohen_d']:.4f} | 95% CI [{r['ci_low']:.2f}, {r['ci_high']:.2f}]"
                 )
+            metric_tvals.append({"llm": llm, "n": n_pairs, "t": r["t_stat"], "p_adj": p_adj_val})
 
         if len(rows) == 0:
             lines.append("No paired data.")
+        else:
+            section_tvals[metric] = metric_tvals
+    for metric in METRICS:
+        save_tvalue_plot("Original vs Assisted", "delta", metric, section_tvals.get(metric, []))
 
     lines.append("\nPaired t-tests [delta]: Original vs Autonomous by model")
     lines.append("(paired by project and model)")
     lines.append("Holm correction: per metric, across LLMs in this section")
+    section_tvals = {}
     for metric in METRICS:
         lines.append(f"\nMetric: {metric}")
         rows = []
+        metric_tvals = []
         for llm in sorted(paired_vs_original["autonomous"][metric].keys()):
             pairs = paired_vs_original["autonomous"][metric][llm]
             generated = np.array([g for g, _ in pairs], dtype=float)
@@ -710,19 +773,26 @@ def main():
                     f"p_ttest_holm={p_adj_val:.6f} | mean(original-generated)={r['mean']:.2f} | "
                     f"cohen_d={r['cohen_d']:.4f} | 95% CI [{r['ci_low']:.2f}, {r['ci_high']:.2f}]"
                 )
+            metric_tvals.append({"llm": llm, "n": n_pairs, "t": r["t_stat"], "p_adj": p_adj_val})
 
         if len(rows) == 0:
             lines.append("No paired data.")
+        else:
+            section_tvals[metric] = metric_tvals
+    for metric in METRICS:
+        save_tvalue_plot("Original vs Autonomous", "delta", metric, section_tvals.get(metric, []))
 
     lines.append("\nPaired t-tests [raw]: Assisted vs Autonomous by model")
     lines.append("(paired by project, tested on raw generated metric values)")
     lines.append("Holm correction: per metric, across LLMs in this section")
+    section_tvals = {}
     for metric in METRICS:
         lines.append(f"\nMetric: {metric}")
         all_llms = sorted(
             set(k_llm for k_llm, k_metric, _ in raw_paired_lookup.keys() if k_metric == metric)
         )
         rows = []
+        metric_tvals = []
         for llm in all_llms:
             assisted = []
             autonomous = []
@@ -783,16 +853,23 @@ def main():
                 f"p_ttest_holm={p_adj_val:.6f} | mean(assisted-autonomous)={r['mean']:.4f} | "
                 f"cohen_d={r['cohen_d']:.4f} | 95% CI [{r['ci_low']:.4f}, {r['ci_high']:.4f}]"
             )
+            metric_tvals.append({"llm": llm, "n": n_pairs, "t": r["t_stat"], "p_adj": p_adj_val})
 
         if len(rows) == 0:
             lines.append("No paired data.")
+        else:
+            section_tvals[metric] = metric_tvals
+    for metric in METRICS:
+        save_tvalue_plot("Assisted vs Autonomous", "raw", metric, section_tvals.get(metric, []))
 
     lines.append("\nPaired t-tests [raw]: Original vs Assisted by model")
     lines.append("(paired by project and model)")
     lines.append("Holm correction: per metric, across LLMs in this section")
+    section_tvals = {}
     for metric in METRICS:
         lines.append(f"\nMetric: {metric}")
         rows = []
+        metric_tvals = []
         for llm in sorted(paired_vs_original["assisted"][metric].keys()):
             pairs = paired_vs_original["assisted"][metric][llm]
             generated = np.array([g for g, _ in pairs], dtype=float)
@@ -847,16 +924,23 @@ def main():
                 f"p_ttest_holm={p_adj_val:.6f} | mean(generated-original)={r['mean']:.4f} | "
                 f"cohen_d={r['cohen_d']:.4f} | 95% CI [{r['ci_low']:.4f}, {r['ci_high']:.4f}]"
             )
+            metric_tvals.append({"llm": llm, "n": n_pairs, "t": r["t_stat"], "p_adj": p_adj_val})
 
         if len(rows) == 0:
             lines.append("No paired data.")
+        else:
+            section_tvals[metric] = metric_tvals
+    for metric in METRICS:
+        save_tvalue_plot("Original vs Assisted", "raw", metric, section_tvals.get(metric, []))
 
     lines.append("\nPaired t-tests [raw]: Original vs Autonomous by model")
     lines.append("(paired by project and model)")
     lines.append("Holm correction: per metric, across LLMs in this section")
+    section_tvals = {}
     for metric in METRICS:
         lines.append(f"\nMetric: {metric}")
         rows = []
+        metric_tvals = []
         for llm in sorted(paired_vs_original["autonomous"][metric].keys()):
             pairs = paired_vs_original["autonomous"][metric][llm]
             generated = np.array([g for g, _ in pairs], dtype=float)
@@ -911,9 +995,19 @@ def main():
                 f"p_ttest_holm={p_adj_val:.6f} | mean(generated-original)={r['mean']:.4f} | "
                 f"cohen_d={r['cohen_d']:.4f} | 95% CI [{r['ci_low']:.4f}, {r['ci_high']:.4f}]"
             )
+            metric_tvals.append({"llm": llm, "n": n_pairs, "t": r["t_stat"], "p_adj": p_adj_val})
 
         if len(rows) == 0:
             lines.append("No paired data.")
+        else:
+            section_tvals[metric] = metric_tvals
+    for metric in METRICS:
+        save_tvalue_plot("Original vs Autonomous", "raw", metric, section_tvals.get(metric, []))
+
+    if ttest_tvalue_plot_paths:
+        lines.append("\nT-value Plots")
+        for variant, p in ttest_tvalue_plot_paths:
+            lines.append(f"{variant}: {p}")
 
     lines.append("\nANOVA by mode per metric (factor: model) [delta]")
     lines.append("(one-way ANOVA + Tukey HSD post-hoc)")

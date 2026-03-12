@@ -43,13 +43,13 @@ Box Plots
 
 Box Plots
 Delta-based (existing behavior):
-/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis_boxplot_accuracy.png
-/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis_boxplot_exec_time.png
-/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis_boxplot_energy.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_boxplot_accuracy.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_boxplot_exec_time.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_boxplot_energy.png
 Raw (including original):
-/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis_boxplot_raw_accuracy.png
-/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis_boxplot_raw_exec_time.png
-/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis_boxplot_raw_energy.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_boxplot_raw_accuracy.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_boxplot_raw_exec_time.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_boxplot_raw_energy.png
 
 Paired t-tests [delta]: Assisted vs Autonomous by model
 (paired by project, tested on delta values)
@@ -182,6 +182,26 @@ chatgpt: n=33 | t=-3.10322 | p_ttest=0.003984 | p_ttest_holm=0.015936 | mean(gen
 claude: n=20 | t=-2.32217 | p_ttest=0.031487 | p_ttest_holm=0.062974 | mean(generated-original)=-72.2403 | cohen_d=-0.5193 | 95% CI [-137.3523, -7.1284]
 codex: n=33 | t=-2.45416 | p_ttest=0.019746 | p_ttest_holm=0.059239 | mean(generated-original)=-114.7652 | cohen_d=-0.4272 | 95% CI [-210.0193, -19.5110]
 gemini: n=31 | t=-2.21286 | p_ttest=0.034660 | p_ttest_holm=0.062974 | mean(generated-original)=-105.3808 | cohen_d=-0.3974 | 95% CI [-202.6381, -8.1236]
+
+T-value Plots
+delta: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_tvalues_delta_assisted_vs_autonomous_accuracy.png
+delta: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_tvalues_delta_assisted_vs_autonomous_exec_time.png
+delta: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_tvalues_delta_assisted_vs_autonomous_energy.png
+delta: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_tvalues_delta_original_vs_assisted_accuracy.png
+delta: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_tvalues_delta_original_vs_assisted_exec_time.png
+delta: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_tvalues_delta_original_vs_assisted_energy.png
+delta: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_tvalues_delta_original_vs_autonomous_accuracy.png
+delta: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_tvalues_delta_original_vs_autonomous_exec_time.png
+delta: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_tvalues_delta_original_vs_autonomous_energy.png
+raw: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_tvalues_raw_assisted_vs_autonomous_accuracy.png
+raw: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_tvalues_raw_assisted_vs_autonomous_exec_time.png
+raw: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_tvalues_raw_assisted_vs_autonomous_energy.png
+raw: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_tvalues_raw_original_vs_assisted_accuracy.png
+raw: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_tvalues_raw_original_vs_assisted_exec_time.png
+raw: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_tvalues_raw_original_vs_assisted_energy.png
+raw: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_tvalues_raw_original_vs_autonomous_accuracy.png
+raw: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_tvalues_raw_original_vs_autonomous_exec_time.png
+raw: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260312_113314.csv_analysis/results_20260312_113314.csv_analysis_tvalues_raw_original_vs_autonomous_energy.png
 
 ANOVA by mode per metric (factor: model) [delta]
 (one-way ANOVA + Tukey HSD post-hoc)
