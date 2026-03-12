@@ -109,13 +109,19 @@ def is_generated_script(filename: str) -> bool:
     return filename.startswith(GENERATED_PREFIX) and filename.endswith(GENERATED_SUFFIX)
 
 
+def normalize_script_name(script: str) -> str:
+    """CSV rows sometimes store nested script paths like analysis/GENAIGREENML_*."""
+
+    return Path(script).name.strip()
+
+
 def collect_last_status_per_script(results_csv: Path) -> Dict[Tuple[str, str], str]:
     last_status: Dict[Tuple[str, str], str] = {}
     with results_csv.open("r", encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
             project = (row.get("project") or "").strip()
-            script = (row.get("script") or "").strip()
+            script = normalize_script_name((row.get("script") or "").strip())
             status = (row.get("status") or "").strip().upper()
             if not project or not script:
                 continue
