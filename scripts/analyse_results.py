@@ -240,11 +240,17 @@ def main():
         mode: {metric: {} for metric in METRICS}
         for mode in MODES
     }
+    raw_by_mode_metric_llm = {
+        mode: {metric: {} for metric in METRICS}
+        for mode in MODES
+    }
     paired_vs_original = {
         mode: {metric: {} for metric in METRICS}
         for mode in MODES
     }
     paired_lookup = {}
+    raw_paired_lookup = {}
+    raw_original = {metric: [] for metric in METRICS}
 
     for r in rows:
         script = r.get("script", "")
@@ -314,9 +320,19 @@ def main():
             delta = compute_delta(metric, gen_val, orig_val)
             deltas_by_mode_metric_llm[mode][metric].setdefault(llm, []).append(delta)
             paired_vs_original[mode][metric].setdefault(llm, []).append((gen_val, orig_val))
+            raw_by_mode_metric_llm[mode][metric].setdefault(llm, []).append(gen_val)
 
             key = (llm, metric, project)
             paired_lookup.setdefault(key, {})[mode] = delta
+            raw_paired_lookup.setdefault(key, {})[mode] = gen_val
+
+    for r in original_by_project.values():
+        for metric in METRICS:
+            col = METRIC_CONFIG[metric]["column"]
+            original_val = to_float(r.get(col, ""))
+            if original_val is None:
+                continue
+            raw_original[metric].append(original_val)
 
     for mode in MODES:
         lines.append(f"\n{mode.capitalize()} vs Original")
@@ -350,9 +366,12 @@ def main():
     lines.append("\nQuantitative Analysis")
     lines.append("Delta definition: accuracy = generated-original; exec_time/energy = original-generated (positive means improvement)")
 
-    plot_paths = []
+    delta_plot_paths = []
+    raw_plot_paths = []
+
+    lines.append("\nBox Plots")
     for metric in METRICS:
-        fig, axes = plt.subplots(1, 2, figsize=(16, 12))
+        fig, axes = plt.subplots(1, 2, figsize=(16, 12), sharey=True)
         plot_metric_label = "accuracy (%)" if metric == "accuracy" else metric
         fig.suptitle(f"{plot_metric_label} delta vs original (positive = better)")
 
@@ -380,7 +399,6 @@ def main():
                     capprops={"linewidth": 1.5},
                     boxprops={"linewidth": 1.5},
                 )
-                ax.axhline(0, color="gray", linestyle="--", linewidth=1)
                 ax.set_title(mode)
                 ax.tick_params(axis="x", rotation=35)
                 if metric == "accuracy":
@@ -395,18 +413,96 @@ def main():
                     loc="upper right",
                     frameon=True,
                 )
+                ax.axhline(0, color="gray", linestyle="--", linewidth=1)
 
         fig.tight_layout(rect=[0, 0, 1, 0.96])
         plot_path = RESULTS_DIR / f"{latest.name}_analysis_boxplot_{metric}.png"
         fig.savefig(plot_path, dpi=160)
         plt.close(fig)
-        plot_paths.append(plot_path)
+        delta_plot_paths.append(plot_path)
+
+    for metric in METRICS:
+        fig, axes = plt.subplots(1, 2, figsize=(16, 12), sharey=True)
+        metric_original = raw_original[metric]
+        metric_original_plot = list(metric_original) if metric == "accuracy" else list(metric_original)
+        plot_metric_label = "Accuracy" if metric == "accuracy" else metric
+        fig.suptitle(f"{plot_metric_label} by mode and source (raw)")
+
+        all_values_for_axis = list(metric_original_plot)
+
+        for ax, mode in zip(axes, MODES):
+            by_llm = raw_by_mode_metric_llm[mode][metric]
+            llms = sorted(by_llm.keys())
+            data = []
+            labels = []
+
+            for llm in llms:
+                values = by_llm[llm]
+                if not values:
+                    continue
+                data.append(values)
+                labels.append(llm)
+
+            if metric_original_plot:
+                data.append(metric_original_plot)
+                labels.append("original")
+
+            for vals in data:
+                all_values_for_axis.extend(vals)
+
+            if metric == "accuracy":
+                ylabel = "Accuracy"
+            else:
+                ylabel = plot_metric_label
+
+            if not data:
+                ax.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax.transAxes)
+                ax.set_title(mode)
+                ax.set_xticks([])
+            else:
+                ax.boxplot(
+                    data,
+                    tick_labels=labels,
+                    showfliers=False,  # Hide outlier dots for cleaner, standard line view.
+                    showmeans=False,   # Keep default median line only.
+                    medianprops={"color": "green", "linewidth": 2},
+                    whiskerprops={"linewidth": 1.5},
+                    capprops={"linewidth": 1.5},
+                    boxprops={"linewidth": 1.5},
+                )
+                ax.set_title(mode)
+                ax.tick_params(axis="x", rotation=35)
+                ax.set_ylabel(ylabel)
+                ax.legend(
+                    handles=[
+                        Line2D([0], [0], color="green", linewidth=2, label="Median"),
+                        Line2D([0], [0], color="blue", linestyle="--", linewidth=1, label="Original"),
+                    ],
+                    loc="upper right",
+                    frameon=True,
+                )
+                ax.axhline(
+                    np.median(metric_original_plot) if metric_original_plot else 0,
+                    color="blue",
+                    linestyle="--",
+                    linewidth=1,
+                )
+
+        fig.tight_layout(rect=[0, 0, 1, 0.96])
+        plot_path = RESULTS_DIR / f"{latest.name}_analysis_boxplot_raw_{metric}.png"
+        fig.savefig(plot_path, dpi=160)
+        plt.close(fig)
+        raw_plot_paths.append(plot_path)
 
     lines.append("\nBox Plots")
-    for p in plot_paths:
+    lines.append("Delta-based (existing behavior):")
+    for p in delta_plot_paths:
+        lines.append(str(p))
+    lines.append("Raw (including original):")
+    for p in raw_plot_paths:
         lines.append(str(p))
 
-    lines.append("\nPaired t-tests: Assisted vs Autonomous by model")
+    lines.append("\nPaired t-tests [delta]: Assisted vs Autonomous by model")
     lines.append("(paired by project, tested on delta values)")
     lines.append("Holm correction: per metric, across LLMs in this section")
     for metric in METRICS:
@@ -476,7 +572,7 @@ def main():
         if len(rows) == 0:
             lines.append("No paired data.")
 
-    lines.append("\nPaired t-tests: Original vs Assisted by model")
+    lines.append("\nPaired t-tests [delta]: Original vs Assisted by model")
     lines.append("(paired by project and model)")
     lines.append("Holm correction: per metric, across LLMs in this section")
     for metric in METRICS:
@@ -547,7 +643,7 @@ def main():
         if len(rows) == 0:
             lines.append("No paired data.")
 
-    lines.append("\nPaired t-tests: Original vs Autonomous by model")
+    lines.append("\nPaired t-tests [delta]: Original vs Autonomous by model")
     lines.append("(paired by project and model)")
     lines.append("Holm correction: per metric, across LLMs in this section")
     for metric in METRICS:
@@ -618,12 +714,252 @@ def main():
         if len(rows) == 0:
             lines.append("No paired data.")
 
-    lines.append("\nANOVA by mode per metric (factor: model)")
+    lines.append("\nPaired t-tests [raw]: Assisted vs Autonomous by model")
+    lines.append("(paired by project, tested on raw generated metric values)")
+    lines.append("Holm correction: per metric, across LLMs in this section")
+    for metric in METRICS:
+        lines.append(f"\nMetric: {metric}")
+        all_llms = sorted(
+            set(k_llm for k_llm, k_metric, _ in raw_paired_lookup.keys() if k_metric == metric)
+        )
+        rows = []
+        for llm in all_llms:
+            assisted = []
+            autonomous = []
+            for (k_llm, k_metric, _project), mode_map in raw_paired_lookup.items():
+                if k_llm != llm or k_metric != metric:
+                    continue
+                if "assisted" in mode_map and "autonomous" in mode_map:
+                    assisted.append(mode_map["assisted"])
+                    autonomous.append(mode_map["autonomous"])
+
+            n_pairs = len(assisted)
+            if n_pairs == 0:
+                continue
+
+            row = {"llm": llm, "n": n_pairs}
+            if n_pairs < 2:
+                row["status"] = "insufficient_pairs"
+                rows.append(row)
+                continue
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                t_stat, p_val = stats.ttest_rel(np.array(assisted), np.array(autonomous), nan_policy="omit")
+
+            row["t_stat"] = float(t_stat)
+            if np.isnan(t_stat) or np.isnan(p_val):
+                row["status"] = "insufficient_variance"
+                rows.append(row)
+            else:
+                diff = np.array(assisted) - np.array(autonomous)
+                mean_diff = float(np.mean(diff))
+                cohen_d = paired_cohens_d(diff)
+                ci_low, ci_high = paired_ci_mean(diff)
+                row["p_raw"] = float(p_val)
+                row["mean"] = mean_diff
+                row["cohen_d"] = cohen_d
+                row["ci_low"] = ci_low
+                row["ci_high"] = ci_high
+                rows.append(row)
+
+        p_raw = [r["p_raw"] for r in rows if "p_raw" in r]
+        p_adj = holm_adjust_pvalues(p_raw)
+        p_adj_iter = iter(p_adj)
+
+        for r in rows:
+            llm = r["llm"]
+            n_pairs = r["n"]
+            if "status" in r:
+                if r["status"] == "insufficient_pairs":
+                    lines.append(f"{llm}: n={n_pairs} | insufficient pairs for t-test")
+                elif r["status"] == "insufficient_variance":
+                    lines.append(f"{llm}: n={n_pairs} | insufficient variance for t-test")
+                continue
+
+            p_adj_val = next(p_adj_iter)
+            lines.append(
+                f"{llm}: n={n_pairs} | t={r['t_stat']:.5f} | p_ttest={r['p_raw']:.6f} | "
+                f"p_ttest_holm={p_adj_val:.6f} | mean(assisted-autonomous)={r['mean']:.4f} | "
+                f"cohen_d={r['cohen_d']:.4f} | 95% CI [{r['ci_low']:.4f}, {r['ci_high']:.4f}]"
+            )
+
+        if len(rows) == 0:
+            lines.append("No paired data.")
+
+    lines.append("\nPaired t-tests [raw]: Original vs Assisted by model")
+    lines.append("(paired by project and model)")
+    lines.append("Holm correction: per metric, across LLMs in this section")
+    for metric in METRICS:
+        lines.append(f"\nMetric: {metric}")
+        rows = []
+        for llm in sorted(paired_vs_original["assisted"][metric].keys()):
+            pairs = paired_vs_original["assisted"][metric][llm]
+            generated = np.array([g for g, _ in pairs], dtype=float)
+            original = np.array([o for _, o in pairs], dtype=float)
+            n_pairs = len(generated)
+            if n_pairs == 0:
+                continue
+
+            row = {"llm": llm, "n": n_pairs}
+            if n_pairs < 2:
+                row["status"] = "insufficient_pairs"
+                rows.append(row)
+                continue
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                t_stat, p_val = stats.ttest_rel(generated, original, nan_policy="omit")
+
+            row["t_stat"] = float(t_stat)
+            if np.isnan(t_stat) or np.isnan(p_val):
+                row["status"] = "insufficient_variance"
+                rows.append(row)
+            else:
+                diff = generated - original
+                mean_diff = float(np.mean(diff))
+                cohen_d = paired_cohens_d(diff)
+                ci_low, ci_high = paired_ci_mean(diff)
+                row["p_raw"] = float(p_val)
+                row["mean"] = mean_diff
+                row["cohen_d"] = cohen_d
+                row["ci_low"] = ci_low
+                row["ci_high"] = ci_high
+                rows.append(row)
+
+        p_raw = [r["p_raw"] for r in rows if "p_raw" in r]
+        p_adj = holm_adjust_pvalues(p_raw)
+        p_adj_iter = iter(p_adj)
+
+        for r in rows:
+            llm = r["llm"]
+            n_pairs = r["n"]
+            if "status" in r:
+                if r["status"] == "insufficient_pairs":
+                    lines.append(f"{llm}: n={n_pairs} | insufficient pairs for t-test")
+                elif r["status"] == "insufficient_variance":
+                    lines.append(f"{llm}: n={n_pairs} | insufficient variance for t-test")
+                continue
+
+            p_adj_val = next(p_adj_iter)
+            lines.append(
+                f"{llm}: n={n_pairs} | t={r['t_stat']:.5f} | p_ttest={r['p_raw']:.6f} | "
+                f"p_ttest_holm={p_adj_val:.6f} | mean(generated-original)={r['mean']:.4f} | "
+                f"cohen_d={r['cohen_d']:.4f} | 95% CI [{r['ci_low']:.4f}, {r['ci_high']:.4f}]"
+            )
+
+        if len(rows) == 0:
+            lines.append("No paired data.")
+
+    lines.append("\nPaired t-tests [raw]: Original vs Autonomous by model")
+    lines.append("(paired by project and model)")
+    lines.append("Holm correction: per metric, across LLMs in this section")
+    for metric in METRICS:
+        lines.append(f"\nMetric: {metric}")
+        rows = []
+        for llm in sorted(paired_vs_original["autonomous"][metric].keys()):
+            pairs = paired_vs_original["autonomous"][metric][llm]
+            generated = np.array([g for g, _ in pairs], dtype=float)
+            original = np.array([o for _, o in pairs], dtype=float)
+            n_pairs = len(generated)
+            if n_pairs == 0:
+                continue
+
+            row = {"llm": llm, "n": n_pairs}
+            if n_pairs < 2:
+                row["status"] = "insufficient_pairs"
+                rows.append(row)
+                continue
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                t_stat, p_val = stats.ttest_rel(generated, original, nan_policy="omit")
+
+            row["t_stat"] = float(t_stat)
+            if np.isnan(t_stat) or np.isnan(p_val):
+                row["status"] = "insufficient_variance"
+                rows.append(row)
+            else:
+                diff = generated - original
+                mean_diff = float(np.mean(diff))
+                cohen_d = paired_cohens_d(diff)
+                ci_low, ci_high = paired_ci_mean(diff)
+                row["p_raw"] = float(p_val)
+                row["mean"] = mean_diff
+                row["cohen_d"] = cohen_d
+                row["ci_low"] = ci_low
+                row["ci_high"] = ci_high
+                rows.append(row)
+
+        p_raw = [r["p_raw"] for r in rows if "p_raw" in r]
+        p_adj = holm_adjust_pvalues(p_raw)
+        p_adj_iter = iter(p_adj)
+
+        for r in rows:
+            llm = r["llm"]
+            n_pairs = r["n"]
+            if "status" in r:
+                if r["status"] == "insufficient_pairs":
+                    lines.append(f"{llm}: n={n_pairs} | insufficient pairs for t-test")
+                elif r["status"] == "insufficient_variance":
+                    lines.append(f"{llm}: n={n_pairs} | insufficient variance for t-test")
+                continue
+
+            p_adj_val = next(p_adj_iter)
+            lines.append(
+                f"{llm}: n={n_pairs} | t={r['t_stat']:.5f} | p_ttest={r['p_raw']:.6f} | "
+                f"p_ttest_holm={p_adj_val:.6f} | mean(generated-original)={r['mean']:.4f} | "
+                f"cohen_d={r['cohen_d']:.4f} | 95% CI [{r['ci_low']:.4f}, {r['ci_high']:.4f}]"
+            )
+
+        if len(rows) == 0:
+            lines.append("No paired data.")
+
+    lines.append("\nANOVA by mode per metric (factor: model) [delta]")
     lines.append("(one-way ANOVA + Tukey HSD post-hoc)")
     for mode in MODES:
         lines.append(f"\nMode: {mode}")
         for metric in METRICS:
             by_llm = deltas_by_mode_metric_llm[mode][metric]
+            llms = sorted(by_llm.keys())
+            groups = [np.array(by_llm[llm], dtype=float) for llm in llms if len(by_llm[llm]) > 0]
+            valid_llms = [llm for llm in llms if len(by_llm[llm]) > 0]
+
+            if len(groups) < 2:
+                lines.append(f"{metric}: insufficient data for ANOVA")
+                continue
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                f_stat, p_val = stats.f_oneway(*groups)
+
+            if np.isnan(f_stat) or np.isnan(p_val):
+                lines.append(f"{metric}: ANOVA undefined (constant/insufficient variance)")
+            else:
+                lines.append(f"{metric}: F={f_stat:.5f} p_anova={p_val:.6f}")
+
+            values = []
+            labels = []
+            for llm in valid_llms:
+                for v in by_llm[llm]:
+                    values.append(v)
+                    labels.append(llm)
+
+            if len(set(labels)) < 2:
+                lines.append(f"{metric} Tukey HSD: insufficient grouped data")
+                continue
+
+            tukey = pairwise_tukeyhsd(endog=np.array(values, dtype=float), groups=np.array(labels), alpha=0.05)
+            lines.append(f"{metric} Tukey HSD:")
+            for row in tukey.summary().as_text().splitlines():
+                lines.append(row)
+
+    lines.append("\nANOVA by mode per metric (factor: model) [raw]")
+    lines.append("(one-way ANOVA + Tukey HSD post-hoc)")
+    for mode in MODES:
+        lines.append(f"\nMode: {mode}")
+        for metric in METRICS:
+            by_llm = raw_by_mode_metric_llm[mode][metric]
             llms = sorted(by_llm.keys())
             groups = [np.array(by_llm[llm], dtype=float) for llm in llms if len(by_llm[llm]) > 0]
             valid_llms = [llm for llm in llms if len(by_llm[llm]) > 0]
