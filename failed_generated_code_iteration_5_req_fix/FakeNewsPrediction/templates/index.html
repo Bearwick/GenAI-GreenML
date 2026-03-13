@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fake News Detector</title>
+</head>
+<body style="text-align: center; margin-top: 100px;">
+    <h1>📰 Fake News Detection App</h1>
+    <form action="/predict" method="post">
+        <textarea name="news" rows="10" cols="80" placeholder="Yahan apni news paste karo..."></textarea><br><br>
+        <button type="submit">Check News</button>
+    </form>
+    <h2>{{ prediction }}</h2>
+</body>
+</html>
