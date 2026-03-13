@@ -7,6 +7,9 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
+import shutil
+import time
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -34,6 +37,43 @@ IGNORE_DIR_NAMES = {
 }
 
 TRACEBACK_ERR_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_\.]*)(?::\s*(.*))?$")
+
+
+def _venv_python_candidates(project_dir: Path) -> List[Path]:
+    venv_dir = project_dir / "venv"
+    return [
+        venv_dir / "bin" / "python",
+        venv_dir / "Scripts" / "python.exe",
+    ]
+
+
+def _is_pip_usable(venv_python: Path) -> tuple[bool, str]:
+    try:
+        version_result = subprocess.run(
+            [str(venv_python), "-m", "pip", "--version"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+        if version_result.returncode != 0:
+            msg = (version_result.stderr or version_result.stdout or "").strip()
+            return False, msg or f"pip --version failed with exit code {version_result.returncode}"
+
+        install_help_result = subprocess.run(
+            [str(venv_python), "-m", "pip", "install", "--help"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+        if install_help_result.returncode == 0:
+            return True, (version_result.stdout or version_result.stderr or "").strip()
+
+        msg = (install_help_result.stderr or install_help_result.stdout or "").strip()
+        return False, msg or f"pip install --help failed with exit code {install_help_result.returncode}"
+    except Exception as e:
+        return False, repr(e)
 
 
 @dataclass
@@ -132,37 +172,226 @@ def iter_generated_scripts(project_dir: Path) -> Iterable[Path]:
 
 
 def select_python(project_dir: Path) -> Path:
-    venv_python = project_dir / "venv" / "bin" / "python"
-    if venv_python.is_file():
-        return venv_python
+    for candidate in _venv_python_candidates(project_dir):
+        if candidate.is_file() and os.access(str(candidate), os.X_OK):
+            return candidate
     return Path(sys.executable)
 
 
-def run_script(project_dir: Path, script_path: Path, timeout_s: float) -> Tuple[bool, str, str]:
-    py = select_python(project_dir)
+def ensure_project_venv(project_dir: Path) -> tuple[Path | None, str]:
+    venv_dir = project_dir / "venv"
+
+    for candidate in _venv_python_candidates(project_dir):
+        if candidate.is_file() and os.access(str(candidate), os.X_OK):
+            pip_ok, pip_msg = _is_pip_usable(candidate)
+            if pip_ok:
+                return candidate, ""
+
+            # Try repairing pip in-place before recreating the environment.
+            subprocess.run(
+                [str(candidate), "-m", "ensurepip", "--upgrade"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False,
+            )
+            pip_ok, pip_msg = _is_pip_usable(candidate)
+            if pip_ok:
+                return candidate, "pip repaired via ensurepip"
+
+            logging.warning(
+                "existing venv python for %s is not usable (%s). Recreating ...",
+                project_dir.name,
+                pip_msg,
+            )
+            try:
+                shutil.rmtree(venv_dir)
+            except OSError as e:
+                return None, f"existing venv is corrupted and could not be removed: {e}"
+
+    candidates = [sys.executable, "python3", "python"]
+    last_error = ""
+
+    for py in candidates:
+        if not py:
+            continue
+        try:
+            logging.info("[i] Creating venv for %s using %s", project_dir.name, py)
+            result = subprocess.run(
+                [py, "-m", "venv", str(venv_dir)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False,
+            )
+
+            if result.returncode != 0:
+                stderr = (result.stderr or "").strip()
+                stdout = (result.stdout or "").strip()
+                msg = stderr or stdout or f"venv creation failed with exit code {result.returncode}"
+                last_error = f"{py}: {msg}"
+                continue
+
+            for candidate in _venv_python_candidates(project_dir):
+                if candidate.is_file() and os.access(str(candidate), os.X_OK):
+                    pip_ok, pip_msg = _is_pip_usable(candidate)
+                    if pip_ok:
+                        return candidate, "venv auto-created"
+
+                    return None, f"{py}: created venv but pip is not usable ({pip_msg})"
+
+            last_error = f"{py}: venv created but python executable not found"
+        except Exception as e:
+            last_error = f"{py}: {repr(e)}"
+
+    return None, f"venv creation failed ({last_error})"
+
+
+def sanitize_requirements_text(text: str) -> str:
+    lines: List[str] = []
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            lines.append(raw)
+            continue
+        if "==" in line and not line.startswith("-e "):
+            pkg = line.split("==", 1)[0].strip()
+            lines.append(pkg)
+        else:
+            lines.append(raw)
+    return "\n".join(lines) + "\n"
+
+
+def ensure_requirements(project_dir: Path, venv_python: Path) -> tuple[bool, str]:
+    req = project_dir / "requirements.txt"
+    if not req.is_file():
+        return True, ""
+
+    logging.debug("[i] Installing requirements for %s", project_dir.name)
+
+    subprocess.run(
+        [str(venv_python), "-m", "ensurepip", "--upgrade"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=False,
+    )
+
+    result = subprocess.run(
+        [str(venv_python), "-m", "pip", "install", "-r", str(req)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=False,
+    )
+
+    if result.returncode == 0:
+        return True, "requirements installed"
+
+    temp_req_path: Path | None = None
+    try:
+        original = req.read_text(encoding="utf-8")
+        relaxed = sanitize_requirements_text(original)
+
+        fd, temp_req = tempfile.mkstemp(prefix="relaxed_requirements_", suffix=".txt")
+        os.close(fd)
+        temp_req_path = Path(temp_req)
+        temp_req_path.write_text(relaxed, encoding="utf-8")
+
+        retry = subprocess.run(
+            [str(venv_python), "-m", "pip", "install", "-r", str(temp_req_path)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+
+        if retry.returncode == 0:
+            return True, "requirements installed (relaxed)"
+
+        err = (retry.stderr or "").strip()
+        out = (retry.stdout or "").strip()
+        msg = err or out or f"relaxed pip install failed with exit code {retry.returncode}"
+        msg = msg.replace("\n", " ")[:500]
+        return False, f"requirements install failed after relaxing pins: {msg}"
+    except Exception as e:
+        err = (result.stderr or "").strip()
+        out = (result.stdout or "").strip()
+        msg = err or out or repr(e)
+        msg = msg.replace("\n", " ")[:500]
+        return False, f"requirements install failed: {msg}"
+    finally:
+        try:
+            if temp_req_path is not None:
+                temp_req_path.unlink()
+        except Exception:
+            pass
+
+
+def run_script(
+    venv_python: Path,
+    project_dir: Path,
+    script_path: Path,
+    timeout_s: float,
+) -> Tuple[bool, str, str]:
+    py = venv_python
     timed_out = False
     rc: int | None = None
     out = ""
+    output_path: Path | None = None
 
     try:
-        proc = subprocess.run(
-            [str(py), str(script_path)],
-            cwd=str(project_dir),
-            capture_output=True,
-            text=True,
-            timeout=timeout_s,
-            check=False,
-        )
-        rc = proc.returncode
-        out = f"{proc.stdout}\n{proc.stderr}"
-    except subprocess.TimeoutExpired as e:
-        timed_out = True
-        out = f"{e.stdout or ''}\n{e.stderr or ''}"
-    except Exception as e:
-        exc = type(e).__name__
-        return False, exc, str(e) or exc
+        fd, out_path_str = tempfile.mkstemp(prefix="runlog_", suffix=".txt")
+        os.close(fd)
+        output_path = Path(out_path_str)
 
-    if rc == 0 and not timed_out:
+        try:
+            with output_path.open("w", encoding="utf-8") as out_f:
+                proc = subprocess.Popen(
+                    [str(py), str(script_path)],
+                    cwd=str(project_dir),
+                    stdout=out_f,
+                    stderr=subprocess.STDOUT,
+                )
+                try:
+                    rc = proc.wait(timeout=timeout_s)
+                except subprocess.TimeoutExpired:
+                    timed_out = True
+                    try:
+                        proc.terminate()
+                    except Exception:
+                        pass
+                    try:
+                        rc = proc.wait(timeout=10)
+                    except Exception:
+                        try:
+                            proc.kill()
+                        except Exception:
+                            pass
+                        try:
+                            rc = proc.wait(timeout=5)
+                        except Exception:
+                            rc = None
+        except Exception as e:
+            return False, type(e).__name__, str(e) or type(e).__name__
+
+        try:
+            out = output_path.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            out = ""
+    except Exception as e:
+        return False, type(e).__name__, str(e) or type(e).__name__
+    finally:
+        try:
+            if output_path is not None and output_path.exists():
+                output_path.unlink()
+        except Exception:
+            pass
+
+    if timed_out:
+        return False, "TimeoutExpired", "Script timed out"
+
+    if rc == 0:
         return True, "", ""
 
     error_type, error_cause = extract_error_details(out, rc, timed_out)
@@ -287,12 +516,40 @@ def analyze_iteration(iteration_dir: Path, timeout_s: float) -> Tuple[int, int]:
 
     project_dirs = [p for p in iteration_dir.iterdir() if p.is_dir()]
     for project_dir in sorted(project_dirs, key=lambda p: p.name):
+        venv_python, venv_note = ensure_project_venv(project_dir)
+        if venv_python is None:
+            req_fails = list(iter_generated_scripts(project_dir))
+            if not req_fails:
+                continue
+            for script_path in req_fails:
+                total_scripts += 1
+                failures.append(
+                    ScriptFailure(
+                        project=project_dir.name,
+                        script=script_path.name,
+                        mode=detect_mode(script_path.name),
+                        llm=detect_llm(script_path.name),
+                        error_type="EnvironmentError",
+                        error_cause=venv_note or "Failed to initialize project venv",
+                    )
+                )
+            continue
+
+        req_ok, req_note = ensure_requirements(project_dir, venv_python)
+        if not req_ok:
+            logging.warning("requirements installation failed for %s: %s", project_dir.name, req_note)
+
         scripts = sorted(iter_generated_scripts(project_dir), key=lambda p: p.name)
         for script_path in scripts:
             total_scripts += 1
             rel_script = script_path.relative_to(project_dir).as_posix()
             logging.info("▶ Running %s / %s", project_dir.name, rel_script)
-            ok, error_type, error_cause = run_script(project_dir, script_path, timeout_s)
+            ok, error_type, error_cause = run_script(
+                venv_python=venv_python,
+                project_dir=project_dir,
+                script_path=script_path,
+                timeout_s=timeout_s,
+            )
             if ok:
                 continue
 
