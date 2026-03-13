@@ -1,0 +1,199 @@
+[
+  {
+    "conversation_id": "conv_021",
+    "messages": [
+      {"sender": "user", "text": "I can’t login to my account."},
+      {"sender": "agent", "text": "Did you try resetting the password?"},
+      {"sender": "user", "text": "Still doesn’t work."},
+      {"sender": "agent", "text": "Let me get the tech team to help."},
+      {"sender": "user", "text": "Appreciate it."}
+    ]
+  },
+  {
+    "conversation_id": "conv_022",
+    "messages": [
+      {"sender": "user", "text": "Hey, did the landlord respond?"},
+      {"sender": "agent", "text": "Still waiting."},
+      {"sender": "user", "text": "Can you follow up again?"},
+      {"sender": "agent", "text": "Sure."},
+      {"sender": "user", "text": "Appreciated."}
+    ]
+  },
+  {
+    "conversation_id": "conv_023",
+    "messages": [
+      {"sender": "user", "text": "Can I pay 6 months upfront for discount?"},
+      {"sender": "agent", "text": "Yes, we can offer 2% off."},
+      {"sender": "user", "text": "Perfect!"},
+      {"sender": "agent", "text": "Will prepare papers."},
+      {"sender": "user", "text": "Thanks."}
+    ]
+  },
+  {
+    "conversation_id": "conv_024",
+    "messages": [
+      {"sender": "user", "text": "Is the flat available for a visit?"},
+      {"sender": "agent", "text": "Yes, tomorrow morning is open."},
+      {"sender": "user", "text": "Let’s do 11am."},
+      {"sender": "agent", "text": "Confirmed!"},
+      {"sender": "user", "text": "Thanks."}
+    ]
+  },
+  {
+    "conversation_id": "conv_025",
+    "messages": [
+      {"sender": "user", "text": "Can we arrange a viewing for tomorrow?"},
+      {"sender": "agent", "text": "Absolutely, what time?"},
+      {"sender": "user", "text": "5pm would be perfect."},
+      {"sender": "agent", "text": "Booked for 5pm."},
+      {"sender": "user", "text": "Great!"}
+    ]
+  },
+  {
+    "conversation_id": "conv_026",
+    "messages": [
+      {"sender": "user", "text": "Can I pay 6 months upfront for discount?"},
+      {"sender": "agent", "text": "Yes, we can offer 2% off."},
+      {"sender": "user", "text": "Perfect!"},
+      {"sender": "agent", "text": "Will prepare papers."},
+      {"sender": "user", "text": "Thanks."}
+    ]
+  },
+  {
+    "conversation_id": "conv_027",
+    "messages": [
+      {"sender": "user", "text": "What’s the square footage?"},
+      {"sender": "agent", "text": "Around 950 sq.ft."},
+      {"sender": "user", "text": "Good size. East-facing?"},
+      {"sender": "agent", "text": "Yes."},
+      {"sender": "user", "text": "Great."}
+    ]
+  },
+  {
+    "conversation_id": "conv_028",
+    "messages": [
+      {"sender": "user", "text": "Is rent flexible?"},
+      {"sender": "agent", "text": "Possibly. What do you propose?"},
+      {"sender": "user", "text": "Reduce to 80k from 85k."},
+      {"sender": "agent", "text": "Let me confirm."},
+      {"sender": "user", "text": "Thanks."}
+    ]
+  },
+  {
+    "conversation_id": "conv_029",
+    "messages": [
+      {"sender": "user", "text": "I can’t login to my account."},
+      {"sender": "agent", "text": "Did you try resetting the password?"},
+      {"sender": "user", "text": "Still doesn’t work."},
+      {"sender": "agent", "text": "Let me get the tech team to help."},
+      {"sender": "user", "text": "Appreciate it."}
+    ]
+  },
+  {
+    "conversation_id": "conv_030",
+    "messages": [
+      {"sender": "user", "text": "What’s the square footage?"},
+      {"sender": "agent", "text": "Around 950 sq.ft."},
+      {"sender": "user", "text": "Good size. East-facing?"},
+      {"sender": "agent", "text": "Yes."},
+      {"sender": "user", "text": "Great."}
+    ]
+  },
+  {
+    "conversation_id": "conv_031",
+    "messages": [
+      {"sender": "user", "text": "My internet is down."},
+      {"sender": "agent", "text": "Have you tried restarting the router?"},
+      {"sender": "user", "text": "Yes, no change."},
+      {"sender": "agent", "text": "I'll raise a ticket for support."},
+      {"sender": "user", "text": "Thanks!"}
+    ]
+  },
+  {
+    "conversation_id": "conv_032",
+    "messages": [
+      {"sender": "user", "text": "What are the amenities in the 1BHK?"},
+      {"sender": "agent", "text": "Gym, pool, and parking."},
+      {"sender": "user", "text": "Balcony included?"},
+      {"sender": "agent", "text": "Yes, spacious one."},
+      {"sender": "user", "text": "Noted."}
+    ]
+  },
+  {
+    "conversation_id": "conv_033",
+    "messages": [
+      {"sender": "user", "text": "Hi, I'd like to schedule a site visit."},
+      {"sender": "agent", "text": "Sure, when?"},
+      {"sender": "user", "text": "This Sunday morning."},
+      {"sender": "agent", "text": "Scheduled at 10AM."},
+      {"sender": "user", "text": "Thank you!"}
+    ]
+  },
+  {
+    "conversation_id": "conv_034",
+    "messages": [
+      {"sender": "user", "text": "Any update on the listing?"},
+      {"sender": "agent", "text": "It was taken yesterday."},
+      {"sender": "user", "text": "Oh okay, let me know if something similar shows up."},
+      {"sender": "agent", "text": "Sure."}
+    ]
+  },
+  {
+    "conversation_id": "conv_035",
+    "messages": [
+      {"sender": "user", "text": "The price is a bit high."},
+      {"sender": "agent", "text": "What’s your offer?"},
+      {"sender": "user", "text": "Maybe 5k less."},
+      {"sender": "agent", "text": "Let me check with the owner."},
+      {"sender": "user", "text": "Please do."}
+    ]
+  },
+  {
+    "conversation_id": "conv_036",
+    "messages": [
+      {"sender": "user", "text": "Hi, I'd like to schedule a site visit."},
+      {"sender": "agent", "text": "Sure, when?"},
+      {"sender": "user", "text": "This Sunday morning."},
+      {"sender": "agent", "text": "Scheduled at 10AM."},
+      {"sender": "user", "text": "Thank you!"}
+    ]
+  },
+  {
+    "conversation_id": "conv_037",
+    "messages": [
+      {"sender": "user", "text": "Can I pay 6 months upfront for discount?"},
+      {"sender": "agent", "text": "Yes, we can offer 2% off."},
+      {"sender": "user", "text": "Perfect!"},
+      {"sender": "agent", "text": "Will prepare papers."},
+      {"sender": "user", "text": "Thanks."}
+    ]
+  },
+  {
+    "conversation_id": "conv_038",
+    "messages": [
+      {"sender": "user", "text": "Any update on the listing?"},
+      {"sender": "agent", "text": "It was taken yesterday."},
+      {"sender": "user", "text": "Oh okay, let me know if something similar shows up."},
+      {"sender": "agent", "text": "Sure."}
+    ]
+  },
+  {
+    "conversation_id": "conv_039",
+    "messages": [
+      {"sender": "user", "text": "What are the amenities in the 1BHK?"},
+      {"sender": "agent", "text": "Gym, pool, and parking."},
+      {"sender": "user", "text": "Balcony included?"},
+      {"sender": "agent", "text": "Yes, spacious one."},
+      {"sender": "user", "text": "Noted."}
+    ]
+  },
+  {
+    "conversation_id": "conv_040",
+    "messages": [
+      {"sender": "user", "text": "Any update on the listing?"},
+      {"sender": "agent", "text": "It was taken yesterday."},
+      {"sender": "user", "text": "Oh okay, let me know if something similar shows up."},
+      {"sender": "agent", "text": "Sure."}
+    ]
+  }
+]
