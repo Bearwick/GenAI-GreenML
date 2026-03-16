@@ -85,12 +85,3 @@ _pickle.UnpicklingError:
   invalid load key, '\x0a'.: ML_CSV_Classification:GENAIGREENML_autonomous_chatgpt.py
 pyspark.errors.exceptions.captured.SparkRuntimeException:
   [USER_RAISED_EXCEPTION] Labels MUST NOT be Null or NaN SQLSTATE: P0001: SparkMLClassification2:GENAIGREENML_assisted_chatgpt.py
-Correctly ran scripts
-  Decision-Trees/GENAIGREENML_autonomous_chatgpt.py
-  Decision-Trees/GENAIGREENML_autonomous_claude.py
-  Decision-Trees/GENAIGREENML_autonomous_codex.py
-  Iris-Classification-ML-problem/GENAIGREENML_autonomous_codex.py
-  JunctionalClassifier2/GENAIGREENML_autonomous_codex.py
-  JunctionalClassifier2/GENAIGREENML_autonomous_gemini.py
-  JunctionalClassifier3/GENAIGREENML_assisted_chatgpt.py
-  K-Nearest-Neighbor-Algorithm/GENAIGREENML_autonomous_gemini.py
