@@ -1,17 +1,17 @@
 Iteration Folder: failed_generated_code_iteration_5
-Total Errors occured: 50
+Total Errors occured: 47
 Total Errors by assisted: 3
-Total Errors by original: 3
+Total Errors by original: 0
 Total Errors by autonomous: 44
-Type of Error by original: FileNotFoundError=2, ImportError=1
+Type of Error by original: none
 Type of Error by assisted: NameError=1, TypeError=1, ValueError=1
 Type of Error by autonomous: TypeError=15, SyntaxError=14, ValueError=8, IndentationError=5, AssertionError=2
-Total Errors per LLM: claude=23, chatgpt=10, gemini=10, codex=7
-Total Errors per LLM by original: chatgpt=3
+Total Errors per LLM: claude=23, gemini=10, chatgpt=7, codex=7
+Total Errors per LLM by original: none
 Total Errors per LLM by assisted: gemini=2, claude=1
 Total Errors per LLM by autonomous: claude=22, gemini=8, chatgpt=7, codex=7
-Type of Error per LLM: chatgpt -> ValueError=3, FileNotFoundError=2, SyntaxError=2, TypeError=2, ImportError=1 | claude -> SyntaxError=12, IndentationError=5, TypeError=4, AssertionError=1, NameError=1 | codex -> TypeError=4, ValueError=2, AssertionError=1 | gemini -> TypeError=6, ValueError=4
-Type of Error per LLM by original: chatgpt -> FileNotFoundError=2, ImportError=1
+Type of Error per LLM: chatgpt -> ValueError=3, SyntaxError=2, TypeError=2 | claude -> SyntaxError=12, IndentationError=5, TypeError=4, AssertionError=1, NameError=1 | codex -> TypeError=4, ValueError=2, AssertionError=1 | gemini -> TypeError=6, ValueError=4
+Type of Error per LLM by original: none
 Type of Error per LLM by assisted: claude -> NameError=1 | gemini -> TypeError=1, ValueError=1
 Type of Error per LLM by autonomous: chatgpt -> ValueError=3, SyntaxError=2, TypeError=2 | claude -> SyntaxError=12, IndentationError=5, TypeError=4, AssertionError=1 | codex -> TypeError=4, ValueError=2, AssertionError=1 | gemini -> TypeError=5, ValueError=3
 Error type with list of projects:script
@@ -20,8 +20,6 @@ SyntaxError: Air-Quality-Health-Prediction:GENAIGREENML_autonomous_claude.py, An
 ValueError: Air-Quality-Health-Prediction:GENAIGREENML_assisted_gemini.py, Annotated_Colab_Notebook:GENAIGREENML_autonomous_codex.py, BreastCancer_Classification:GENAIGREENML_autonomous_gemini.py, FakeNewsPrediction:GENAIGREENML_autonomous_chatgpt.py, Iris-Flower-Classification-Codealpha3:GENAIGREENML_autonomous_gemini.py, JunctionalClassifier2:GENAIGREENML_autonomous_chatgpt.py, JunctionalClassifier3:GENAIGREENML_autonomous_codex.py, Voting-Data-Classification:GENAIGREENML_autonomous_gemini.py, student-math-ml-analysis:GENAIGREENML_autonomous_chatgpt.py
 IndentationError: HWStudentGradPredictor:GENAIGREENML_autonomous_claude.py, JunctionalClassifier2:GENAIGREENML_autonomous_claude.py, JunctionalClassifier:GENAIGREENML_autonomous_claude.py, Multi-Turn-Intent-Classification:GENAIGREENML_autonomous_claude.py, Predicting-heart-diseases-:GENAIGREENML_autonomous_claude.py
 AssertionError: Algorithms_KnnClasifier:GENAIGREENML_autonomous_claude.py, JunctionalClassifier:GENAIGREENML_autonomous_codex.py
-FileNotFoundError: Na-ve-bayes-algorithm-to-classify-the-fetal-health-:GENAIGREENML_original_telemetry_chatgpt.py, Supervised-Data-mining-Customer-satisfaction-prediction-:GENAIGREENML_original_telemetry_chatgpt.py
-ImportError: Voting-Data-Classification:GENAIGREENML_original_telemetry_chatgpt.py
 NameError: Network_Intrusion_Detection_System:GENAIGREENML_assisted_claude.py
 Error type with exact causes and list of projects:script
 TypeError:
@@ -56,10 +54,5 @@ IndentationError:
 AssertionError:
   AssertionError: JunctionalClassifier:GENAIGREENML_autonomous_codex.py
   Dataset is empty after preprocessing: Algorithms_KnnClasifier:GENAIGREENML_autonomous_claude.py
-FileNotFoundError:
-  [Errno 2] No such file or directory: 'C:\\Users\\Mazen\\Downloads\\Bio-Assignment-2\\fetal_health.csv': Na-ve-bayes-algorithm-to-classify-the-fetal-health-:GENAIGREENML_original_telemetry_chatgpt.py
-  [Errno 2] No such file or directory: 'EireJet.csv': Supervised-Data-mining-Customer-satisfaction-prediction-:GENAIGREENML_original_telemetry_chatgpt.py
-ImportError:
-  cannot import name 'joblib' from 'sklearn.externals' (/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/failed_generated_code_iteration_5/Voting-Data-Classification/venv/lib/python3.13/site-packages/sklearn/externals/__init__.py): Voting-Data-Classification:GENAIGREENML_original_telemetry_chatgpt.py
 NameError:
   name 'train_idx' is not defined. Did you mean: 'train_df'?: Network_Intrusion_Detection_System:GENAIGREENML_assisted_claude.py

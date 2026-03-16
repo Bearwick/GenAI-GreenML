@@ -1,17 +1,17 @@
 Iteration Folder: failed_generated_code_iteration_3
-Total Errors occured: 72
+Total Errors occured: 69
 Total Errors by assisted: 6
-Total Errors by original: 3
+Total Errors by original: 0
 Total Errors by autonomous: 63
-Type of Error by original: FileNotFoundError=2, ImportError=1
+Type of Error by original: none
 Type of Error by assisted: TypeError=3, ValueError=2, SyntaxError=1
 Type of Error by autonomous: SyntaxError=22, TypeError=19, ValueError=11, AssertionError=5, IndentationError=4, AttributeError=1, RuntimeError=1
-Total Errors per LLM: claude=32, codex=16, chatgpt=12, gemini=12
-Total Errors per LLM by original: chatgpt=3
+Total Errors per LLM: claude=32, codex=16, gemini=12, chatgpt=9
+Total Errors per LLM by original: none
 Total Errors per LLM by assisted: codex=2, gemini=2, chatgpt=1, claude=1
 Total Errors per LLM by autonomous: claude=31, codex=14, gemini=10, chatgpt=8
-Type of Error per LLM: chatgpt -> ValueError=5, TypeError=3, FileNotFoundError=2, ImportError=1, RuntimeError=1 | claude -> SyntaxError=22, IndentationError=4, TypeError=4, AssertionError=1, ValueError=1 | codex -> TypeError=7, ValueError=5, AssertionError=4 | gemini -> TypeError=8, ValueError=2, AttributeError=1, SyntaxError=1
-Type of Error per LLM by original: chatgpt -> FileNotFoundError=2, ImportError=1
+Type of Error per LLM: chatgpt -> ValueError=5, TypeError=3, RuntimeError=1 | claude -> SyntaxError=22, IndentationError=4, TypeError=4, AssertionError=1, ValueError=1 | codex -> TypeError=7, ValueError=5, AssertionError=4 | gemini -> TypeError=8, ValueError=2, AttributeError=1, SyntaxError=1
+Type of Error per LLM by original: none
 Type of Error per LLM by assisted: chatgpt -> TypeError=1 | claude -> SyntaxError=1 | codex -> ValueError=2 | gemini -> TypeError=2
 Type of Error per LLM by autonomous: chatgpt -> ValueError=5, TypeError=2, RuntimeError=1 | claude -> SyntaxError=21, IndentationError=4, TypeError=4, AssertionError=1, ValueError=1 | codex -> TypeError=7, AssertionError=4, ValueError=3 | gemini -> TypeError=6, ValueError=2, AttributeError=1, SyntaxError=1
 Error type with list of projects:script
@@ -20,9 +20,7 @@ TypeError: Air-Quality-Health-Prediction:GENAIGREENML_assisted_gemini.py, Air-Qu
 ValueError: Air-Quality-Health-Prediction:GENAIGREENML_assisted_codex.py, Annotated_Colab_Notebook:GENAIGREENML_autonomous_codex.py, BreastCancer_Classification:GENAIGREENML_autonomous_gemini.py, FakeNewsPrediction:GENAIGREENML_autonomous_chatgpt.py, Iris-Flower-Classification-Codealpha2:GENAIGREENML_autonomous_codex.py, Iris-Flower-Classification-Codealpha:GENAIGREENML_autonomous_codex.py, JunctionalClassifier2:GENAIGREENML_autonomous_claude.py, JunctionalClassifier3:GENAIGREENML_autonomous_chatgpt.py, JunctionalClassifier:GENAIGREENML_autonomous_chatgpt.py, ML_CSV_Classification:GENAIGREENML_assisted_codex.py, Voting-Data-Classification:GENAIGREENML_autonomous_gemini.py, animals-classification:GENAIGREENML_autonomous_chatgpt.py, student-math-ml-analysis:GENAIGREENML_autonomous_chatgpt.py
 AssertionError: Algorithms_KnnClasifier:GENAIGREENML_autonomous_claude.py, FakeNewsPrediction:GENAIGREENML_autonomous_codex.py, Iris-Flower-Classification-Codealpha3:GENAIGREENML_autonomous_codex.py, JunctionalClassifier3:GENAIGREENML_autonomous_codex.py, JunctionalClassifier:GENAIGREENML_autonomous_codex.py
 IndentationError: Annotated_Colab_Notebook:GENAIGREENML_autonomous_claude.py, BreastCancer_Classification:GENAIGREENML_autonomous_claude.py, JunctionalClassifier:GENAIGREENML_autonomous_claude.py, SparkMLClassification2:GENAIGREENML_autonomous_claude.py
-FileNotFoundError: Na-ve-bayes-algorithm-to-classify-the-fetal-health-:GENAIGREENML_original_telemetry_chatgpt.py, Supervised-Data-mining-Customer-satisfaction-prediction-:GENAIGREENML_original_telemetry_chatgpt.py
 AttributeError: ML_CSV_Classification:GENAIGREENML_autonomous_gemini.py
-ImportError: Voting-Data-Classification:GENAIGREENML_original_telemetry_chatgpt.py
 RuntimeError: JunctionalClassifier2:GENAIGREENML_autonomous_chatgpt.py
 Error type with exact causes and list of projects:script
 SyntaxError:
@@ -63,12 +61,7 @@ IndentationError:
   expected an indented block after 'if' statement on line 108: Annotated_Colab_Notebook:GENAIGREENML_autonomous_claude.py
   expected an indented block after 'if' statement on line 90: BreastCancer_Classification:GENAIGREENML_autonomous_claude.py
   expected an indented block after 'if' statement on line 91: SparkMLClassification2:GENAIGREENML_autonomous_claude.py
-FileNotFoundError:
-  [Errno 2] No such file or directory: 'C:\\Users\\Mazen\\Downloads\\Bio-Assignment-2\\fetal_health.csv': Na-ve-bayes-algorithm-to-classify-the-fetal-health-:GENAIGREENML_original_telemetry_chatgpt.py
-  [Errno 2] No such file or directory: 'EireJet.csv': Supervised-Data-mining-Customer-satisfaction-prediction-:GENAIGREENML_original_telemetry_chatgpt.py
 AttributeError:
   'dict' object has no attribute 'columns': ML_CSV_Classification:GENAIGREENML_autonomous_gemini.py
-ImportError:
-  cannot import name 'joblib' from 'sklearn.externals' (/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/failed_generated_code_iteration_3/Voting-Data-Classification/venv/lib/python3.13/site-packages/sklearn/externals/__init__.py): Voting-Data-Classification:GENAIGREENML_original_telemetry_chatgpt.py
 RuntimeError:
   Unsupported pickle contents.: JunctionalClassifier2:GENAIGREENML_autonomous_chatgpt.py

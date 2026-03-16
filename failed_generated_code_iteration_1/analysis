@@ -1,17 +1,17 @@
 Iteration Folder: failed_generated_code_iteration_1
-Total Errors occured: 133
+Total Errors occured: 130
 Total Errors by assisted: 20
-Total Errors by original: 3
+Total Errors by original: 0
 Total Errors by autonomous: 110
-Type of Error by original: FileNotFoundError=2, ImportError=1
+Type of Error by original: none
 Type of Error by assisted: ValueError=8, TypeError=5, SyntaxError=3, UnicodeDecodeError=2, FileNotFoundError=1, TimeoutExpired=1
 Type of Error by autonomous: TypeError=41, SyntaxError=30, ValueError=17, AssertionError=13, IndentationError=3, NameError=2, RuntimeError=2, KeyError=1, _pickle.UnpicklingError=1
-Total Errors per LLM: claude=38, codex=37, chatgpt=33, gemini=25
-Total Errors per LLM by original: chatgpt=3
+Total Errors per LLM: claude=38, codex=37, chatgpt=30, gemini=25
+Total Errors per LLM by original: none
 Total Errors per LLM by assisted: chatgpt=7, gemini=6, codex=5, claude=2
 Total Errors per LLM by autonomous: claude=36, codex=32, chatgpt=23, gemini=19
-Type of Error per LLM: chatgpt -> ValueError=9, TypeError=8, AssertionError=7, FileNotFoundError=2, RuntimeError=2, ImportError=1, SyntaxError=1, TimeoutExpired=1, UnicodeDecodeError=1, _pickle.UnpicklingError=1 | claude -> SyntaxError=28, IndentationError=3, TypeError=3, AssertionError=2, NameError=1, ValueError=1 | codex -> TypeError=19, ValueError=12, AssertionError=4, KeyError=1, UnicodeDecodeError=1 | gemini -> TypeError=16, SyntaxError=4, ValueError=3, FileNotFoundError=1, NameError=1
-Type of Error per LLM by original: chatgpt -> FileNotFoundError=2, ImportError=1
+Type of Error per LLM: chatgpt -> ValueError=9, TypeError=8, AssertionError=7, RuntimeError=2, SyntaxError=1, TimeoutExpired=1, UnicodeDecodeError=1, _pickle.UnpicklingError=1 | claude -> SyntaxError=28, IndentationError=3, TypeError=3, AssertionError=2, NameError=1, ValueError=1 | codex -> TypeError=19, ValueError=12, AssertionError=4, KeyError=1, UnicodeDecodeError=1 | gemini -> TypeError=16, SyntaxError=4, ValueError=3, FileNotFoundError=1, NameError=1
+Type of Error per LLM by original: none
 Type of Error per LLM by assisted: chatgpt -> ValueError=4, TimeoutExpired=1, TypeError=1, UnicodeDecodeError=1 | claude -> SyntaxError=2 | codex -> ValueError=3, TypeError=1, UnicodeDecodeError=1 | gemini -> TypeError=3, FileNotFoundError=1, SyntaxError=1, ValueError=1
 Type of Error per LLM by autonomous: chatgpt -> AssertionError=7, TypeError=7, ValueError=5, RuntimeError=2, SyntaxError=1, _pickle.UnpicklingError=1 | claude -> SyntaxError=26, IndentationError=3, TypeError=3, AssertionError=2, NameError=1, ValueError=1 | codex -> TypeError=18, ValueError=9, AssertionError=4, KeyError=1 | gemini -> TypeError=13, SyntaxError=3, ValueError=2, NameError=1
 Error type with list of projects:script
@@ -19,12 +19,11 @@ TypeError: Air-Quality-Health-Prediction:GENAIGREENML_autonomous_codex.py, Algor
 SyntaxError: Algorithms_KnnClasifier:GENAIGREENML_autonomous_claude.py, Algorithms_KnnClasifier:GENAIGREENML_autonomous_gemini.py, BreastCancer_Classification:GENAIGREENML_autonomous_claude.py, CT_Project:GENAIGREENML_autonomous_chatgpt.py, CT_Project:GENAIGREENML_autonomous_claude.py, Classification-with-xgboost-on-binary.csv-data:GENAIGREENML_autonomous_claude.py, Cuisine-Predictor:GENAIGREENML_autonomous_claude.py, Decision-Trees:GENAIGREENML_assisted_claude.py, Decision-Trees:GENAIGREENML_autonomous_claude.py, DecisionTreeClassifier:GENAIGREENML_autonomous_claude.py, Deep-Learning-Classification:GENAIGREENML_autonomous_claude.py, Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity:GENAIGREENML_autonomous_claude.py, Diabetes-Classification-with-SVM:GENAIGREENML_autonomous_claude.py, HWStudentGradPredictor:GENAIGREENML_autonomous_claude.py, Iris-Classification-ML-problem:GENAIGREENML_autonomous_claude.py, Iris-Flower-Classification-Codealpha:GENAIGREENML_autonomous_claude.py, JunctionalClassifier2:GENAIGREENML_autonomous_gemini.py, JunctionalClassifier3:GENAIGREENML_autonomous_claude.py, JunctionalClassifier:GENAIGREENML_autonomous_claude.py, ML_CSV_Classification:GENAIGREENML_autonomous_claude.py, MaliciousSoftwareClassification:GENAIGREENML_autonomous_claude.py, Multi-Turn-Intent-Classification:GENAIGREENML_autonomous_claude.py, Network_Intrusion_Detection_System:GENAIGREENML_assisted_claude.py, Predicting-heart-diseases-:GENAIGREENML_autonomous_claude.py, Rock-or-Mine-prediction:GENAIGREENML_autonomous_claude.py, Spam-Email-Classifier:GENAIGREENML_autonomous_claude.py, SparkMLClassification2:GENAIGREENML_autonomous_claude.py, SparkMLClassification:GENAIGREENML_assisted_gemini.py, Supervised-Data-mining-Customer-satisfaction-prediction-:GENAIGREENML_autonomous_claude.py, Svm-GridsearchCV:GENAIGREENML_autonomous_claude.py, cars-classification:GENAIGREENML_autonomous_claude.py, dyslexia-randomforest:GENAIGREENML_autonomous_gemini.py, student-math-ml-analysis:GENAIGREENML_autonomous_claude.py
 ValueError: Air-Quality-Health-Prediction:GENAIGREENML_assisted_chatgpt.py, Air-Quality-Health-Prediction:GENAIGREENML_assisted_codex.py, Air-Quality-Health-Prediction:GENAIGREENML_assisted_gemini.py, Annotated_Colab_Notebook:GENAIGREENML_autonomous_chatgpt.py, BreastCancer_Classification:GENAIGREENML_autonomous_gemini.py, CT_Project:GENAIGREENML_assisted_chatgpt.py, CT_Project:GENAIGREENML_autonomous_gemini.py, Decision-Trees:GENAIGREENML_autonomous_codex.py, DecisionTreeClassifier:GENAIGREENML_assisted_chatgpt.py, FakeNewsPrediction:GENAIGREENML_autonomous_chatgpt.py, FakeNewsPrediction:GENAIGREENML_autonomous_codex.py, HWStudentGradPredictor:GENAIGREENML_assisted_codex.py, IMDB-Sentiment-Analysis:GENAIGREENML_autonomous_codex.py, Iris-Flower-Classification-Codealpha3:GENAIGREENML_autonomous_codex.py, JunctionalClassifier2:GENAIGREENML_autonomous_claude.py, JunctionalClassifier:GENAIGREENML_assisted_codex.py, JunctionalClassifier:GENAIGREENML_autonomous_codex.py, Multi-Turn-Intent-Classification:GENAIGREENML_autonomous_codex.py, Na-ve-bayes-algorithm-to-classify-the-fetal-health-:GENAIGREENML_autonomous_codex.py, SparkMLClassification2:GENAIGREENML_assisted_chatgpt.py, SparkMLClassification2:GENAIGREENML_autonomous_codex.py, Voting-Data-Classification:GENAIGREENML_autonomous_chatgpt.py, cars-classification:GENAIGREENML_autonomous_codex.py, spam-ham-detection:GENAIGREENML_autonomous_chatgpt.py, student-math-ml-analysis:GENAIGREENML_autonomous_chatgpt.py
 AssertionError: Annotated_Colab_Notebook:GENAIGREENML_autonomous_codex.py, Decision-Trees:GENAIGREENML_autonomous_chatgpt.py, DecisionTreeClassifier:GENAIGREENML_autonomous_chatgpt.py, Deep-Learning-Classification:GENAIGREENML_autonomous_chatgpt.py, IMDB-Sentiment-Analysis:GENAIGREENML_autonomous_chatgpt.py, Iris-Flower-Classification-Codealpha:GENAIGREENML_autonomous_chatgpt.py, Iris-ML-Lab:GENAIGREENML_autonomous_codex.py, JunctionalClassifier3:GENAIGREENML_autonomous_chatgpt.py, JunctionalClassifier3:GENAIGREENML_autonomous_codex.py, ML_CSV_Classification:GENAIGREENML_autonomous_codex.py, SCT_ML_3:GENAIGREENML_autonomous_claude.py, Social-Network-Ads:GENAIGREENML_autonomous_claude.py, cars-classification:GENAIGREENML_autonomous_chatgpt.py
-FileNotFoundError: Na-ve-bayes-algorithm-to-classify-the-fetal-health-:GENAIGREENML_original_telemetry_chatgpt.py, Supervised-Data-mining-Customer-satisfaction-prediction-:GENAIGREENML_assisted_gemini.py, Supervised-Data-mining-Customer-satisfaction-prediction-:GENAIGREENML_original_telemetry_chatgpt.py
 IndentationError: Air-Quality-Health-Prediction:GENAIGREENML_autonomous_claude.py, Annotated_Colab_Notebook:GENAIGREENML_autonomous_claude.py, dyslexia-randomforest:GENAIGREENML_autonomous_claude.py
 NameError: FakeNewsPrediction:GENAIGREENML_autonomous_claude.py, Network_Intrusion_Detection_System:GENAIGREENML_autonomous_gemini.py
 RuntimeError: JunctionalClassifier2:GENAIGREENML_autonomous_chatgpt.py, JunctionalClassifier:GENAIGREENML_autonomous_chatgpt.py
 UnicodeDecodeError: ML_CSV_Classification:GENAIGREENML_assisted_chatgpt.py, ML_CSV_Classification:GENAIGREENML_assisted_codex.py
-ImportError: Voting-Data-Classification:GENAIGREENML_original_telemetry_chatgpt.py
+FileNotFoundError: Supervised-Data-mining-Customer-satisfaction-prediction-:GENAIGREENML_assisted_gemini.py
 KeyError: spam-ham-detection:GENAIGREENML_autonomous_codex.py
 TimeoutExpired: JunctionalClassifier3:GENAIGREENML_assisted_chatgpt.py
 _pickle.UnpicklingError: ML_CSV_Classification:GENAIGREENML_autonomous_chatgpt.py
@@ -74,9 +73,6 @@ AssertionError:
   No samples after preprocessing: Social-Network-Ads:GENAIGREENML_autonomous_claude.py
   No samples left after removing missing targets.: JunctionalClassifier3:GENAIGREENML_autonomous_chatgpt.py
   Not enough numeric target values for regression.: Iris-Flower-Classification-Codealpha:GENAIGREENML_autonomous_chatgpt.py
-FileNotFoundError:
-  [Errno 2] No such file or directory: 'EireJet.csv': Supervised-Data-mining-Customer-satisfaction-prediction-:GENAIGREENML_assisted_gemini.py, Supervised-Data-mining-Customer-satisfaction-prediction-:GENAIGREENML_original_telemetry_chatgpt.py
-  [Errno 2] No such file or directory: 'C:\\Users\\Mazen\\Downloads\\Bio-Assignment-2\\fetal_health.csv': Na-ve-bayes-algorithm-to-classify-the-fetal-health-:GENAIGREENML_original_telemetry_chatgpt.py
 IndentationError:
   expected an indented block after 'for' statement on line 110: Annotated_Colab_Notebook:GENAIGREENML_autonomous_claude.py
   expected an indented block after 'if' statement on line 102: dyslexia-randomforest:GENAIGREENML_autonomous_claude.py
@@ -89,8 +85,8 @@ RuntimeError:
   Unsupported pickle contents for dataset.: JunctionalClassifier2:GENAIGREENML_autonomous_chatgpt.py
 UnicodeDecodeError:
   'utf-8' codec can't decode byte 0x80 in position 0: invalid start byte: ML_CSV_Classification:GENAIGREENML_assisted_chatgpt.py, ML_CSV_Classification:GENAIGREENML_assisted_codex.py
-ImportError:
-  cannot import name 'joblib' from 'sklearn.externals' (/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/failed_generated_code_iteration_1/Voting-Data-Classification/venv/lib/python3.13/site-packages/sklearn/externals/__init__.py): Voting-Data-Classification:GENAIGREENML_original_telemetry_chatgpt.py
+FileNotFoundError:
+  [Errno 2] No such file or directory: 'EireJet.csv': Supervised-Data-mining-Customer-satisfaction-prediction-:GENAIGREENML_assisted_gemini.py
 KeyError:
   "None of [Index([0, 1], dtype='int64')] are in the [columns]": spam-ham-detection:GENAIGREENML_autonomous_codex.py
 TimeoutExpired:
