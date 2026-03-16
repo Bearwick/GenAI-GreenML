@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
 
-df = pd.read_csv("C:\\Users\\Mazen\\Downloads\\Bio-Assignment-2\\fetal_health.csv")
+df = pd.read_csv("fetal_health.csv")
 y = df.iloc[:, -1:]
 df = df.drop(['fetal_health'], axis=1)
 
