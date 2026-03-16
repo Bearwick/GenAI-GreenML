@@ -60,8 +60,3 @@ AttributeError:
   'dict' object has no attribute 'empty': ML_CSV_Classification:GENAIGREENML_autonomous_gemini.py
 ImportError:
   cannot import name 'joblib' from 'sklearn.externals' (/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/failed_generated_code_iteration_4/Voting-Data-Classification/venv/lib/python3.13/site-packages/sklearn/externals/__init__.py): Voting-Data-Classification:GENAIGREENML_original_telemetry_chatgpt.py
-Correctly ran scripts
-  Cuisine-Predictor/GENAIGREENML_autonomous_claude.py
-  Iris-Classification-ML-problem/GENAIGREENML_autonomous_claude.py
-  JunctionalClassifier/GENAIGREENML_autonomous_chatgpt.py
-  SparkMLClassification2/GENAIGREENML_autonomous_codex.py
