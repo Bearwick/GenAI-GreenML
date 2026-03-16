@@ -416,6 +416,7 @@ def find_iteration_dirs(root_dir: Path, only_name: str | None) -> List[Path]:
 def format_analysis(
     folder_name: str,
     failures: List[ScriptFailure],
+    successful_scripts: List[tuple[str, str]],
 ) -> str:
     total_errors = len(failures)
 
@@ -506,12 +507,20 @@ def format_analysis(
                 entries = sorted(cause_map[cause])
                 lines.append(f"  {cause}: {', '.join(entries)}")
 
+    if successful_scripts:
+        lines.append("Correctly ran scripts")
+        for project_name, script in sorted(successful_scripts):
+            lines.append(f"  {project_name}/{script}")
+
     lines.append("")
     return "\n".join(lines)
 
 
-def analyze_iteration(iteration_dir: Path, timeout_s: float) -> Tuple[int, int]:
+def analyze_iteration(
+    iteration_dir: Path, timeout_s: float
+) -> Tuple[int, int, List[tuple[str, str]]]:
     failures: List[ScriptFailure] = []
+    successful_scripts: List[tuple[str, str]] = []
     total_scripts = 0
 
     project_dirs = [p for p in iteration_dir.iterdir() if p.is_dir()]
@@ -551,6 +560,7 @@ def analyze_iteration(iteration_dir: Path, timeout_s: float) -> Tuple[int, int]:
                 timeout_s=timeout_s,
             )
             if ok:
+                successful_scripts.append((project_dir.name, rel_script))
                 continue
 
             script_name = script_path.name
@@ -567,10 +577,10 @@ def analyze_iteration(iteration_dir: Path, timeout_s: float) -> Tuple[int, int]:
 
     analysis_path = iteration_dir / ANALYSIS_FILENAME
     analysis_path.write_text(
-        format_analysis(iteration_dir.name, failures),
+        format_analysis(iteration_dir.name, failures, successful_scripts),
         encoding="utf-8",
     )
-    return total_scripts, len(failures)
+    return total_scripts, len(failures), successful_scripts
 
 
 def main() -> None:
@@ -593,10 +603,15 @@ def main() -> None:
 
     grand_total_scripts = 0
     grand_total_failures = 0
+    all_successful_scripts: List[tuple[str, str]] = []
     for iteration_dir in iteration_dirs:
-        total_scripts, total_failures = analyze_iteration(iteration_dir, args.timeout_s)
+        total_scripts, total_failures, successful_scripts = analyze_iteration(
+            iteration_dir,
+            args.timeout_s,
+        )
         grand_total_scripts += total_scripts
         grand_total_failures += total_failures
+        all_successful_scripts.extend(successful_scripts)
         print(
             f"{iteration_dir.name}: analyzed {total_scripts} scripts, "
             f"errors={total_failures}, wrote {ANALYSIS_FILENAME}"
@@ -606,6 +621,10 @@ def main() -> None:
         f"Completed. Iterations={len(iteration_dirs)}, "
         f"scripts={grand_total_scripts}, errors={grand_total_failures}"
     )
+    if all_successful_scripts:
+        print("Correctly ran scripts:")
+        for project_name, script in sorted(all_successful_scripts):
+            print(f"  {project_name}/{script}")
 
 
 if __name__ == "__main__":
