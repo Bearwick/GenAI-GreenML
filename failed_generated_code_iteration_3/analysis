@@ -72,7 +72,3 @@ ImportError:
   cannot import name 'joblib' from 'sklearn.externals' (/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/failed_generated_code_iteration_3/Voting-Data-Classification/venv/lib/python3.13/site-packages/sklearn/externals/__init__.py): Voting-Data-Classification:GENAIGREENML_original_telemetry_chatgpt.py
 RuntimeError:
   Unsupported pickle contents.: JunctionalClassifier2:GENAIGREENML_autonomous_chatgpt.py
-Correctly ran scripts
-  Iris-ML-Lab/GENAIGREENML_autonomous_chatgpt.py
-  Iris-ML-Lab/GENAIGREENML_autonomous_codex.py
-  K-Nearest-Neighbor-Algorithm/GENAIGREENML_autonomous_chatgpt.py
