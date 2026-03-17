@@ -36,6 +36,11 @@ gemini:
 assisted: accuracy inc=7 dec=8 eq=31 | exec_time inc=3 dec=45 eq=1 | energy inc=3 dec=46 eq=0
 autonomous: accuracy inc=17 dec=14 eq=9 | exec_time inc=2 dec=41 eq=0 | energy inc=2 dec=41 eq=0
 
+Performance category visuals
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260316_170958.csv_analysis/results_20260316_170958.csv_analysis_mode_performance_stacked.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260316_170958.csv_analysis/results_20260316_170958.csv_analysis_mode_performance_stacked_pct.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260316_170958.csv_analysis/results_20260316_170958.csv_analysis_mode_performance_net_inc_minus_dec.png
+
 Quantitative Analysis
 Delta definition: accuracy = generated-original; exec_time/energy = original-generated (positive means improvement)
 

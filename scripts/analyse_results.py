@@ -131,6 +131,141 @@ def holm_adjust_pvalues(p_values):
     return out.tolist()
 
 
+def save_performance_category_plots(analysis_dir: Path, latest: Path, counts: dict, plt, np) -> list[Path]:
+    mode_names = [m.title() for m in MODES]
+    x = np.arange(len(MODES))
+    width = 0.55
+
+    metric_labels = {
+        "accuracy": "Accuracy",
+        "exec_time": "Execution time",
+        "energy": "Energy",
+    }
+
+    color_inc = "#2ca02c"
+    color_dec = "#d62728"
+    color_eq = "#7f7f7f"
+
+    stacked_path = analysis_dir / f"{latest.name}_analysis_mode_performance_stacked.png"
+    fig, axes = plt.subplots(1, len(METRICS), figsize=(5 * len(METRICS), 5), sharey=False)
+    if len(METRICS) == 1:
+        axes = [axes]
+    for ax, metric in zip(axes, METRICS):
+        inc = np.array([counts[m][metric]["inc"] for m in MODES], dtype=float)
+        dec = np.array([counts[m][metric]["dec"] for m in MODES], dtype=float)
+        eq = np.array([counts[m][metric]["eq"] for m in MODES], dtype=float)
+
+        ax.bar(x, inc, width, color=color_inc, label="inc")
+        ax.bar(x, dec, width, bottom=inc, color=color_dec, label="dec")
+        ax.bar(x, eq, width, bottom=inc + dec, color=color_eq, label="eq")
+
+        for i in range(len(MODES)):
+            total = inc[i] + dec[i] + eq[i]
+            if total > 0:
+                ax.text(x[i], total + max(1, 0.02 * total), f"{int(total)}", ha="center", va="bottom", fontsize=8)
+
+        ax.set_xticks(x)
+        ax.set_xticklabels(mode_names)
+        ax.set_title(metric_labels.get(metric, metric))
+        ax.set_ylabel("Projects/rows")
+        ax.tick_params(axis="x", rotation=0)
+        ax.grid(axis="y", alpha=0.25)
+        if ax == axes[0]:
+            ax.legend(loc="upper right", fontsize=8)
+
+    fig.suptitle("LLM performance relative to original (count, stacked)")
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    fig.savefig(stacked_path, dpi=160)
+    plt.close(fig)
+
+    percent_path = analysis_dir / f"{latest.name}_analysis_mode_performance_stacked_pct.png"
+    fig, axes = plt.subplots(1, len(METRICS), figsize=(5 * len(METRICS), 5), sharey=False)
+    if len(METRICS) == 1:
+        axes = [axes]
+    for ax, metric in zip(axes, METRICS):
+        inc = np.array([counts[m][metric]["inc"] for m in MODES], dtype=float)
+        dec = np.array([counts[m][metric]["dec"] for m in MODES], dtype=float)
+        eq = np.array([counts[m][metric]["eq"] for m in MODES], dtype=float)
+        totals = inc + dec + eq
+        with np.errstate(divide="ignore", invalid="ignore"):
+            inc_pct = np.where(totals > 0, inc / totals * 100.0, 0.0)
+            dec_pct = np.where(totals > 0, dec / totals * 100.0, 0.0)
+            eq_pct = np.where(totals > 0, eq / totals * 100.0, 0.0)
+
+        ax.bar(x, inc_pct, width, color=color_inc, label="inc")
+        ax.bar(x, dec_pct, width, bottom=inc_pct, color=color_dec, label="dec")
+        ax.bar(x, eq_pct, width, bottom=inc_pct + dec_pct, color=color_eq, label="eq")
+
+        for i in range(len(MODES)):
+            if totals[i] > 0:
+                ax.text(
+                    x[i],
+                    101,
+                    f"n={int(totals[i])}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=8,
+                )
+
+        ax.set_xticks(x)
+        ax.set_xticklabels(mode_names)
+        ax.set_title(metric_labels.get(metric, metric))
+        ax.set_ylabel("Percentage")
+        ax.tick_params(axis="x", rotation=0)
+        ax.set_ylim(0, 105)
+        ax.grid(axis="y", alpha=0.25)
+        if ax == axes[0]:
+            ax.legend(loc="upper right", fontsize=8)
+
+    fig.suptitle("LLM performance relative to original (percentage by mode)")
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    fig.savefig(percent_path, dpi=160)
+    plt.close(fig)
+
+    net_path = analysis_dir / f"{latest.name}_analysis_mode_performance_net_inc_minus_dec.png"
+    fig, ax = plt.subplots(figsize=(8, 5))
+    n_metrics = len(METRICS)
+    ind = np.arange(n_metrics)
+    bar_width = 0.35
+
+    assisted_net = np.array([counts["assisted"][metric]["inc"] - counts["assisted"][metric]["dec"] for metric in METRICS], dtype=float)
+    autonomous_net = np.array([counts["autonomous"][metric]["inc"] - counts["autonomous"][metric]["dec"] for metric in METRICS], dtype=float)
+
+    ax.axhline(0, color="black", linewidth=1)
+    ax.bar(ind - bar_width / 2, assisted_net, bar_width, label="assisted", color="#1f77b4")
+    ax.bar(ind + bar_width / 2, autonomous_net, bar_width, label="autonomous", color="#ff7f0e")
+
+    for i in range(n_metrics):
+        ax.text(
+            ind[i] - bar_width / 2,
+            assisted_net[i] + (0.1 if assisted_net[i] >= 0 else -0.3),
+            str(int(assisted_net[i])),
+            ha="center",
+            va="bottom" if assisted_net[i] >= 0 else "top",
+            fontsize=8,
+        )
+        ax.text(
+            ind[i] + bar_width / 2,
+            autonomous_net[i] + (0.1 if autonomous_net[i] >= 0 else -0.3),
+            str(int(autonomous_net[i])),
+            ha="center",
+            va="bottom" if autonomous_net[i] >= 0 else "top",
+            fontsize=8,
+        )
+
+    ax.set_xticks(ind)
+    ax.set_xticklabels([metric_labels.get(m, m) for m in METRICS])
+    ax.set_title("LLM performance net score (inc - dec)")
+    ax.set_ylabel("Net score")
+    ax.grid(axis="y", alpha=0.25)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(net_path, dpi=160)
+    plt.close(fig)
+
+    return [stacked_path, percent_path, net_path]
+
+
 def detect_mode(script: str) -> str | None:
     s = script.lower()
     if "assisted" in s:
@@ -364,6 +499,11 @@ def main():
                     c = counts_by_llm[llm][mode][metric]
                     parts.append(f"{metric} inc={c['inc']} dec={c['dec']} eq={c['eq']}")
                 lines.append(f"{mode}: {' | '.join(parts)}")
+
+    perf_plot_paths = save_performance_category_plots(analysis_dir, latest, counts, plt, np)
+    lines.append("\nPerformance category visuals")
+    for path in perf_plot_paths:
+        lines.append(str(path))
 
     lines.append("\nQuantitative Analysis")
     lines.append("Delta definition: accuracy = generated-original; exec_time/energy = original-generated (positive means improvement)")
