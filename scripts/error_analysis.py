@@ -339,7 +339,7 @@ def plot_last_iteration_error_types(iterations: List[Dict[str, object]], out_dir
                 fontsize=9,
             )
 
-    ax.set_title(f"Error types by mode (last iteration: {last['iteration']})")
+    ax.set_title(f"Error types by mode (final iteration)")
     ax.set_xlabel("Error type")
     ax.set_ylabel("Error count")
     ax.set_xticks(idx)
