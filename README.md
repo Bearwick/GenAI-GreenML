@@ -21,6 +21,7 @@ This dataset was developed as part of a master’s thesis at the **Norwegian Uni
 7. [Analyse Results](#analyse-results)
 8. [Generate Code Iterations (Failed Scripts)](#generate-code-iterations-failed-scripts)
 9. [Analyse Failed Code](#analyse-failed-code)
+10. [Analyse Errors](#analyse-errors)
 
 ## Repository Information
 
@@ -253,4 +254,16 @@ To analyse a specific iteration:
 
 ```
 python ./scripts/analyse_failed_scripts.py --iteration failed_generated_code_iteration_1
+```
+
+## Analyse Errors
+
+Analyse the error analysis from failed iterations.
+
+```
+cd scripts
+source venv/bin/activate
+python ./error_analysis.py
+deactivate
+cd ..
 ```
