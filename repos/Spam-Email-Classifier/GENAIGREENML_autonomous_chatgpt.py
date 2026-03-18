@@ -218,7 +218,7 @@ def main():
                         norm="l2"
                     ))
                 ])
-                transformers.append(("text", text_transformer, text_cols[0] if len(text_cols) == 1 else text_cols))
+                transformers.append(("text", text_transformer, text_cols))
 
             # Separate numeric vs categorical among non-text
             num_cols = []
@@ -304,7 +304,7 @@ def main():
                         norm="l2"
                     ))
                 ])
-                transformers.append(("text", text_transformer, text_cols[0] if len(text_cols) == 1 else text_cols))
+                transformers.append(("text", text_transformer, text_cols))
 
             num_cols = []
             cat_cols = []
