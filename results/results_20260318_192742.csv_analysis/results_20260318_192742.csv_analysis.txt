@@ -1,10 +1,10 @@
-Results file: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv
-ML Projects: 51
+Results file: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv
+ML Projects: 50
 ML Projects with original OK: 50
-Distinct code files: 412
-Distinct code files (OK): 408
-Assisted + autonomous code files: 361
-Assisted + autonomous code files (OK): 358
+Distinct code files: 403
+Distinct code files (OK): 403
+Assisted + autonomous code files: 353
+Assisted + autonomous code files (OK): 353
 A+A OK with comparable original: 353
 
 Assisted vs Original
@@ -37,9 +37,9 @@ assisted: accuracy inc=7 dec=8 eq=30 | exec_time inc=3 dec=45 eq=0 | energy inc=
 autonomous: accuracy inc=18 dec=12 eq=9 | exec_time inc=1 dec=41 eq=0 | energy inc=2 dec=40 eq=0
 
 Performance category visuals
-/cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_mode_performance_stacked.png
-/cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_mode_performance_stacked_pct.png
-/cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_mode_performance_net_inc_minus_dec.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_mode_performance_stacked.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_mode_performance_stacked_pct.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_mode_performance_net_inc_minus_dec.png
 
 Quantitative Analysis
 Delta definition: accuracy = generated-original; exec_time/energy = original-generated (positive means improvement)
@@ -48,13 +48,13 @@ Box Plots
 
 Box Plots
 Delta-based (existing behavior):
-/cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_boxplot_accuracy.png
-/cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_boxplot_exec_time.png
-/cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_boxplot_energy.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_boxplot_accuracy.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_boxplot_exec_time.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_boxplot_energy.png
 Raw (including original):
-/cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_boxplot_raw_accuracy.png
-/cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_boxplot_raw_exec_time.png
-/cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_boxplot_raw_energy.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_boxplot_raw_accuracy.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_boxplot_raw_exec_time.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_boxplot_raw_energy.png
 
 Paired t-tests [delta]: Assisted vs Autonomous by model
 (paired by project, tested on delta values)
@@ -189,24 +189,24 @@ codex: n=43 | t=-7.73851 | p_ttest=0.000000 | p_ttest_holm=0.000000 | mean(gener
 gemini: n=42 | t=-4.31810 | p_ttest=0.000097 | p_ttest_holm=0.000195 | mean(generated-original)=-6073.3349 | cohen_d=-0.6663 | 95% CI [-8913.7841, -3232.8858]
 
 T-value Plots
-delta: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_delta_assisted_vs_autonomous_accuracy.png
-delta: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_delta_assisted_vs_autonomous_exec_time.png
-delta: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_delta_assisted_vs_autonomous_energy.png
-delta: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_delta_original_vs_assisted_accuracy.png
-delta: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_delta_original_vs_assisted_exec_time.png
-delta: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_delta_original_vs_assisted_energy.png
-delta: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_delta_original_vs_autonomous_accuracy.png
-delta: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_delta_original_vs_autonomous_exec_time.png
-delta: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_delta_original_vs_autonomous_energy.png
-raw: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_raw_assisted_vs_autonomous_accuracy.png
-raw: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_raw_assisted_vs_autonomous_exec_time.png
-raw: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_raw_assisted_vs_autonomous_energy.png
-raw: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_raw_original_vs_assisted_accuracy.png
-raw: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_raw_original_vs_assisted_exec_time.png
-raw: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_raw_original_vs_assisted_energy.png
-raw: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_raw_original_vs_autonomous_accuracy.png
-raw: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_raw_original_vs_autonomous_exec_time.png
-raw: /cluster/home/edvardbj/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_raw_original_vs_autonomous_energy.png
+delta: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_delta_assisted_vs_autonomous_accuracy.png
+delta: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_delta_assisted_vs_autonomous_exec_time.png
+delta: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_delta_assisted_vs_autonomous_energy.png
+delta: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_delta_original_vs_assisted_accuracy.png
+delta: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_delta_original_vs_assisted_exec_time.png
+delta: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_delta_original_vs_assisted_energy.png
+delta: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_delta_original_vs_autonomous_accuracy.png
+delta: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_delta_original_vs_autonomous_exec_time.png
+delta: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_delta_original_vs_autonomous_energy.png
+raw: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_raw_assisted_vs_autonomous_accuracy.png
+raw: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_raw_assisted_vs_autonomous_exec_time.png
+raw: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_raw_assisted_vs_autonomous_energy.png
+raw: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_raw_original_vs_assisted_accuracy.png
+raw: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_raw_original_vs_assisted_exec_time.png
+raw: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_raw_original_vs_assisted_energy.png
+raw: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_raw_original_vs_autonomous_accuracy.png
+raw: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_raw_original_vs_autonomous_exec_time.png
+raw: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/results_20260318_192742.csv_analysis/results_20260318_192742.csv_analysis_tvalues_raw_original_vs_autonomous_energy.png
 
 ANOVA by mode per metric (factor: model) [delta]
 (one-way ANOVA + Tukey HSD post-hoc)
@@ -378,9 +378,4 @@ chatgpt gemini -420.0393 0.0008  -698.406 -141.6727   True
   codex gemini  -30.7551 0.9917 -309.1218  247.6115  False
 ----------------------------------------------------------
 
-Failed runs: 4
-Failed list:
-SparkMLClassification: GENAIGREENML_original_telemetry_chatgpt.py
-SparkMLClassification: GENAIGREENML_assisted_chatgpt.py
-SparkMLClassification: GENAIGREENML_assisted_claude.py
-SparkMLClassification: GENAIGREENML_assisted_gemini.py
+Failed runs: 0
