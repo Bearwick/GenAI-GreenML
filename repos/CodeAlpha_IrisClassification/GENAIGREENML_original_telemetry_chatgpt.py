@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 def main() -> None:
     try:
-        data = pd.read_csv("C:/Users/Lalit Pathak/python2.0/Iris.csv")
+        data = pd.read_csv("Iris.csv")
     except FileNotFoundError:
         exit()
 
