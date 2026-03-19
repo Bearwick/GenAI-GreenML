@@ -10,88 +10,80 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 
-DATASET_PATH = "diabetes.csv"
+# --- Robust CSV Loading ---
+DATASET_PATH = "heart.csv"
 
-# Robust CSV loading
 try:
     df = pd.read_csv(DATASET_PATH)
-    if df.shape[1] < 2:
-        df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
 except Exception:
-    df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
+    df = pd.DataFrame()
 
-# Normalize column names
-df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
-df = df[[c for c in df.columns if not c.startswith('Unnamed')]]
+# Check if parsing produced a single column (possible separator issue)
+if df.shape[1] <= 1:
+    try:
+        df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
+    except Exception:
+        pass
 
-# Identify target and features
-expected_target = 'Outcome'
-if expected_target in df.columns:
-    target_col = expected_target
-else:
-    # Fallback: pick last column or a non-constant numeric column
-    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-    target_col = numeric_cols[-1] if numeric_cols else df.columns[-1]
+# If still single column, try whitespace separator (header line looks space-separated)
+if df.shape[1] <= 1:
+    try:
+        df = pd.read_csv(DATASET_PATH, sep=r'\s+')
+    except Exception:
+        pass
 
-feature_cols = [c for c in df.columns if c != target_col]
+# --- Column Name Normalization ---
+df.columns = [str(c).strip() for c in df.columns]
+df.columns = [' '.join(c.split()) for c in df.columns]
+# Drop unnamed columns
+df = df[[c for c in df.columns if not c.lower().startswith('unnamed')]]
 
-# Coerce all to numeric where possible
-for c in [target_col] + feature_cols:
-    df[c] = pd.to_numeric(df[c], errors='coerce')
+# --- Identify schema ---
+# Based on DATASET_HEADERS and context: this is the UCI Heart Disease dataset.
+# The headers line "70.0 1.0 4.0 130.0 322.0 0.0 2.0 109.0 0.0 2.4 2.0 3.0 3.0 2"
+# suggests the CSV may have numeric headers (the first data row used as header).
+# Standard UCI heart disease columns:
+EXPECTED_COLS = ['age', 'sex', 'cp', 'trestbps', 'chol', 'fbs', 'restecg',
+                 'thalach', 'exang', 'oldpeak', 'slope', 'ca', 'thal', 'target']
 
-# Drop rows with NaN in target
-df = df.dropna(subset=[target_col])
+# If the number of columns matches expected, rename
+if df.shape[1] == len(EXPECTED_COLS):
+    # Check if headers look numeric (i.e., the first row was used as header)
+    headers_look_numeric = True
+    for c in df.columns:
+        try:
+            float(c)
+        except (ValueError, TypeError):
+            headers_look_numeric = False
+            break
 
-# Keep only numeric feature columns that exist
-feature_cols = [c for c in feature_cols if df[c].dtype.kind in ('i', 'f', 'u')]
-
-# Impute NaN in features with median
-for c in feature_cols:
-    median_val = df[c].median()
-    df[c] = df[c].fillna(median_val)
-
-# Replace inf
-df = df.replace([np.inf, -np.inf], np.nan).dropna(subset=feature_cols + [target_col])
-
-assert df.shape[0] > 0, "Dataset empty after preprocessing"
-
-X = df[list(feature_cols)].values
-y = df[target_col].values
-
-# Determine task type
-n_classes = len(np.unique(y))
-is_classification = n_classes >= 2 and n_classes <= 20
-
-if not is_classification or n_classes < 2:
-    # Fallback: trivial baseline
-    from sklearn.dummy import DummyClassifier
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    model = DummyClassifier(strategy='most_frequent')
-    model.fit(X_train, y_train)
-    accuracy = model.score(X_test, y_test)
-else:
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
+    if headers_look_numeric:
+        # The actual header row is data; we need to recover it
+        header_row = pd.DataFrame([df.columns.tolist()], columns=EXPECTED_COLS)
+        df.columns = EXPECTED_COLS
+        # Convert header_row values to match dtypes
+        for col in EXPECTED_COLS:
+            header_row[col] = pd.to_numeric(header_row[col], errors='coerce')
+        df = pd.concat([header_row, df], ignore_index=True)
+    else:
+        # Headers are meaningful strings; check if they match expected or just use them
+        # Map to expected if possible
+        pass
+elif df.shape[1] == 14:
+    # Right number of columns, assign standard names
+    headers_look_numeric = all(
+        isinstance(c, (int, float)) or (isinstance(c, str) and c.replace('.', '', 1).replace('-', '', 1).isdigit())
+        for c in df.columns
     )
+    if headers_look_numeric:
+        header_row = pd.DataFrame([df.columns.tolist()], columns=EXPECTED_COLS)
+        df.columns = EXPECTED_COLS
+        for col in EXPECTED_COLS:
+            header_row[col] = pd.to_numeric(header_row[col], errors='coerce')
+        df = pd.concat([header_row, df], ignore_index=True)
 
-    assert X_train.shape[0] > 0 and X_test.shape[0] > 0, "Empty train or test split"
+# --- Coerce all columns to numeric ---
+for col in df.columns:
+    df[col] = pd.to_numeric(df[col], errors='coerce')
 
-    # Lightweight pipeline: StandardScaler + LogisticRegression
-    pipeline = Pipeline([
-        ('scaler', StandardScaler()),
-        ('clf', LogisticRegression(
-            max_iter=300,
-            solver='lbfgs',
-            C=1.0,
-            random_state=42
-        ))
-    ])
-
-    pipeline.fit(X_train, y_train)
-    y_pred = pipeline.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-
-print(f"ACCURACY={accuracy:.6f}")
-
-# OPTIMIZATION SUMMARY
-# 1. Model choice: LogisticRegression with lbfgs solver is one of the most energy-efficient
+# --- Drop rows/cols that are all

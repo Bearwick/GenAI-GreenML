@@ -1,6 +1,6 @@
 # GenAI-GreenML
 
-**GenAI-GreenML** is an open-source dataset consisting of curated machine learning repositories collected for research on generative artificial intelligence and sustainable machine learning development. The dataset includes 51 small-scale (<500 MB) GitHub projects focused on tabular and natural language processing (NLP) tasks. Each repository contains both source code and datasets that enable reproducible experiments on model performance, energy consumption, and green coding practices.
+**GenAI-GreenML** is an open-source dataset consisting of curated machine learning repositories collected for research on generative artificial intelligence and sustainable machine learning development. The dataset includes 50 small-scale (<500 MB) GitHub projects focused on tabular and natural language processing (NLP) tasks. Each repository contains both source code and datasets that enable reproducible experiments on model performance, energy consumption, and green coding practices.
 
 This dataset was developed as part of a master’s thesis at the **Norwegian University of Science and Technology (NTNU)**, investigating how large language models (LLMs) can be utilised in producing more energy-efficient machine learning code.
 
@@ -188,6 +188,12 @@ See output in the results folder.
 ### CLI Flags
 
 Flags can be used together.
+
+Only process projects whose directory name matches this regex:
+
+```
+python scripts/run_ml_projects.py --project-regex <regex>
+```
 
 Timeout per script in seconds:
 

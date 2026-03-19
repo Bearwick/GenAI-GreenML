@@ -25,89 +25,75 @@ from pyspark.ml.feature import VectorAssembler
 import time
 
 
-def diabetes():
-    sc = SparkSession.builder.getOrCreate()
+def isSick(x):
+    if x in (3, 7):
+        return 0
+    else:
+        return 1
 
-    raw_data = (
-        spark.read.format("csv")
-        .option("header", "true")
-        .option("inferSchema", "true")
-        .load("diabetes.csv")
-    )
 
-    raw_data = raw_data.withColumn(
-        "Glucose", when(raw_data.Glucose == 0, np.nan).otherwise(raw_data.Glucose)
-    )
-    raw_data = raw_data.withColumn(
-        "BloodPressure",
-        when(raw_data.BloodPressure == 0, np.nan).otherwise(raw_data.BloodPressure),
-    )
-    raw_data = raw_data.withColumn(
-        "SkinThickness",
-        when(raw_data.SkinThickness == 0, np.nan).otherwise(raw_data.SkinThickness),
-    )
-    raw_data = raw_data.withColumn(
-        "BMI", when(raw_data.BMI == 0, np.nan).otherwise(raw_data.BMI)
-    )
-    raw_data = raw_data.withColumn(
-        "Insulin", when(raw_data.Insulin == 0, np.nan).otherwise(raw_data.Insulin)
-    )
+def classify():
+    cols = [
+        "age",
+        "sex",
+        "chest pain",
+        "resting blood pressure",
+        "serum cholesterol",
+        "fasting blood sugar",
+        "resting electrocardiographic results",
+        "maximum heart rate achieved",
+        "exercise induced angina",
+        "ST depression induced by exercise relative to rest",
+        "the slope of the peak exercise ST segment",
+        "number of major vessels ",
+        "thal",
+        "last",
+    ]
 
-    imputer = Imputer(
-        inputCols=["Glucose", "BloodPressure", "SkinThickness", "BMI", "Insulin"],
-        outputCols=["Glucose", "BloodPressure", "SkinThickness", "BMI", "Insulin"],
-    )
-    model = imputer.fit(raw_data)
-    raw_data = model.transform(raw_data)
+    data = pd.read_csv("heart.csv", delimiter=" ", names=cols)
+    data = data.iloc[:, 0:13]
+    data["label"] = data["thal"].apply(isSick)
+    df = spark.createDataFrame(data)
 
-    cols = raw_data.columns
-    cols.remove("Outcome")
-    assembler = VectorAssembler(inputCols=cols, outputCol="features")
-    raw_data = assembler.transform(raw_data)
+    features = [
+        "age",
+        "sex",
+        "chest pain",
+        "resting blood pressure",
+        "serum cholesterol",
+        "fasting blood sugar",
+        "resting electrocardiographic results",
+        "maximum heart rate achieved",
+        "exercise induced angina",
+        "ST depression induced by exercise relative to rest",
+        "the slope of the peak exercise ST segment",
+        "number of major vessels ",
+    ]
 
-    standardscaler = StandardScaler().setInputCol("features").setOutputCol(
-        "Scaled_features"
-    )
+    assembler = VectorAssembler(inputCols=features, outputCol="features")
+    raw_data = assembler.transform(df)
+
+    standardscaler = StandardScaler().setInputCol("features").setOutputCol("Scaled_features")
     raw_data = standardscaler.fit(raw_data).transform(raw_data)
 
-    train, test = raw_data.randomSplit([0.8, 0.2], seed=12345)
+    from pyspark.ml.tuning import ParamGridBuilder, TrainValidationSplit
+    from pyspark.ml.classification import LogisticRegression
 
-    dataset_size = float(train.select("Outcome").count())
-    numPositives = train.select("Outcome").where("Outcome == 1").count()
-    numNegatives = float(dataset_size - numPositives)
+    training, test = raw_data.randomSplit([0.5, 0.5], seed=12345)
 
-    BalancingRatio = numNegatives / dataset_size
-    train = train.withColumn(
-        "classWeights",
-        when(train.Outcome == 1, BalancingRatio).otherwise(1 - BalancingRatio),
-    )
-
-    css = ChiSqSelector(
-        featuresCol="Scaled_features", outputCol="Aspect", labelCol="Outcome", fpr=0.05
-    )
-    train = css.fit(train).transform(train)
-    test = css.fit(test).transform(test)
-
-    lr = LogisticRegression(
-        labelCol="Outcome",
-        featuresCol="Aspect",
-        weightCol="classWeights",
-        maxIter=10,
-    )
-    model = lr.fit(train)
+    rf = RandomForestClassifier(labelCol="label", featuresCol="Scaled_features", numTrees=200)
+    model = rf.fit(training)
     predict_test = model.transform(test)
 
-    evaluator = MulticlassClassificationEvaluator(
-        labelCol="Outcome", predictionCol="prediction", metricName="accuracy"
-    )
-    accuracy = evaluator.evaluate(predict_test)
+    evaluator = BinaryClassificationEvaluator()
+    accuracy = evaluator.evaluate(predict_test, {evaluator.metricName: "areaUnderROC"})
     print(f"ACCURACY={accuracy:.6f}")
 
-    sc.stop()
+    return 0
 
 
 def main():
-    diabetes()
+    classify()
 
 
 if __name__ == "__main__":

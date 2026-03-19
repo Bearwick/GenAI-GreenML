@@ -2,142 +2,118 @@
 # LLM: codex
 # Mode: assisted
 
-import os
-os.environ.setdefault("OMP_NUM_THREADS", "1")
-os.environ.setdefault("MKL_NUM_THREADS", "1")
-os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
-os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
-
-import warnings
+import random
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
-from sklearn.feature_selection import chi2
-from sklearn.exceptions import ConvergenceWarning
+from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
+from pyspark.sql.types import StructType, StructField, DoubleType
+from pyspark.ml.feature import VectorAssembler, StandardScaler
+from pyspark.ml.classification import RandomForestClassifier
+from pyspark.ml.evaluation import BinaryClassificationEvaluator
 
-warnings.filterwarnings("ignore", category=ConvergenceWarning)
+DATASET_PATH = "heart.csv"
+DATASET_HEADERS = "70.0 1.0 4.0 130.0 322.0 0.0 2.0 109.0 0.0 2.4 2.0 3.0 3.0 2"
+SEED = 12345
 
-DATASET_PATH = "diabetes.csv"
-DATASET_HEADERS = "Pregnancies,Glucose,BloodPressure,SkinThickness,Insulin,BMI,DiabetesPedigreeFunction,Age,Outcome"
-RANDOM_SEED = 12345
+def parse_header_tokens(header_str):
+    return [t for t in header_str.replace(",", " ").split() if t]
 
-
-def _needs_fallback(df, headers):
-    if df.shape[1] != len(headers):
+def is_parsing_wrong(df, expected_cols, header_tokens):
+    if df is None or df.empty:
         return True
-    expected = set(headers)
-    if expected.isdisjoint(df.columns):
+    if expected_cols is not None and df.shape[1] != expected_cols:
         return True
-    sample = df.head(10)
-    numeric = sample.apply(pd.to_numeric, errors="coerce")
-    return numeric.isna().mean().mean() > 0.4
+    if header_tokens and [str(c) for c in df.columns] == header_tokens:
+        return True
+    return False
 
+def read_csv_robust(path, expected_cols, header_tokens):
+    try:
+        df = pd.read_csv(path)
+    except Exception:
+        df = None
+    if is_parsing_wrong(df, expected_cols, header_tokens):
+        try:
+            df = pd.read_csv(path, sep=";", decimal=",", header=None)
+        except Exception:
+            df = None
+        if is_parsing_wrong(df, expected_cols, header_tokens):
+            try:
+                with open(path, "r") as f:
+                    first_line = f.readline()
+            except Exception:
+                first_line = ""
+            if "," in first_line:
+                df = pd.read_csv(path, header=None)
+            else:
+                df = pd.read_csv(path, sep=r"\s+", header=None, engine="python")
+    return df
 
-def read_dataset(path, headers_str):
-    headers = [h.strip() for h in headers_str.split(",") if h.strip()]
-    df = pd.read_csv(path)
-    df.columns = [str(c).strip() for c in df.columns]
-    if _needs_fallback(df, headers):
-        df = pd.read_csv(path, sep=";", decimal=",")
-        df.columns = [str(c).strip() for c in df.columns]
-    if df.shape[1] == len(headers) and not set(headers).issubset(df.columns):
-        df.columns = headers
-    ordered = [c for c in headers if c in df.columns]
-    if ordered:
-        df = df[ordered]
-    df = df.apply(pd.to_numeric, errors="coerce")
-    return df, headers
+def load_and_prepare_data(path, header_str):
+    header_tokens = parse_header_tokens(header_str)
+    expected_cols = len(header_tokens) if header_tokens else None
+    df = read_csv_robust(path, expected_cols, header_tokens)
+    if df is None or df.empty:
+        raise ValueError("Failed to read dataset.")
+    n_cols = df.shape[1]
+    if n_cols < 13:
+        raise ValueError("Dataset must have at least 13 columns.")
+    df = df.copy()
+    df.columns = [f"c{i}" for i in range(n_cols)]
+    if not all(pd.api.types.is_numeric_dtype(t) for t in df.dtypes):
+        df = df.apply(pd.to_numeric, errors="coerce")
+    if df.isnull().values.any():
+        df = df.dropna()
+    df = df.iloc[:, :13]
+    feature_cols = df.columns[:12].tolist()
+    thal_col = df.columns[12]
+    df["label"] = np.where(df[thal_col].isin([3.0, 7.0]), 0.0, 1.0)
+    df = df.drop(columns=[thal_col])
+    df["label"] = df["label"].astype(float)
+    return df, feature_cols
 
+def create_spark_session():
+    spark = SparkSession.builder.appName("HeartClassification").config("spark.sql.shuffle.partitions", "4").getOrCreate()
+    spark.sparkContext.setLogLevel("ERROR")
+    return spark
 
-def prepare_arrays(df, headers):
-    label_col = None
-    for col in df.columns:
-        if col.lower() == "outcome":
-            label_col = col
-            break
-    if label_col is None:
-        label_col = "Outcome" if "Outcome" in df.columns else df.columns[-1]
-    feature_cols = [col for col in df.columns if col != label_col]
-    zero_missing_set = {h for h in headers if h in {"Glucose", "BloodPressure", "SkinThickness", "BMI", "Insulin"}}
-    zero_missing_cols = [col for col in feature_cols if col in zero_missing_set]
-    if zero_missing_cols:
-        df[zero_missing_cols] = df[zero_missing_cols].replace(0, np.nan)
-    X = df[feature_cols].to_numpy(dtype=float)
-    y = df[label_col].to_numpy(dtype=float)
-    valid_mask = ~np.isnan(y)
-    if not np.all(valid_mask):
-        X = X[valid_mask]
-        y = y[valid_mask]
-    y = y.astype(int)
-    return X, y
+def pandas_to_spark(spark, df):
+    schema = StructType([StructField(c, DoubleType(), True) for c in df.columns])
+    return spark.createDataFrame(df, schema=schema)
 
-
-def impute_and_scale(X):
-    with np.errstate(invalid="ignore"):
-        col_means = np.nanmean(X, axis=0)
-    col_means = np.where(np.isnan(col_means), 0.0, col_means)
-    nan_mask = np.isnan(X)
-    if nan_mask.any():
-        X[nan_mask] = np.take(col_means, np.where(nan_mask)[1])
-    std = X.std(axis=0)
-    std[std == 0] = 1.0
-    X /= std
-    return X
-
-
-def split_data(X, y, train_ratio=0.8, seed=RANDOM_SEED):
-    rng = np.random.default_rng(seed)
-    mask = rng.random(len(X)) < train_ratio
-    if mask.all() or (~mask).all():
-        indices = rng.permutation(len(X))
-        test_size = max(1, int(len(X) * (1 - train_ratio)))
-        test_idx = indices[:test_size]
-        train_idx = indices[test_size:]
-        return X[train_idx], X[test_idx], y[train_idx], y[test_idx]
-    return X[mask], X[~mask], y[mask], y[~mask]
-
-
-def compute_sample_weights(y):
-    n = y.size
-    if n == 0:
-        return np.array([], dtype=float)
-    num_pos = np.sum(y == 1)
-    num_neg = n - num_pos
-    balancing_ratio = num_neg / n
-    weight_pos = balancing_ratio
-    weight_neg = 1 - balancing_ratio
-    return np.where(y == 1, weight_pos, weight_neg)
-
-
-def select_features_chi2(X_train, y_train, X_test, alpha=0.05):
-    _, p_values = chi2(X_train, y_train)
-    selected = np.where(p_values < alpha)[0]
-    if selected.size == 0:
-        return X_train, X_test
-    return X_train[:, selected], X_test[:, selected]
-
+def train_and_evaluate(spark_df, feature_cols, seed):
+    assembler = VectorAssembler(inputCols=feature_cols, outputCol="features")
+    assembled = assembler.transform(spark_df).select("label", "features")
+    scaler = StandardScaler(inputCol="features", outputCol="Scaled_features", withStd=True, withMean=False)
+    scaled = scaler.fit(assembled).transform(assembled).select("label", "Scaled_features")
+    training, test = scaled.randomSplit([0.5, 0.5], seed=seed)
+    rf = RandomForestClassifier(labelCol="label", featuresCol="Scaled_features", numTrees=200, seed=seed)
+    model = rf.fit(training)
+    predictions = model.transform(test).select("label", "prediction", "rawPrediction").cache()
+    evaluator = BinaryClassificationEvaluator(labelCol="label", rawPredictionCol="rawPrediction", metricName="areaUnderROC")
+    _ = evaluator.evaluate(predictions)
+    accuracy_row = predictions.select((F.col("label") == F.col("prediction")).cast("double").alias("correct")).agg(F.avg("correct")).first()
+    accuracy = accuracy_row[0] if accuracy_row and accuracy_row[0] is not None else 0.0
+    predictions.unpersist()
+    return float(accuracy)
 
 def main():
-    np.random.seed(RANDOM_SEED)
-    df, headers = read_dataset(DATASET_PATH, DATASET_HEADERS)
-    X, y = prepare_arrays(df, headers)
-    X = impute_and_scale(X)
-    X_train, X_test, y_train, y_test = split_data(X, y, train_ratio=0.8, seed=RANDOM_SEED)
-    sample_weight = compute_sample_weights(y_train)
-    X_train_sel, X_test_sel = select_features_chi2(X_train, y_train, X_test, alpha=0.05)
-    model = LogisticRegression(max_iter=10, solver="lbfgs", C=1e6, random_state=RANDOM_SEED)
-    model.fit(X_train_sel, y_train, sample_weight=sample_weight)
-    y_pred = model.predict(X_test_sel)
-    accuracy = float(np.mean(y_pred == y_test))
+    random.seed(SEED)
+    np.random.seed(SEED)
+    spark = create_spark_session()
+    df, feature_cols = load_and_prepare_data(DATASET_PATH, DATASET_HEADERS)
+    spark_df = pandas_to_spark(spark, df)
+    accuracy = train_and_evaluate(spark_df, feature_cols, SEED)
     print(f"ACCURACY={accuracy:.6f}")
-
+    spark.stop()
 
 if __name__ == "__main__":
     main()
 
 # Optimization Summary
-# - Replaced the Spark pipeline with a local pandas/NumPy/Scikit-learn workflow to avoid distributed overhead for a small dataset.
-# - Performed mean imputation and scaling in-place with NumPy to reduce intermediate allocations and data movement.
-# - Computed chi-square feature selection once on the training data and reused indices for the test set to avoid redundant fitting.
-# - Used vectorized NumPy operations for splitting, weighting, and accuracy computation with fixed seeds for deterministic results.
-# - Limited BLAS thread usage and suppressed non-critical warnings to reduce unnecessary runtime overhead.
+# - Removed unused imports, plotting, and display actions to eliminate unnecessary computation and I/O.
+# - Used vectorized label creation and dropped the unused thal column to reduce data size and memory footprint.
+# - Selected only required columns during transformations and cached predictions once to avoid recomputation for metrics.
+# - Set fixed seeds and reduced Spark shuffle partitions to improve reproducibility and lower overhead.
+# - Added robust CSV parsing with minimal re-reads and an explicit schema to avoid costly type inference.
