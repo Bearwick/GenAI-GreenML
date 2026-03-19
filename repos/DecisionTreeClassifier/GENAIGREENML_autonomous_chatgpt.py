@@ -258,7 +258,7 @@ if task == "classification":
     class_counts = y_series.value_counts(dropna=False)
     stratify = y_series if (class_counts.size >= 2 and class_counts.min() >= 2) else None
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y_series, test_size=0.2, random_state=42, stratify=stratify
+        X, y_series, test_size=0.3, random_state=42, stratify=stratify
     )
 else:
     X_train, X_test, y_train, y_test = train_test_split(

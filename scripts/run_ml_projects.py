@@ -197,27 +197,50 @@ def ensure_project_venv(project_dir: Path) -> Tuple[Optional[Path], str]:
 # Sanitize Requirements
 # ----------------------------
 
+import re
+
 def sanitize_requirements_text(text: str) -> str:
     """
-    Relax exact pins from 'pkg==x.y.z' to 'pkg' for portability.
-    Keeps comments, blank lines, and non-exact specifiers unchanged.
+    Relax exact pins from 'pkg==x.y.z' to 'pkg' while preserving
+    environment markers, extras, and comments.
     """
     lines = []
-    for raw in text.splitlines():
-        line = raw.strip()
 
-        if not line or line.startswith("#"):
+    for raw in text.splitlines():
+        stripped = raw.strip()
+
+        if not stripped or stripped.startswith("#"):
             lines.append(raw)
             continue
 
-        if "==" in line and not line.startswith("-e "):
-            pkg = line.split("==", 1)[0].strip()
-            lines.append(pkg)
-        else:
+        if stripped.startswith("-e ") or stripped.startswith("--"):
             lines.append(raw)
+            continue
+
+        # Split off inline comment first
+        if " #" in raw:
+            body, comment = raw.split(" #", 1)
+            comment = " #" + comment
+        else:
+            body, comment = raw, ""
+
+        # Preserve environment marker
+        if ";" in body:
+            req_part, marker_part = body.split(";", 1)
+            marker_suffix = ";" + marker_part
+        else:
+            req_part, marker_suffix = body, ""
+
+        req_part = req_part.strip()
+
+        # Relax only exact == pins
+        if "==" in req_part:
+            req_part = req_part.split("==", 1)[0].strip()
+
+        new_line = req_part + marker_suffix + comment
+        lines.append(new_line)
 
     return "\n".join(lines) + "\n"
-
 # ----------------------------
 # Requirements (optional)
 # ----------------------------

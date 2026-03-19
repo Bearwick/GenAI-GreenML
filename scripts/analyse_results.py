@@ -3,7 +3,7 @@ import argparse
 import csv
 import warnings
 from pathlib import Path
-
+from typing import Optional
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 RESULTS_DIR = REPO_ROOT / "results"
@@ -48,7 +48,7 @@ def latest_results_file() -> Path:
     return max(files, key=lambda p: p.stat().st_mtime)
 
 
-def resolve_results_file(results_file: str | None) -> Path:
+def resolve_results_file(results_file: Optional[str]) -> Path:
     if not results_file:
         return latest_results_file()
 
@@ -266,7 +266,7 @@ def save_performance_category_plots(analysis_dir: Path, latest: Path, counts: di
     return [stacked_path, percent_path, net_path]
 
 
-def detect_mode(script: str) -> str | None:
+def detect_mode(script: str) -> Optional[str]:
     s = script.lower()
     if "assisted" in s:
         return "assisted"
