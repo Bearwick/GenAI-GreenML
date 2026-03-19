@@ -38,26 +38,6 @@ def call_gemini(prompt, model="gemini-3-flash-preview"):
     )
     return response.text
 
-
-if __name__ == "__main__":
-    # Read source code from stdin and build prompt based on mode + optional dataset headers.
-    mode = "original_telemetry"
-    if "--mode" in sys.argv:
-        idx = sys.argv.index("--mode")
-        if idx + 1 < len(sys.argv):
-            mode = sys.argv[idx + 1]
-
-    source_code = sys.stdin.read().strip()
-    dataset_headers = os.getenv("DATASET_HEADERS", "").strip()
-    if "--headers" in sys.argv:
-        idx = sys.argv.index("--headers")
-        if idx + 1 < len(sys.argv):
-            dataset_headers = sys.argv[idx + 1].strip()
-
-    prompt_text = build_prompt(mode, source_code, dataset_headers, "", "", "")
-    print(call_gemini(prompt_text))
-
-
 def generate_code(mode, source_code, dataset_headers="", exampleRowDataset="", datasetPath="", projectContext=""):
     prompt_text = build_prompt(mode, source_code, dataset_headers, exampleRowDataset, datasetPath, projectContext)
     return call_gemini(prompt_text)
