@@ -8,7 +8,6 @@ Applied improvements:
 3) run scripts by full path (safer than basename)
 4) per-script timeout with terminate/kill; status TIMEOUT
 5) RAPL energy on Linux when available; macOS fallback approximation with note
-6) improved memory sampling (lower overhead, safer) via psutil when available
 7) improved accuracy parsing (last match, cap read size)
 9) csv.DictWriter + flush per row
 10) script_priority moved out of loop
@@ -80,7 +79,6 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     p.add_argument("--results-dir", default=DEFAULT_RESULTS_DIR, help="Directory to write results CSV.")
     p.add_argument("--macos-power-w", type=float, default=DEFAULT_MACOS_AVG_POWER_W, help="Fallback macOS avg power (W).")
     p.add_argument("--timeout-s", type=float, default=900.0, help="Timeout per script in seconds.")
-    p.add_argument("--sample-interval-s", type=float, default=0.25, help="Memory sampling interval (seconds).")
     p.add_argument("--project-regex", default=None, help="Only process projects whose directory name matches this regex.")
     p.add_argument("--max-projects", type=int, default=None, help="Stop after processing N projects.")
     p.add_argument("--no-requirements", action="store_true", help="Do not install requirements.txt per project.")
@@ -373,57 +371,6 @@ def read_accuracy(output_path: Path) -> str:
 
 
 # ----------------------------
-# Memory tracking
-# ----------------------------
-
-def mem_peak_delta_mb_for_process(proc: subprocess.Popen, sample_interval_s: float) -> float:
-    """
-    Track peak RSS while process runs. Returns (peak - baseline) in MB.
-    If psutil isn't available or errors occur, returns 0.0.
-
-    Lower sampling overhead than 50ms polling.
-    """
-    try:
-        import psutil  # type: ignore
-    except Exception:
-        return 0.0
-
-    try:
-        p = psutil.Process(proc.pid)
-    except Exception:
-        return 0.0
-
-    try:
-        baseline = p.memory_info().rss
-    except Exception:
-        baseline = 0
-
-    peak = baseline
-
-    # Sample until process exits
-    while proc.poll() is None:
-        try:
-            rss = p.memory_info().rss
-            if rss > peak:
-                peak = rss
-        except Exception:
-            pass
-        time.sleep(sample_interval_s)
-
-    # A few extra samples right after exit to catch late RSS reporting
-    for _ in range(3):
-        try:
-            rss = p.memory_info().rss
-            if rss > peak:
-                peak = rss
-        except Exception:
-            break
-        time.sleep(sample_interval_s)
-
-    delta = max(0, peak - baseline)
-    return delta / (1024 ** 2)
-
-
 # ----------------------------
 # Runner
 # ----------------------------
@@ -433,7 +380,6 @@ class RunResult:
     status: str
     exit_code: Optional[int]
     accuracy: str
-    mem_delta_mb: float
     exec_time_s: float
     energy_j: str
     notes: str
@@ -445,7 +391,6 @@ def run_script(
     project_dir: Path,
     script_path: Path,
     timeout_s: float,
-    sample_interval_s: float,
     macos_avg_power_w: float,
 ) -> RunResult:
     # Write combined stdout/stderr to a temp file (closed properly)
@@ -469,9 +414,6 @@ def run_script(
                 stdout=out_f,
                 stderr=subprocess.STDOUT,
             )
-
-            # Track memory while process runs (poll-based)
-            mem_delta_mb = mem_peak_delta_mb_for_process(proc, sample_interval_s)
 
             try:
                 exit_code = proc.wait(timeout=timeout_s)
@@ -500,14 +442,10 @@ def run_script(
 
     except Exception as e:
         # If Popen/open fails, capture error
-        mem_delta_mb = 0.0
         exec_time_s = time.time() - start
         notes = f"runner error: {repr(e)}"
         status = "FAILED"
 
-    # If we didn't compute mem_delta_mb inside the normal flow, ensure it's defined
-    if "mem_delta_mb" not in locals():
-        mem_delta_mb = 0.0
     if "exec_time_s" not in locals():
         exec_time_s = time.time() - start
 
@@ -545,7 +483,6 @@ def run_script(
         status=status,
         exit_code=exit_code,
         accuracy=accuracy,
-        mem_delta_mb=mem_delta_mb,
         exec_time_s=exec_time_s,
         energy_j=energy_j,
         notes=notes,
@@ -582,7 +519,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "status",
         "exit_code",
         "accuracy",
-        "mem_delta_mb",
         "exec_time_s",
         "energy_j",
         "notes",
@@ -613,7 +549,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                         "status": "SKIPPED",
                         "exit_code": "",
                         "accuracy": "",
-                        "mem_delta_mb": "",
                         "exec_time_s": "",
                         "energy_j": "",
                         "notes": "",
@@ -639,7 +574,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                             "status": "FAILED",
                             "exit_code": "",
                             "accuracy": "",
-                            "mem_delta_mb": "",
                             "exec_time_s": "",
                             "energy_j": "",
                              "notes": venv_note or "venv python missing",
@@ -657,7 +591,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     project_dir=project_dir,
                     script_path=script_path,
                     timeout_s=args.timeout_s,
-                    sample_interval_s=args.sample_interval_s,
                     macos_avg_power_w=args.macos_power_w,
                 )
 
@@ -669,7 +602,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                         "status": result.status,
                         "exit_code": "" if result.exit_code is None else str(result.exit_code),
                         "accuracy": result.accuracy,
-                        "mem_delta_mb": f"{result.mem_delta_mb:.3f}",
                         "exec_time_s": f"{result.exec_time_s:.9f}",
                         "energy_j": result.energy_j,
                         "notes": " | ".join(x for x in [venv_note, req_note, result.notes] if x),
