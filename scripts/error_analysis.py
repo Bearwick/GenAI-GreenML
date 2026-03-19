@@ -38,8 +38,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--max-error-types",
         type=int,
-        default=12,
-        help="Max number of error types in the temporal plot (default: 12).",
+        default=0,
+        help="Max number of error types in the temporal plot (0 = include all; default: 0).",
     )
     return p.parse_args()
 
@@ -59,6 +59,13 @@ def import_plot_libs():
         )
 
 
+def normalize_error_type(name: str) -> str:
+    name = name.strip()
+    if "." in name:
+        return name.rsplit(".", 1)[-1]
+    return name
+
+
 def parse_counter(text: str) -> Dict[str, int]:
     text = (text or "").strip()
     if not text or text.lower() == "none":
@@ -70,7 +77,7 @@ def parse_counter(text: str) -> Dict[str, int]:
         if "=" not in part:
             continue
         key, val = part.split("=", 1)
-        key = key.strip()
+        key = normalize_error_type(key)
         try:
             out[key] = int(val.strip())
         except ValueError:
@@ -121,7 +128,7 @@ def parse_analysis_file(path: Path) -> Dict[str, object]:
             break
         if in_error_type_list and ":" in line and not line.startswith("none"):
             key, entries = line.split(":", 1)
-            key = key.strip()
+            key = normalize_error_type(key)
             if key:
                 count = 0
                 entries = entries.strip()
@@ -283,15 +290,18 @@ def plot_error_types_over_iterations(iterations: List[Dict[str, object]], out_di
             continue
         seen.add(err)
         top_types.append(err)
-    top_types = top_types[:max_types]
+    if max_types > 0:
+        top_types = top_types[:max_types]
 
     if not top_types:
         return None
 
     fig, ax = plt.subplots(figsize=(12, 6))
+    plotted = []
     for err in top_types:
         ys = [d["error_types"].get(err, 0) for d in iterations]
-        ax.plot(xvals, ys, marker="o", label=err)
+        line, = ax.plot(xvals, ys, marker="o")
+        plotted.append((line, err))
 
     ax.set_title("Error type trend over iterations")
     ax.set_xlabel("Iteration")
@@ -300,8 +310,10 @@ def plot_error_types_over_iterations(iterations: List[Dict[str, object]], out_di
     ax.set_xticklabels(labels)
     ax.tick_params(axis="x", rotation=0)
     ax.grid(True, alpha=0.25)
-    ax.legend(ncol=2, fontsize=8)
-    fig.tight_layout()
+    handles = [h for h, _ in plotted]
+    display_labels = [lbl for _, lbl in plotted]
+    ax.legend(handles, display_labels, loc="upper right", ncol=2, fontsize=8)
+    fig.tight_layout(rect=[0, 0, 0.8, 1])
     out = out_dir / "error_type_over_iterations.png"
     fig.savefig(out, dpi=160)
     plt.close(fig)
