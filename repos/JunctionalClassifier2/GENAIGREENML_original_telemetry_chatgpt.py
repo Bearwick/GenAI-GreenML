@@ -96,7 +96,7 @@ def takeInput():
         pass
 
 
-predict()
+trainAndTestModel()
 
 
 class Testing(unittest.TestCase):

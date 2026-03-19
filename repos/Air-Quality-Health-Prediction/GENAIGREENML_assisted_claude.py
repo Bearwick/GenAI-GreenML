@@ -83,3 +83,5 @@ def main():
 
     accuracy = accuracy_score(y_clf_test, y_clf_pred)
     print(f"ACCURACY={accuracy:.6f}")
+
+main()
