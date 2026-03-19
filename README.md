@@ -19,6 +19,7 @@ This dataset was developed as part of a master’s thesis at the **Norwegian Uni
    2. [Runability Check](#runability-check)
 6. [Run Projects and Capture Telemetry](#run-projects-and-capture-telemetry)
 7. [Analyse Results](#analyse-results)
+   1. [Analyse File Sizes](#analyse-file-sizes)
 8. [Generate Code Iterations (Failed Scripts)](#generate-code-iterations-failed-scripts)
 9. [Analyse Failed Code](#analyse-failed-code)
 10. [Analyse Errors](#analyse-errors)
@@ -236,6 +237,18 @@ Select a specific CSV file from the results folder:
 
 ```
 python ./analyse_results.py --results-file results_20260220_135839.csv
+```
+
+### Analyse File Sizes
+
+From project root:
+
+```
+cd scripts
+source venv/bin/activate
+python ./analyse_file_sizes.py
+deactivate
+cd ..
 ```
 
 ## Generate Code Iterations (Failed Scripts)
