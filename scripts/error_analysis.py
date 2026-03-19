@@ -296,11 +296,21 @@ def plot_error_types_over_iterations(iterations: List[Dict[str, object]], out_di
     if not top_types:
         return None
 
+    base_colors = plt.rcParams["axes.prop_cycle"].by_key().get("color", [])
+    if not base_colors:
+        base_colors = list(plt.get_cmap("tab20").colors)
+    colors = [base_colors[i] for i in range(min(len(top_types), len(base_colors)))]
+    if len(top_types) > len(base_colors):
+        fallback = plt.get_cmap("tab20")
+        extra_count = len(top_types) - len(base_colors)
+        colors.extend(fallback(i / max(1, extra_count)) for i in range(extra_count))
+
     fig, ax = plt.subplots(figsize=(12, 6))
     plotted = []
     for err in top_types:
         ys = [d["error_types"].get(err, 0) for d in iterations]
-        line, = ax.plot(xvals, ys, marker="o")
+        color = colors[len(plotted) % len(colors)] if colors else None
+        line, = ax.plot(xvals, ys, marker="o", color=color)
         plotted.append((line, err))
 
     ax.set_title("Error type trend over iterations")
@@ -336,19 +346,29 @@ def plot_last_iteration_error_types(iterations: List[Dict[str, object]], out_dir
     assist_vals = [assisted.get(e, 0) for e in errs]
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    bottoms = [0 for _ in errs]
-    ax.bar(idx, auto_vals, width=0.5, label="autonomous")
-    ax.bar(idx, assist_vals, width=0.5, bottom=auto_vals, label="assisted")
-    for i in idx:
-        total = auto_vals[i] + assist_vals[i]
-        if total > 0:
+    x_auto = [i - width / 2 for i in idx]
+    x_assist = [i + width / 2 for i in idx]
+    ax.bar(x_auto, auto_vals, width=width, label="autonomous")
+    ax.bar(x_assist, assist_vals, width=width, label="assisted")
+    for x_pos, value in zip(x_auto, auto_vals):
+        if value > 0:
             ax.text(
-                i,
-                total + 0.2,
-                str(total),
+                x_pos,
+                value + 0.2,
+                str(value),
                 ha="center",
                 va="bottom",
-                fontsize=9,
+                fontsize=8,
+            )
+    for x_pos, value in zip(x_assist, assist_vals):
+        if value > 0:
+            ax.text(
+                x_pos,
+                value + 0.2,
+                str(value),
+                ha="center",
+                va="bottom",
+                fontsize=8,
             )
 
     ax.set_title(f"Error types by mode (final iteration)")
