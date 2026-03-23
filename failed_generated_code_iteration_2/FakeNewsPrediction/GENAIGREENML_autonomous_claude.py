@@ -87,3 +87,5 @@ else:
         df['combined_text'] = ''
 
 # --- Step
+
+raise SyntaxError("Did not finish generating code")
