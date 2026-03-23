@@ -95,3 +95,5 @@ for col in numeric_features:
 # Drop rows that are entirely NaN in features
 df = df.dropna(subset=feature_cols, how='all')
 assert len
+
+raise SyntaxError("Did not finish generating code")
