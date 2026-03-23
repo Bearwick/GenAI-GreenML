@@ -102,3 +102,5 @@ if is_classification:
     y = le.fit_transform(df[target_col])
 else:
     df
+
+raise SyntaxError("Did not finish generating code")
