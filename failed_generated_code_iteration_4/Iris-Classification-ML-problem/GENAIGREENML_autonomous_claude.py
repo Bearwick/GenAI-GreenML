@@ -97,3 +97,5 @@ if target_col is None:
     else:
         # Check if any column is object type
         obj_cols
+
+raise SyntaxError("Did not finish generating code")
