@@ -90,3 +90,5 @@ y = le.fit_transform(df[target_col].astype(str))
 X = df[list(valid_features)].values
 
 assert X.shape
+
+raise SyntaxError("Did not finish generating code")
