@@ -87,3 +87,5 @@ for col in df.columns:
     df[col] = pd.to_numeric(df[col], errors='coerce')
 
 # --- Drop rows/cols that are all
+
+raise SyntaxError("Did not finish generating code")
