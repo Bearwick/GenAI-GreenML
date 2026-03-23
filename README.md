@@ -145,6 +145,12 @@ Generate specific ML projects:
 python ./generate_llm_code.py --project-regex <directory_name>
 ```
 
+To turn off original_telemetry generation:
+
+```
+python ./generate_llm_code.py --no-original-telemetry
+```
+
 To stop after processing N projects:
 
 ```
