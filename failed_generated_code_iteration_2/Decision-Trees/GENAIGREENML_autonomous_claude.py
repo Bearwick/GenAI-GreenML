@@ -96,3 +96,5 @@ if is_classification:
         X_train, X_test, y_train, y_test = train_test_split(X[list(numeric_cols)].fillna(0), y, test_size=0.2, random_state=42)
         model = DummyClassifier(strategy='most_frequent')
         model
+        
+raise SyntaxError("Did not finish generating code")
