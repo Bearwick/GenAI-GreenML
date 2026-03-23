@@ -96,3 +96,5 @@ for col in cat_features:
 
 # Now all features are numeric
 all_feature_names = list(all_features)
+
+raise SyntaxError("Did not finish generating code")
