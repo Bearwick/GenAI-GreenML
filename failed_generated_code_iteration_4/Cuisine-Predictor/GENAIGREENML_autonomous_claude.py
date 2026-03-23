@@ -106,3 +106,5 @@ X_test_tfidf = tfidf.transform(X_test)
 
 # Logistic Regression - lightweight, efficient, good for text classification
 # saga solver is efficient for larger datasets; lbfgs for moderate
+
+raise SyntaxError("Did not finish generating code")
