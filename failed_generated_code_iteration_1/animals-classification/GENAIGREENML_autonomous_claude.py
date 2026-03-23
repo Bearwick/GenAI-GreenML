@@ -102,3 +102,5 @@ else:
 
 if is_classification and y.nunique() < 2:
     is_
+
+raise SyntaxError("Did not finish generating code")

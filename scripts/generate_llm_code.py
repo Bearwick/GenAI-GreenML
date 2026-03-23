@@ -647,6 +647,11 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         action="store_true",
         help="Enable Gemini rate-limit pause (60s every 10 requests). Disabled by default.",
     )
+    p.add_argument(
+        "--no-original-telemetry",
+        action="store_true",
+        help="Temporary switch: skip primary-only original_telemetry generation.",
+    )
     return p.parse_args(argv)
 
 
@@ -749,43 +754,46 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             continue
 
         # (Primary-only) original_telemetry
-        primary_client = clients.get(primary_llm_name)
-        skip_primary_existing = False
-        out_primary = output_path(src_file.parent, config.base_name, "original_telemetry", primary_llm_name)
-        if out_primary.exists() and not args.force:
-            try:
-                if out_primary.stat().st_size > 0:
-                    logging.info("[i] Skip existing: %s", out_primary.name)
-                    skip_primary_existing = True
-            except OSError:
-                pass
-
-        if skip_primary_existing:
-            pass
-        elif primary_client is not None:
-            code = generate(
-                primary_client,
-                "original_telemetry",
-                src_file,
-                "",
-                project_dir.name,
-                exampleRowDataset,
-                dataset_path_for_prompt,
-                projectContext,
-            )
-            if code:
-                write_output_file(
-                    out_file=out_primary,
-                    script_name=Path(__file__).name,
-                    llm_name=primary_llm_name,
-                    mode="original_telemetry",
-                    code=code,
-                    force=args.force,
-                )
-            else:
-                logging.info("[i] Skipping %s original_telemetry (no response)", primary_llm_name)
+        if args.no_original_telemetry:
+            logging.info("[i] Skipping original_telemetry generation (--no-original-telemetry)")
         else:
-            logging.info("[i] Skipping %s original_telemetry (client unavailable)", primary_llm_name)
+            primary_client = clients.get(primary_llm_name)
+            skip_primary_existing = False
+            out_primary = output_path(src_file.parent, config.base_name, "original_telemetry", primary_llm_name)
+            if out_primary.exists() and not args.force:
+                try:
+                    if out_primary.stat().st_size > 0:
+                        logging.info("[i] Skip existing: %s", out_primary.name)
+                        skip_primary_existing = True
+                except OSError:
+                    pass
+
+            if skip_primary_existing:
+                pass
+            elif primary_client is not None:
+                code = generate(
+                    primary_client,
+                    "original_telemetry",
+                    src_file,
+                    "",
+                    project_dir.name,
+                    exampleRowDataset,
+                    dataset_path_for_prompt,
+                    projectContext,
+                )
+                if code:
+                    write_output_file(
+                        out_file=out_primary,
+                        script_name=Path(__file__).name,
+                        llm_name=primary_llm_name,
+                        mode="original_telemetry",
+                        code=code,
+                        force=args.force,
+                    )
+                else:
+                    logging.info("[i] Skipping %s original_telemetry (no response)", primary_llm_name)
+            else:
+                logging.info("[i] Skipping %s original_telemetry (client unavailable)", primary_llm_name)
 
         # Per-LLM assisted/autonomous
         for llm_name in llm_names:
