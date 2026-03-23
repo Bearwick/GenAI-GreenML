@@ -5,15 +5,15 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score
-import warnings
-warnings.filterwarnings("ignore")
 
-# NSL-KDD column names based on the dataset specification
-nsl_kdd_columns = [
+# NSL-KDD column names (standard 41 features + label + difficulty)
+KDD_COLUMNS = [
     'duration', 'protocol_type', 'service', 'flag', 'src_bytes', 'dst_bytes',
     'land', 'wrong_fragment', 'urgent', 'hot', 'num_failed_logins', 'logged_in',
     'num_compromised', 'root_shell', 'su_attempted', 'num_root',
@@ -23,50 +23,52 @@ nsl_kdd_columns = [
     'diff_srv_rate', 'srv_diff_host_rate', 'dst_host_count', 'dst_host_srv_count',
     'dst_host_same_srv_rate', 'dst_host_diff_srv_rate', 'dst_host_same_src_port_rate',
     'dst_host_srv_diff_host_rate', 'dst_host_serror_rate', 'dst_host_srv_serror_rate',
-    'dst_host_rerror_rate', 'dst_host_srv_rerror_rate', 'attack_type', 'difficulty_level'
+    'dst_host_rerror_rate', 'dst_host_srv_rerror_rate', 'attack_type', 'difficulty'
 ]
 
 # Robust CSV loading
-df = None
 try:
     df = pd.read_csv('data/raw/Train.txt', header=None)
-    if df.shape[1] == 1:
-        df = pd.read_csv('data/raw/Train.txt', header=None, sep=';', decimal=',')
 except Exception:
     df = pd.read_csv('data/raw/Train.txt', header=None, sep=';', decimal=',')
 
-# Assign column names if the number of columns matches or is close
-if df.shape[1] == len(nsl_kdd_columns):
-    df.columns = nsl_kdd_columns
-elif df.shape[1] == len(nsl_kdd_columns) - 1:
-    # Some versions of NSL-KDD don't have difficulty_level
-    df.columns = nsl_kdd_columns[:-1]
+# If the number of columns matches KDD format (42 or 43), assign names
+if df.shape[1] == len(KDD_COLUMNS):
+    df.columns = KDD_COLUMNS
+elif df.shape[1] == len(KDD_COLUMNS) - 1:
+    # No difficulty column
+    df.columns = KDD_COLUMNS[:-1]
 else:
-    # Fallback: use generic column names
+    # Try to use first row as header check
+    # If columns are numeric-like, just assign generic names
     df.columns = [f'col_{i}' for i in range(df.shape[1])]
 
 # Strip/normalize column names
 df.columns = [str(c).strip().replace('  ', ' ') for c in df.columns]
-df = df[[c for c in df.columns if not c.startswith('Unnamed')]]
+drop_cols = [c for c in df.columns if c.startswith('Unnamed')]
+if drop_cols:
+    df.drop(columns=drop_cols, inplace=True)
 
 # Identify target column
 target_col = None
 if 'attack_type' in df.columns:
     target_col = 'attack_type'
 else:
-    # Try to find a likely categorical target in the last few columns
-    for c in reversed(df.columns):
-        if df[c].dtype == object and df[c].nunique() > 1 and df[c].nunique() < 200:
+    # Look for a likely categorical target in last columns
+    for c in reversed(df.columns.tolist()):
+        if df[c].dtype == object and df[c].nunique() > 1 and df[c].nunique() < 100:
             target_col = c
             break
 
 if target_col is None:
-    # Fallback: use last column
+    # fallback: use last column
     target_col = df.columns[-1]
 
-# Drop difficulty_level if present (it's metadata, not a feature)
-if 'difficulty_level' in df.columns and target_col != 'difficulty_level':
-    df = df.drop(columns=['difficulty_level'])
+# Drop 'difficulty' column if present (not a feature)
+if 'difficulty' in df.columns and 'difficulty' != target_col:
+    df.drop(columns=['difficulty'], inplace=True)
 
-# Create binary target: normal vs attack
-df['label'] = df[target_col].apply(lambda x: 0 if str(x).strip().lower() == 'normal' else 1)
+# Binary classification: normal vs attack
+# Map target: 'normal' -> 0, everything else -> 1
+df[target_col] = df[target_col].astype(str).str.strip().str.lower()
+df['label'] = (df[target
