@@ -90,3 +90,5 @@ if not is_classification or n_classes < 2:
     # Fallback: treat as regression, report bounded R^2 as accuracy proxy
     from sklearn.linear_model import Ridge
     X
+
+raise SyntaxError("Did not finish generating code")
