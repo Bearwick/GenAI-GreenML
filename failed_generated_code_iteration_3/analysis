@@ -48,12 +48,3 @@ AttributeError:
   'dict' object has no attribute 'columns': ML_CSV_Classification:GENAIGREENML_autonomous_gemini.py
 RuntimeError:
   Unsupported pickle contents.: JunctionalClassifier2:GENAIGREENML_autonomous_chatgpt.py
-Correctly ran scripts
-
-  Air-Quality-Health-Prediction/GENAIGREENML_assisted_gemini.py
-  Annotated_Colab_Notebook/GENAIGREENML_autonomous_codex.py
-  MaliciousSoftwareClassification/GENAIGREENML_autonomous_claude.py
-  Network_Intrusion_Detection_System/GENAIGREENML_autonomous_codex.py
-  Predicting-heart-diseases-/GENAIGREENML_autonomous_claude.py
-  Social-Network-Ads/GENAIGREENML_autonomous_codex.py
-  SparkMLClassification/GENAIGREENML_assisted_chatgpt.py
