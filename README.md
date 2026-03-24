@@ -28,7 +28,7 @@ This dataset was developed as part of a master’s thesis at the **Norwegian Uni
 
 ### Repository Content
 
-- 51 open-source ML repositories (tabular and NLP tasks)
+- 50 open-source ML repositories (tabular and NLP tasks)
 - Metadata on repository size, task type, and primary programming language
 - Experiment design and evaluation scripts for LLM-assisted code generation
 - Benchmarking tools for energy consumption, FLOPS, and model performance
