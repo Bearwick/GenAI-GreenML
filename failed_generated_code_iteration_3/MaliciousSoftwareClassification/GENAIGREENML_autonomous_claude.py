@@ -102,3 +102,5 @@ pipeline = Pipeline([
 ])
 
 pipeline.fit
+
+raise SyntaxError("Did not finish generating code")

@@ -28,7 +28,7 @@ This dataset was developed as part of a master’s thesis at the **Norwegian Uni
 
 ### Repository Content
 
-- 51 open-source ML repositories (tabular and NLP tasks)
+- 50 open-source ML repositories (tabular and NLP tasks)
 - Metadata on repository size, task type, and primary programming language
 - Experiment design and evaluation scripts for LLM-assisted code generation
 - Benchmarking tools for energy consumption, FLOPS, and model performance
@@ -143,6 +143,12 @@ Generate specific ML projects:
 
 ```
 python ./generate_llm_code.py --project-regex <directory_name>
+```
+
+To turn off original_telemetry generation:
+
+```
+python ./generate_llm_code.py --no-original-telemetry
 ```
 
 To stop after processing N projects:

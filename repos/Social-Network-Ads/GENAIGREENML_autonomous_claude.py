@@ -5,94 +5,103 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
 from sklearn.metrics import accuracy_score
 
 DATASET_PATH = "Social_Network_Ads.csv"
 
-# Robust CSV loading
+df = None
 try:
     df = pd.read_csv(DATASET_PATH)
     if df.shape[1] < 2:
-        df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
+        raise ValueError("Too few columns")
 except Exception:
-    df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
+    try:
+        df = pd.read_csv(DATASET_PATH, sep=';', decimal=',')
+    except Exception:
+        pass
 
-# Strip and normalize column names
+assert df is not None and not df.empty, "Failed to load dataset"
+
 df.columns = df.columns.str.strip().str.replace(r'\s+', ' ', regex=True)
-df = df.loc[:, ~df.columns.str.startswith('Unnamed')]
+df = df[[c for c in df.columns if not c.startswith('Unnamed')]]
 
-# Identify columns based on expected schema
+target_col = None
 expected_target = 'Purchased'
-expected_features_numeric = ['Age', 'EstimatedSalary']
-expected_features_cat = ['Gender']
-expected_drop = ['User ID']
+for c in df.columns:
+    if c.strip().lower() == expected_target.lower():
+        target_col = c
+        break
 
-# Drop User ID if present (not predictive)
-for col in expected_drop:
-    if col in df.columns:
-        df = df.drop(columns=[col])
+if target_col is None:
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    for c in numeric_cols:
+        if df[c].nunique() >= 2:
+            target_col = c
+            break
 
-# Determine target
-if expected_target in df.columns:
-    target_col = expected_target
-else:
-    # Fallback: pick last column if it looks binary/categorical
-    target_col = df.columns[-1]
+assert target_col is not None, "No suitable target column found"
 
-# Coerce numeric columns
-for col in df.columns:
-    if col == target_col and df[col].dtype == object:
-        continue
-    if col in expected_features_cat:
-        continue
-    df[col] = pd.to_numeric(df[col], errors='coerce')
-
-# Drop rows with NaN in target
+df[target_col] = pd.to_numeric(df[target_col], errors='coerce')
 df = df.dropna(subset=[target_col])
 
-# Encode target if needed
-y = df[target_col].copy()
-if y.dtype == object:
+y = df[target_col].astype(int)
+assert y.nunique() >= 2, "Target has fewer than 2 classes"
+
+drop_cols = [target_col]
+for c in df.columns:
+    if c.lower().replace(' ', '') in ['userid', 'user_id', 'id']:
+        drop_cols.append(c)
+
+feature_cols = [c for c in df.columns if c not in drop_cols]
+
+cat_cols = []
+num_cols = []
+for c in feature_cols:
+    if df[c].dtype == object or df[c].dtype.name == 'category':
+        cat_cols.append(c)
+    else:
+        num_cols.append(c)
+
+for c in num_cols:
+    df[c] = pd.to_numeric(df[c], errors='coerce')
+
+for c in cat_cols:
     le = LabelEncoder()
-    y = pd.Series(le.fit_transform(y), index=y.index)
-else:
-    y = y.astype(int)
+    df[c] = le.fit_transform(df[c].astype(str))
 
-assert y.nunique() >= 2, "Target must have at least 2 classes"
+all_feature_cols = num_cols + cat_cols
 
-# Identify available feature columns
-feature_cols = [c for c in df.columns if c != target_col]
+df = df.replace([np.inf, -np.inf], np.nan)
+df = df.dropna(subset=all_feature_cols)
 
-num_features = [c for c in feature_cols if c in expected_features_numeric and df[c].dtype in ['float64', 'int64', 'float32', 'int32']]
-cat_features = [c for c in feature_cols if c in expected_features_cat and df[c].dtype == object]
+X = df[list(all_feature_cols)].values
+y = y.loc[df.index].values
 
-# If expected columns missing, fallback to available numeric
-if not num_features:
-    num_features = [c for c in feature_cols if df[c].dtype in ['float64', 'int64', 'float32', 'int32']]
-if not cat_features:
-    cat_features = [c for c in feature_cols if df[c].dtype == object and c not in num_features]
+assert X.shape[0] > 0, "No samples after preprocessing"
 
-all_features = num_features + cat_features
-assert len(all_features) > 0, "No features available"
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, random_state=42, stratify=y
+)
 
-X = df[list(all_features)].copy()
+assert X_train.shape[0] > 0 and X_test.shape[0] > 0, "Empty train or test split"
 
-# Handle NaN/inf in numeric features
-for col in num_features:
-    X[col] = pd.to_numeric(X[col], errors='coerce')
-    X[col] = X[col].replace([np.inf, -np.inf], np.nan)
-    median_val = X[col].median()
-    X[col] = X[col].fillna(median_val)
+pipeline = Pipeline([
+    ('scaler', StandardScaler()),
+    ('clf', LogisticRegression(max_iter=300, solver='lbfgs', random_state=42))
+])
 
-# Encode categorical features simply with label encoding (lightweight)
-for col in cat_features:
-    X[col] = X[col].fillna('missing')
-    le_cat = LabelEncoder()
-    X[col] = le_cat.fit_transform(X[col])
+pipeline.fit(X_train, y_train)
 
-# Now all features are numeric
-all_feature_names = list(all_features)
+y_pred = pipeline.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+
+print(f"ACCURACY={accuracy:.6f}")
+
+# OPTIMIZATION SUMMARY
+# 1. Model choice: Logistic Regression — lightweight, energy-efficient, ideal for binary
+#    classification on small tabular data as specified by the project context.
+# 2. Preprocessing: StandardScaler for numeric features, LabelEncoder for categorical
+#    (Gender). Minimal transformations

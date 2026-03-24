@@ -105,3 +105,5 @@ if is_classification:
             tol=1e-3
         ))
     ])
+
+    raise SyntaxError("Did not finish generating code")

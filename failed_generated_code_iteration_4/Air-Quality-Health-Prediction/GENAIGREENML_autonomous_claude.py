@@ -83,3 +83,5 @@ if len(available_features) < 2:
 
 # --- Create synthetic target as described in README ---
 # Hospital_Visits = synthetic regression
+
+raise SyntaxError("Did not finish generating code")

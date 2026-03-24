@@ -95,3 +95,5 @@ else:
         max_depth=5,
         random_state=42
     )
+
+raise SyntaxError("Did not finish generating code")

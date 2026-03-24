@@ -28,41 +28,26 @@ df = df.loc[:, ~df.columns.str.startswith('Unnamed')]
 expected_target = 'admit'
 expected_features = ['gre', 'gpa', 'rank']
 
-# Check if expected columns exist; fallback if not
 available_cols = list(df.columns)
 
 if expected_target in available_cols:
     target_col = expected_target
 else:
-    # Try to find a binary-looking column
-    target_col = None
-    for c in available_cols:
-        col_numeric = pd.to_numeric(df[c], errors='coerce')
-        nunique = col_numeric.dropna().nunique()
-        if nunique == 2:
-            target_col = c
-            break
-    if target_col is None:
-        # Pick the first numeric non-constant column
-        for c in available_cols:
-            col_numeric = pd.to_numeric(df[c], errors='coerce')
-            if col_numeric.dropna().nunique() >= 2:
-                target_col = c
-                break
-    if target_col is None:
-        target_col = available_cols[0]
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    non_constant = [c for c in numeric_cols if df[c].nunique() > 1]
+    target_col = non_constant[0] if non_constant else numeric_cols[0]
 
-feature_cols = [c for c in expected_features if c in available_cols]
-if len(feature_cols) == 0:
+feature_cols = [c for c in expected_features if c in available_cols and c != target_col]
+if not feature_cols:
     feature_cols = [c for c in available_cols if c != target_col]
 
-# --- Coerce to Numeric ---
-for c in feature_cols + [target_col]:
-    df[c] = pd.to_numeric(df[c], errors='coerce')
+# --- Coerce Numeric ---
+for col in feature_cols + [target_col]:
+    df[col] = pd.to_numeric(df[col], errors='coerce')
 
-# --- Handle NaN/Inf ---
-df.replace([np.inf, -np.inf], np.nan, inplace=True)
-df.dropna(subset=feature_cols + [target_col], inplace=True)
+# --- Drop NaN/Inf ---
+df = df.replace([np.inf, -np.inf], np.nan)
+df = df.dropna(subset=feature_cols + [target_col])
 
 assert df.shape[0] > 0, "Dataset is empty after preprocessing"
 
@@ -85,16 +70,25 @@ assert X_test.shape[0] > 0, "Test set is empty"
 if is_classification:
     pipeline = Pipeline([
         ('scaler', StandardScaler()),
-        ('clf', LogisticRegression(max_iter=1000, solver='lbfgs', random_state=42))
+        ('model', LogisticRegression(max_iter=1000, solver='lbfgs', random_state=42))
     ])
     pipeline.fit(X_train, y_train)
     y_pred = pipeline.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
 else:
     from sklearn.linear_model import Ridge
-    from sklearn.metrics import r2_score
     pipeline = Pipeline([
         ('scaler', StandardScaler()),
-        ('reg', Ridge(alpha=1.0, random_state=42))
+        ('model', Ridge(alpha=1.0))
     ])
     pipeline.fit(X_train, y_train)
+    r2 = pipeline.score(X_test, y_test)
+    accuracy = max(0.0, r2)
+
+print(f"ACCURACY={accuracy:.6f}")
+
+# --- OPTIMIZATION SUMMARY ---
+# 1. Logistic Regression chosen: lightweight, CPU-efficient, ideal for binary classification (admit: 0/1).
+# 2. StandardScaler normalizes gre, gpa, rank to similar scales for stable convergence.
+# 3. No ensemble methods used — single linear model minimizes energy consumption.
+# 4. Robust CSV parsing with fallback separator and decimal handling.
