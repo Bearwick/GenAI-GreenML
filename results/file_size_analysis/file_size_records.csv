@@ -2,6 +2,7 @@ project,relative_path,mode,llm,size_bytes,size_kb
 Air-Quality-Health-Prediction,Air-Quality-Health-Prediction/GENAIGREENML_assisted_chatgpt.py,assisted,chatgpt,4879,4.765
 Air-Quality-Health-Prediction,Air-Quality-Health-Prediction/GENAIGREENML_assisted_claude.py,assisted,claude,2796,2.730
 Air-Quality-Health-Prediction,Air-Quality-Health-Prediction/GENAIGREENML_assisted_codex.py,assisted,codex,4537,4.431
+Air-Quality-Health-Prediction,Air-Quality-Health-Prediction/GENAIGREENML_assisted_gemini.py,assisted,gemini,3543,3.460
 Air-Quality-Health-Prediction,Air-Quality-Health-Prediction/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,14927,14.577
 Air-Quality-Health-Prediction,Air-Quality-Health-Prediction/GENAIGREENML_autonomous_codex.py,autonomous,codex,6827,6.667
 Air-Quality-Health-Prediction,Air-Quality-Health-Prediction/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,5269,5.146
@@ -11,6 +12,7 @@ Algorithms_KnnClasifier,Algorithms_KnnClasifier/GENAIGREENML_assisted_claude.py,
 Algorithms_KnnClasifier,Algorithms_KnnClasifier/GENAIGREENML_assisted_codex.py,assisted,codex,4746,4.635
 Algorithms_KnnClasifier,Algorithms_KnnClasifier/GENAIGREENML_assisted_gemini.py,assisted,gemini,2659,2.597
 Algorithms_KnnClasifier,Algorithms_KnnClasifier/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,10492,10.246
+Algorithms_KnnClasifier,Algorithms_KnnClasifier/GENAIGREENML_autonomous_claude.py,autonomous,claude,3093,3.021
 Algorithms_KnnClasifier,Algorithms_KnnClasifier/GENAIGREENML_autonomous_codex.py,autonomous,codex,6511,6.358
 Algorithms_KnnClasifier,Algorithms_KnnClasifier/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,4451,4.347
 Algorithms_KnnClasifier,Algorithms_KnnClasifier/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,2348,2.293
@@ -19,6 +21,7 @@ Annotated_Colab_Notebook,Annotated_Colab_Notebook/GENAIGREENML_assisted_claude.p
 Annotated_Colab_Notebook,Annotated_Colab_Notebook/GENAIGREENML_assisted_codex.py,assisted,codex,1887,1.843
 Annotated_Colab_Notebook,Annotated_Colab_Notebook/GENAIGREENML_assisted_gemini.py,assisted,gemini,2061,2.013
 Annotated_Colab_Notebook,Annotated_Colab_Notebook/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,13683,13.362
+Annotated_Colab_Notebook,Annotated_Colab_Notebook/GENAIGREENML_autonomous_codex.py,autonomous,codex,7722,7.541
 Annotated_Colab_Notebook,Annotated_Colab_Notebook/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,5014,4.896
 Annotated_Colab_Notebook,Annotated_Colab_Notebook/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,860,0.840
 BREAST-CANCER-PREDICTION-SYSTEM,BREAST-CANCER-PREDICTION-SYSTEM/GENAIGREENML_assisted_chatgpt.py,assisted,chatgpt,4575,4.468
@@ -53,6 +56,7 @@ CodeAlpha_IrisClassification,CodeAlpha_IrisClassification/GENAIGREENML_assisted_
 CodeAlpha_IrisClassification,CodeAlpha_IrisClassification/GENAIGREENML_assisted_codex.py,assisted,codex,3221,3.146
 CodeAlpha_IrisClassification,CodeAlpha_IrisClassification/GENAIGREENML_assisted_gemini.py,assisted,gemini,2237,2.185
 CodeAlpha_IrisClassification,CodeAlpha_IrisClassification/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,10021,9.786
+CodeAlpha_IrisClassification,CodeAlpha_IrisClassification/GENAIGREENML_autonomous_claude.py,autonomous,claude,3066,2.994
 CodeAlpha_IrisClassification,CodeAlpha_IrisClassification/GENAIGREENML_autonomous_codex.py,autonomous,codex,8162,7.971
 CodeAlpha_IrisClassification,CodeAlpha_IrisClassification/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,4541,4.435
 CodeAlpha_IrisClassification,CodeAlpha_IrisClassification/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,1369,1.337
@@ -118,6 +122,7 @@ FakeNewsPrediction,FakeNewsPrediction/GENAIGREENML_assisted_chatgpt.py,assisted,
 FakeNewsPrediction,FakeNewsPrediction/GENAIGREENML_assisted_claude.py,assisted,claude,2597,2.536
 FakeNewsPrediction,FakeNewsPrediction/GENAIGREENML_assisted_codex.py,assisted,codex,3701,3.614
 FakeNewsPrediction,FakeNewsPrediction/GENAIGREENML_assisted_gemini.py,assisted,gemini,2515,2.456
+FakeNewsPrediction,FakeNewsPrediction/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,10435,10.190
 FakeNewsPrediction,FakeNewsPrediction/GENAIGREENML_autonomous_codex.py,autonomous,codex,8365,8.169
 FakeNewsPrediction,FakeNewsPrediction/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,4966,4.850
 FakeNewsPrediction,FakeNewsPrediction/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,984,0.961
@@ -151,13 +156,16 @@ Iris-Flower-Classification-Codealpha,Iris-Flower-Classification-Codealpha/GENAIG
 Iris-Flower-Classification-Codealpha,Iris-Flower-Classification-Codealpha/GENAIGREENML_assisted_codex.py,assisted,codex,3431,3.351
 Iris-Flower-Classification-Codealpha,Iris-Flower-Classification-Codealpha/GENAIGREENML_assisted_gemini.py,assisted,gemini,2195,2.144
 Iris-Flower-Classification-Codealpha,Iris-Flower-Classification-Codealpha/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,8539,8.339
+Iris-Flower-Classification-Codealpha,Iris-Flower-Classification-Codealpha/GENAIGREENML_autonomous_claude.py,autonomous,claude,3165,3.091
 Iris-Flower-Classification-Codealpha,Iris-Flower-Classification-Codealpha/GENAIGREENML_autonomous_codex.py,autonomous,codex,7338,7.166
+Iris-Flower-Classification-Codealpha,Iris-Flower-Classification-Codealpha/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,4599,4.491
 Iris-Flower-Classification-Codealpha,Iris-Flower-Classification-Codealpha/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,1167,1.140
 Iris-Flower-Classification-Codealpha2,Iris-Flower-Classification-Codealpha2/GENAIGREENML_assisted_chatgpt.py,assisted,chatgpt,3010,2.939
 Iris-Flower-Classification-Codealpha2,Iris-Flower-Classification-Codealpha2/GENAIGREENML_assisted_claude.py,assisted,claude,1924,1.879
 Iris-Flower-Classification-Codealpha2,Iris-Flower-Classification-Codealpha2/GENAIGREENML_assisted_codex.py,assisted,codex,2690,2.627
 Iris-Flower-Classification-Codealpha2,Iris-Flower-Classification-Codealpha2/GENAIGREENML_assisted_gemini.py,assisted,gemini,1877,1.833
 Iris-Flower-Classification-Codealpha2,Iris-Flower-Classification-Codealpha2/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,9948,9.715
+Iris-Flower-Classification-Codealpha2,Iris-Flower-Classification-Codealpha2/GENAIGREENML_autonomous_claude.py,autonomous,claude,3180,3.105
 Iris-Flower-Classification-Codealpha2,Iris-Flower-Classification-Codealpha2/GENAIGREENML_autonomous_codex.py,autonomous,codex,5904,5.766
 Iris-Flower-Classification-Codealpha2,Iris-Flower-Classification-Codealpha2/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,5548,5.418
 Iris-Flower-Classification-Codealpha2,Iris-Flower-Classification-Codealpha2/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,1131,1.104
@@ -166,6 +174,9 @@ Iris-Flower-Classification-Codealpha3,Iris-Flower-Classification-Codealpha3/GENA
 Iris-Flower-Classification-Codealpha3,Iris-Flower-Classification-Codealpha3/GENAIGREENML_assisted_codex.py,assisted,codex,2599,2.538
 Iris-Flower-Classification-Codealpha3,Iris-Flower-Classification-Codealpha3/GENAIGREENML_assisted_gemini.py,assisted,gemini,1879,1.835
 Iris-Flower-Classification-Codealpha3,Iris-Flower-Classification-Codealpha3/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,9204,8.988
+Iris-Flower-Classification-Codealpha3,Iris-Flower-Classification-Codealpha3/GENAIGREENML_autonomous_claude.py,autonomous,claude,3184,3.109
+Iris-Flower-Classification-Codealpha3,Iris-Flower-Classification-Codealpha3/GENAIGREENML_autonomous_codex.py,autonomous,codex,7539,7.362
+Iris-Flower-Classification-Codealpha3,Iris-Flower-Classification-Codealpha3/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,4622,4.514
 Iris-Flower-Classification-Codealpha3,Iris-Flower-Classification-Codealpha3/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,1010,0.986
 Iris-ML-Lab,Iris-ML-Lab/GENAIGREENML_assisted_chatgpt.py,assisted,chatgpt,4096,4.000
 Iris-ML-Lab,Iris-ML-Lab/GENAIGREENML_assisted_claude.py,assisted,claude,1595,1.558
@@ -174,6 +185,7 @@ Iris-ML-Lab,Iris-ML-Lab/GENAIGREENML_assisted_gemini.py,assisted,gemini,1989,1.9
 Iris-ML-Lab,Iris-ML-Lab/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,8885,8.677
 Iris-ML-Lab,Iris-ML-Lab/GENAIGREENML_autonomous_claude.py,autonomous,claude,3370,3.291
 Iris-ML-Lab,Iris-ML-Lab/GENAIGREENML_autonomous_codex.py,autonomous,codex,7539,7.362
+Iris-ML-Lab,Iris-ML-Lab/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,4652,4.543
 Iris-ML-Lab,Iris-ML-Lab/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,934,0.912
 JunctionalClassifier,JunctionalClassifier/GENAIGREENML_assisted_chatgpt.py,assisted,chatgpt,4420,4.316
 JunctionalClassifier,JunctionalClassifier/GENAIGREENML_assisted_claude.py,assisted,claude,2347,2.292
@@ -186,6 +198,7 @@ JunctionalClassifier2,JunctionalClassifier2/GENAIGREENML_assisted_chatgpt.py,ass
 JunctionalClassifier2,JunctionalClassifier2/GENAIGREENML_assisted_claude.py,assisted,claude,1886,1.842
 JunctionalClassifier2,JunctionalClassifier2/GENAIGREENML_assisted_codex.py,assisted,codex,5121,5.001
 JunctionalClassifier2,JunctionalClassifier2/GENAIGREENML_assisted_gemini.py,assisted,gemini,2354,2.299
+JunctionalClassifier2,JunctionalClassifier2/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,10461,10.216
 JunctionalClassifier2,JunctionalClassifier2/GENAIGREENML_autonomous_codex.py,autonomous,codex,9369,9.149
 JunctionalClassifier2,JunctionalClassifier2/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,6588,6.434
 JunctionalClassifier2,JunctionalClassifier2/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,2892,2.824
@@ -217,11 +230,13 @@ MachineLearn-WineClassifier,MachineLearn-WineClassifier/GENAIGREENML_assisted_co
 MachineLearn-WineClassifier,MachineLearn-WineClassifier/GENAIGREENML_assisted_gemini.py,assisted,gemini,1970,1.924
 MachineLearn-WineClassifier,MachineLearn-WineClassifier/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,11019,10.761
 MachineLearn-WineClassifier,MachineLearn-WineClassifier/GENAIGREENML_autonomous_codex.py,autonomous,codex,8421,8.224
+MachineLearn-WineClassifier,MachineLearn-WineClassifier/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,4656,4.547
 MachineLearn-WineClassifier,MachineLearn-WineClassifier/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,974,0.951
 MaliciousSoftwareClassification,MaliciousSoftwareClassification/GENAIGREENML_assisted_chatgpt.py,assisted,chatgpt,6009,5.868
 MaliciousSoftwareClassification,MaliciousSoftwareClassification/GENAIGREENML_assisted_claude.py,assisted,claude,2863,2.796
 MaliciousSoftwareClassification,MaliciousSoftwareClassification/GENAIGREENML_assisted_codex.py,assisted,codex,6536,6.383
 MaliciousSoftwareClassification,MaliciousSoftwareClassification/GENAIGREENML_assisted_gemini.py,assisted,gemini,4716,4.605
+MaliciousSoftwareClassification,MaliciousSoftwareClassification/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,9133,8.919
 MaliciousSoftwareClassification,MaliciousSoftwareClassification/GENAIGREENML_autonomous_codex.py,autonomous,codex,6320,6.172
 MaliciousSoftwareClassification,MaliciousSoftwareClassification/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,3854,3.764
 MaliciousSoftwareClassification,MaliciousSoftwareClassification/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,3995,3.901
@@ -244,6 +259,7 @@ Na-ve-bayes-algorithm-to-classify-the-fetal-health-,Na-ve-bayes-algorithm-to-cla
 Network_Intrusion_Detection_System,Network_Intrusion_Detection_System/GENAIGREENML_assisted_chatgpt.py,assisted,chatgpt,2473,2.415
 Network_Intrusion_Detection_System,Network_Intrusion_Detection_System/GENAIGREENML_assisted_codex.py,assisted,codex,3445,3.364
 Network_Intrusion_Detection_System,Network_Intrusion_Detection_System/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,10550,10.303
+Network_Intrusion_Detection_System,Network_Intrusion_Detection_System/GENAIGREENML_autonomous_codex.py,autonomous,codex,8429,8.231
 Network_Intrusion_Detection_System,Network_Intrusion_Detection_System/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,5009,4.892
 Network_Intrusion_Detection_System,Network_Intrusion_Detection_System/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,1599,1.562
 Predicting-heart-diseases-,Predicting-heart-diseases-/GENAIGREENML_assisted_chatgpt.py,assisted,chatgpt,3300,3.223
@@ -251,6 +267,7 @@ Predicting-heart-diseases-,Predicting-heart-diseases-/GENAIGREENML_assisted_clau
 Predicting-heart-diseases-,Predicting-heart-diseases-/GENAIGREENML_assisted_codex.py,assisted,codex,3793,3.704
 Predicting-heart-diseases-,Predicting-heart-diseases-/GENAIGREENML_assisted_gemini.py,assisted,gemini,2837,2.771
 Predicting-heart-diseases-,Predicting-heart-diseases-/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,10147,9.909
+Predicting-heart-diseases-,Predicting-heart-diseases-/GENAIGREENML_autonomous_claude.py,autonomous,claude,3129,3.056
 Predicting-heart-diseases-,Predicting-heart-diseases-/GENAIGREENML_autonomous_codex.py,autonomous,codex,5830,5.693
 Predicting-heart-diseases-,Predicting-heart-diseases-/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,5049,4.931
 Predicting-heart-diseases-,Predicting-heart-diseases-/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,2596,2.535
@@ -285,6 +302,7 @@ Social-Network-Ads,Social-Network-Ads/GENAIGREENML_assisted_claude.py,assisted,c
 Social-Network-Ads,Social-Network-Ads/GENAIGREENML_assisted_codex.py,assisted,codex,4478,4.373
 Social-Network-Ads,Social-Network-Ads/GENAIGREENML_assisted_gemini.py,assisted,gemini,2573,2.513
 Social-Network-Ads,Social-Network-Ads/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,10992,10.734
+Social-Network-Ads,Social-Network-Ads/GENAIGREENML_autonomous_claude.py,autonomous,claude,3051,2.979
 Social-Network-Ads,Social-Network-Ads/GENAIGREENML_autonomous_codex.py,autonomous,codex,6372,6.223
 Social-Network-Ads,Social-Network-Ads/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,4201,4.103
 Social-Network-Ads,Social-Network-Ads/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,1267,1.237
@@ -309,6 +327,7 @@ Supervised-Data-mining-Customer-satisfaction-prediction-,Supervised-Data-mining-
 Supervised-Data-mining-Customer-satisfaction-prediction-,Supervised-Data-mining-Customer-satisfaction-prediction-/GENAIGREENML_assisted_codex.py,assisted,codex,4179,4.081
 Supervised-Data-mining-Customer-satisfaction-prediction-,Supervised-Data-mining-Customer-satisfaction-prediction-/GENAIGREENML_assisted_gemini.py,assisted,gemini,3150,3.076
 Supervised-Data-mining-Customer-satisfaction-prediction-,Supervised-Data-mining-Customer-satisfaction-prediction-/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,8399,8.202
+Supervised-Data-mining-Customer-satisfaction-prediction-,Supervised-Data-mining-Customer-satisfaction-prediction-/GENAIGREENML_autonomous_codex.py,autonomous,codex,7070,6.904
 Supervised-Data-mining-Customer-satisfaction-prediction-,Supervised-Data-mining-Customer-satisfaction-prediction-/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,4491,4.386
 Supervised-Data-mining-Customer-satisfaction-prediction-,Supervised-Data-mining-Customer-satisfaction-prediction-/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,3170,3.096
 Svm-GridsearchCV,Svm-GridsearchCV/GENAIGREENML_assisted_chatgpt.py,assisted,chatgpt,3642,3.557
@@ -317,6 +336,7 @@ Svm-GridsearchCV,Svm-GridsearchCV/GENAIGREENML_assisted_codex.py,assisted,codex,
 Svm-GridsearchCV,Svm-GridsearchCV/GENAIGREENML_assisted_gemini.py,assisted,gemini,2520,2.461
 Svm-GridsearchCV,Svm-GridsearchCV/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,10740,10.488
 Svm-GridsearchCV,Svm-GridsearchCV/GENAIGREENML_autonomous_codex.py,autonomous,codex,6791,6.632
+Svm-GridsearchCV,Svm-GridsearchCV/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,4968,4.852
 Svm-GridsearchCV,Svm-GridsearchCV/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,1045,1.021
 Voting-Data-Classification,Voting-Data-Classification/GENAIGREENML_assisted_chatgpt.py,assisted,chatgpt,3614,3.529
 Voting-Data-Classification,Voting-Data-Classification/GENAIGREENML_assisted_claude.py,assisted,claude,2096,2.047
@@ -325,11 +345,13 @@ Voting-Data-Classification,Voting-Data-Classification/GENAIGREENML_assisted_gemi
 Voting-Data-Classification,Voting-Data-Classification/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,13677,13.356
 Voting-Data-Classification,Voting-Data-Classification/GENAIGREENML_autonomous_claude.py,autonomous,claude,3061,2.989
 Voting-Data-Classification,Voting-Data-Classification/GENAIGREENML_autonomous_codex.py,autonomous,codex,6391,6.241
+Voting-Data-Classification,Voting-Data-Classification/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,4400,4.297
 Voting-Data-Classification,Voting-Data-Classification/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,3893,3.802
 animals-classification,animals-classification/GENAIGREENML_assisted_chatgpt.py,assisted,chatgpt,2957,2.888
 animals-classification,animals-classification/GENAIGREENML_assisted_claude.py,assisted,claude,1287,1.257
 animals-classification,animals-classification/GENAIGREENML_assisted_codex.py,assisted,codex,2491,2.433
 animals-classification,animals-classification/GENAIGREENML_assisted_gemini.py,assisted,gemini,1617,1.579
+animals-classification,animals-classification/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,9541,9.317
 animals-classification,animals-classification/GENAIGREENML_autonomous_codex.py,autonomous,codex,6835,6.675
 animals-classification,animals-classification/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,5024,4.906
 animals-classification,animals-classification/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,884,0.863
@@ -388,4 +410,5 @@ student-math-ml-analysis,student-math-ml-analysis/analysis/GENAIGREENML_assisted
 student-math-ml-analysis,student-math-ml-analysis/analysis/GENAIGREENML_assisted_codex.py,assisted,codex,3116,3.043
 student-math-ml-analysis,student-math-ml-analysis/analysis/GENAIGREENML_assisted_gemini.py,assisted,gemini,3026,2.955
 student-math-ml-analysis,student-math-ml-analysis/analysis/GENAIGREENML_autonomous_codex.py,autonomous,codex,5887,5.749
+student-math-ml-analysis,student-math-ml-analysis/analysis/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,5578,5.447
 student-math-ml-analysis,student-math-ml-analysis/analysis/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,3594,3.510

@@ -2,45 +2,45 @@ GENAIGREENML File Size Analysis
 ==================================
 Repos directory: /cluster/home/edvardbj/GenAI-GreenML/repos
 Projects scanned: 50
-Total files analyzed: 390
+Total files analyzed: 413
 
 Requested metrics
 Average original file size: 2.037 KB
 Median  original file size: 1.584 KB
 
 Average file size per LLM:
-  chatgpt: 5.239 KB (n=143)
-  claude: 2.490 KB (n=64)
-  codex: 5.643 KB (n=93)
-  gemini: 3.585 KB (n=90)
+  chatgpt: 5.359 KB (n=147)
+  claude: 2.545 KB (n=71)
+  codex: 5.720 KB (n=97)
+  gemini: 3.661 KB (n=98)
 Median file size per LLM:
-  chatgpt: 3.529 KB (n=143)
-  claude: 2.528 KB (n=64)
-  codex: 6.088 KB (n=93)
-  gemini: 3.589 KB (n=90)
-Average file size per mode: assisted=3.279 KB, autonomous=7.049 KB, original=2.037 KB
-Median file size per mode: assisted=2.888 KB, autonomous=6.507 KB, original=1.584 KB
+  chatgpt: 3.534 KB (n=147)
+  claude: 2.730 KB (n=71)
+  codex: 6.172 KB (n=97)
+  gemini: 3.763 KB (n=98)
+Average file size per mode: assisted=3.280 KB, autonomous=6.853 KB, original=2.037 KB
+Median file size per mode: assisted=2.893 KB, autonomous=6.435 KB, original=1.584 KB
 Average file size per mode per LLM:
   assisted/chatgpt: mean=3.972 KB, median=3.506 KB, n=50
   assisted/claude: mean=2.312 KB, median=2.119 KB, n=49
   assisted/codex: mean=4.238 KB, median=3.407 KB, n=50
-  assisted/gemini: mean=2.548 KB, median=2.310 KB, n=48
-  autonomous/chatgpt: mean=10.436 KB, median=10.303 KB, n=43
-  autonomous/claude: mean=3.070 KB, median=3.048 KB, n=15
-  autonomous/codex: mean=7.278 KB, median=6.675 KB, n=43
-  autonomous/gemini: mean=4.769 KB, median=4.828 KB, n=42
+  assisted/gemini: mean=2.567 KB, median=2.315 KB, n=49
+  autonomous/chatgpt: mean=10.370 KB, median=10.216 KB, n=47
+  autonomous/claude: mean=3.064 KB, median=3.051 KB, n=22
+  autonomous/codex: mean=7.298 KB, median=6.904 KB, n=47
+  autonomous/gemini: mean=4.755 KB, median=4.782 KB, n=49
   original/chatgpt: mean=2.037 KB, median=1.584 KB, n=50
 
 Additional analyses
 Share of total bytes by mode:
-  assisted: 36.79% (n=197)
-  autonomous: 57.41% (n=143)
-  original: 5.80% (n=50)
+  assisted: 34.51% (n=198)
+  autonomous: 60.08% (n=165)
+  original: 5.41% (n=50)
 Share of total bytes by LLM:
-  chatgpt: 42.66% (n=143)
-  claude: 9.07% (n=64)
-  codex: 29.89% (n=93)
-  gemini: 18.37% (n=90)
+  chatgpt: 41.86% (n=147)
+  claude: 9.60% (n=71)
+  codex: 29.48% (n=97)
+  gemini: 19.06% (n=98)
 Top projects by total bytes (top 10)
   Decision-Trees: 71.821 KB
   K-Nearest-Neighbor-Algorithm: 49.953 KB
@@ -48,10 +48,10 @@ Top projects by total bytes (top 10)
   Cuisine-Predictor: 43.799 KB
   Iris-Classification-ML-problem: 43.203 KB
   SparkMLClassification: 42.803 KB
+  Air-Quality-Health-Prediction: 42.668 KB
+  MaliciousSoftwareClassification: 42.408 KB
   dyslexia-randomforest: 42.201 KB
-  JunctionalClassifier: 41.626 KB
-  Email-spam-detector: 41.155 KB
-  BREAST-CANCER-PREDICTION-SYSTEM: 41.135 KB
+  Voting-Data-Classification: 41.953 KB
 Top 10 largest files
    1. Air-Quality-Health-Prediction/Air-Quality-Health-Prediction/GENAIGREENML_autonomous_chatgpt.py — 14.577 KB (autonomous/chatgpt)
    2. ML_CSV_Classification/ML_CSV_Classification/GENAIGREENML_autonomous_chatgpt.py — 13.384 KB (autonomous/chatgpt)
@@ -78,31 +78,31 @@ Top 10 smallest files
 Biggest file: Air-Quality-Health-Prediction/Air-Quality-Health-Prediction/GENAIGREENML_autonomous_chatgpt.py
   bytes=14927 (14.577 KB) mode=autonomous llm=chatgpt
 
-Mode counts: {'assisted': 197, 'autonomous': 143, 'original': 50}
-LLM counts: {'chatgpt': 143, 'claude': 64, 'codex': 93, 'gemini': 90}
+Mode counts: {'assisted': 198, 'autonomous': 165, 'original': 50}
+LLM counts: {'chatgpt': 147, 'claude': 71, 'codex': 97, 'gemini': 98}
 
 Within-project comparison (generated vs original, same LLM)
-Matched files: assisted=50, autonomous=43
-Unmatched files: assisted=147, autonomous=100
+Matched files: assisted=50, autonomous=47
+Unmatched files: assisted=148, autonomous=118
   assisted/chatgpt: n=50, mean delta=1.935 KB, median delta=1.915 KB, p90 delta=3.059 KB, p10 delta=0.528 KB, min=-0.272 KB, max=9.418 KB
-  autonomous/chatgpt: n=43, mean delta=8.479 KB, median delta=8.635 KB, p90 delta=10.632 KB, p10 delta=5.865 KB, min=-0.906 KB, max=13.685 KB
+  autonomous/chatgpt: n=47, mean delta=8.398 KB, median delta=8.610 KB, p90 delta=10.529 KB, p10 delta=5.675 KB, min=-0.906 KB, max=13.685 KB
 
 Project-level summary (top 15 mean file sizes)
   Decision-Trees: 8.978 KB
   JunctionalClassifier: 5.947 KB
   Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity: 5.694 KB
-  Air-Quality-Health-Prediction: 5.601 KB
   K-Nearest-Neighbor-Algorithm: 5.550 KB
   Cuisine-Predictor: 5.475 KB
   Multi-Turn-Intent-Classification: 5.443 KB
   Iris-Classification-ML-problem: 5.400 KB
   SparkMLClassification: 5.350 KB
+  Air-Quality-Health-Prediction: 5.333 KB
+  MaliciousSoftwareClassification: 5.301 KB
   dyslexia-randomforest: 5.275 KB
   Email-spam-detector: 5.144 KB
-  MaliciousSoftwareClassification: 4.784 KB
-  Voting-Data-Classification: 4.707 KB
-  Algorithms_KnnClasifier: 4.600 KB
-  breastcancer_classification: 4.592 KB
+  Network_Intrusion_Detection_System: 5.128 KB
+  JunctionalClassifier2: 5.102 KB
+  Supervised-Data-mining-Customer-satisfaction-prediction-: 4.676 KB
 
 Output files
 - records: /cluster/home/edvardbj/GenAI-GreenML/results/file_size_analysis/file_size_records.csv
