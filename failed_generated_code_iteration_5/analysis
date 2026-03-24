@@ -5,27 +5,26 @@ Total Errors by original: 0
 Total Errors by autonomous: 33
 Type of Error by original: none
 Type of Error by assisted: NameError=1, TypeError=1
-Type of Error by autonomous: SyntaxError=21, IndentationError=5, ValueError=3, TypeError=2, AssertionError=1, ModuleNotFoundError=1
+Type of Error by autonomous: SyntaxError=22, IndentationError=5, ValueError=3, TypeError=2, AssertionError=1
 Total Errors per LLM: claude=27, chatgpt=3, codex=3, gemini=2
 Total Errors per LLM by original: none
 Total Errors per LLM by assisted: claude=1, gemini=1
 Total Errors per LLM by autonomous: claude=26, chatgpt=3, codex=3, gemini=1
-Type of Error per LLM: chatgpt -> SyntaxError=1, TypeError=1, ValueError=1 | claude -> SyntaxError=20, IndentationError=5, ModuleNotFoundError=1, NameError=1 | codex -> AssertionError=1, TypeError=1, ValueError=1 | gemini -> TypeError=1, ValueError=1
+Type of Error per LLM: chatgpt -> SyntaxError=1, TypeError=1, ValueError=1 | claude -> SyntaxError=21, IndentationError=5, NameError=1 | codex -> AssertionError=1, TypeError=1, ValueError=1 | gemini -> TypeError=1, ValueError=1
 Type of Error per LLM by original: none
 Type of Error per LLM by assisted: claude -> NameError=1 | gemini -> TypeError=1
-Type of Error per LLM by autonomous: chatgpt -> SyntaxError=1, TypeError=1, ValueError=1 | claude -> SyntaxError=20, IndentationError=5, ModuleNotFoundError=1 | codex -> AssertionError=1, TypeError=1, ValueError=1 | gemini -> ValueError=1
+Type of Error per LLM by autonomous: chatgpt -> SyntaxError=1, TypeError=1, ValueError=1 | claude -> SyntaxError=21, IndentationError=5 | codex -> AssertionError=1, TypeError=1, ValueError=1 | gemini -> ValueError=1
 Error type with list of projects:script
-SyntaxError: Annotated_Colab_Notebook:GENAIGREENML_autonomous_claude.py, BreastCancer_Classification:GENAIGREENML_autonomous_claude.py, Cuisine-Predictor:GENAIGREENML_autonomous_claude.py, Decision-Trees:GENAIGREENML_autonomous_claude.py, Deep-Learning-Classification:GENAIGREENML_autonomous_claude.py, Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity:GENAIGREENML_autonomous_claude.py, Email-spam-detector:GENAIGREENML_autonomous_claude.py, FakeNewsPrediction:GENAIGREENML_autonomous_claude.py, JunctionalClassifier3:GENAIGREENML_autonomous_chatgpt.py, JunctionalClassifier3:GENAIGREENML_autonomous_claude.py, ML_CSV_Classification:GENAIGREENML_autonomous_claude.py, Network_Intrusion_Detection_System:GENAIGREENML_autonomous_claude.py, Rock-or-Mine-prediction:GENAIGREENML_autonomous_claude.py, Spam-Email-Classifier:GENAIGREENML_autonomous_claude.py, SparkMLClassification:GENAIGREENML_autonomous_claude.py, Supervised-Data-mining-Customer-satisfaction-prediction-:GENAIGREENML_autonomous_claude.py, Svm-GridsearchCV:GENAIGREENML_autonomous_claude.py, animals-classification:GENAIGREENML_autonomous_claude.py, cars-classification:GENAIGREENML_autonomous_claude.py, dyslexia-randomforest:GENAIGREENML_autonomous_claude.py, student-math-ml-analysis:GENAIGREENML_autonomous_claude.py
+SyntaxError: Annotated_Colab_Notebook:GENAIGREENML_autonomous_claude.py, BreastCancer_Classification:GENAIGREENML_autonomous_claude.py, Cuisine-Predictor:GENAIGREENML_autonomous_claude.py, Decision-Trees:GENAIGREENML_autonomous_claude.py, Deep-Learning-Classification:GENAIGREENML_autonomous_claude.py, Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity:GENAIGREENML_autonomous_claude.py, Email-spam-detector:GENAIGREENML_autonomous_claude.py, FakeNewsPrediction:GENAIGREENML_autonomous_claude.py, Iris-Classification-ML-problem:GENAIGREENML_autonomous_claude.py, JunctionalClassifier3:GENAIGREENML_autonomous_chatgpt.py, JunctionalClassifier3:GENAIGREENML_autonomous_claude.py, ML_CSV_Classification:GENAIGREENML_autonomous_claude.py, Network_Intrusion_Detection_System:GENAIGREENML_autonomous_claude.py, Rock-or-Mine-prediction:GENAIGREENML_autonomous_claude.py, Spam-Email-Classifier:GENAIGREENML_autonomous_claude.py, SparkMLClassification:GENAIGREENML_autonomous_claude.py, Supervised-Data-mining-Customer-satisfaction-prediction-:GENAIGREENML_autonomous_claude.py, Svm-GridsearchCV:GENAIGREENML_autonomous_claude.py, animals-classification:GENAIGREENML_autonomous_claude.py, cars-classification:GENAIGREENML_autonomous_claude.py, dyslexia-randomforest:GENAIGREENML_autonomous_claude.py, student-math-ml-analysis:GENAIGREENML_autonomous_claude.py
 IndentationError: HWStudentGradPredictor:GENAIGREENML_autonomous_claude.py, JunctionalClassifier2:GENAIGREENML_autonomous_claude.py, JunctionalClassifier:GENAIGREENML_autonomous_claude.py, MachineLearn-WineClassifier:GENAIGREENML_autonomous_claude.py, Multi-Turn-Intent-Classification:GENAIGREENML_autonomous_claude.py
 TypeError: ML_CSV_Classification:GENAIGREENML_autonomous_codex.py, Multi-Turn-Intent-Classification:GENAIGREENML_autonomous_chatgpt.py, Network_Intrusion_Detection_System:GENAIGREENML_assisted_gemini.py
 ValueError: BreastCancer_Classification:GENAIGREENML_autonomous_gemini.py, JunctionalClassifier3:GENAIGREENML_autonomous_codex.py, student-math-ml-analysis:GENAIGREENML_autonomous_chatgpt.py
 AssertionError: JunctionalClassifier:GENAIGREENML_autonomous_codex.py
-ModuleNotFoundError: Iris-Classification-ML-problem:GENAIGREENML_autonomous_claude.py
 NameError: Network_Intrusion_Detection_System:GENAIGREENML_assisted_claude.py
 Error type with exact causes and list of projects:script
 SyntaxError:
   unexpected EOF while parsing: Cuisine-Predictor:GENAIGREENML_autonomous_claude.py, Decision-Trees:GENAIGREENML_autonomous_claude.py, Deep-Learning-Classification:GENAIGREENML_autonomous_claude.py, ML_CSV_Classification:GENAIGREENML_autonomous_claude.py, Spam-Email-Classifier:GENAIGREENML_autonomous_claude.py, Supervised-Data-mining-Customer-satisfaction-prediction-:GENAIGREENML_autonomous_claude.py, dyslexia-randomforest:GENAIGREENML_autonomous_claude.py
-  Did not finish generating code: Network_Intrusion_Detection_System:GENAIGREENML_autonomous_claude.py, Rock-or-Mine-prediction:GENAIGREENML_autonomous_claude.py, SparkMLClassification:GENAIGREENML_autonomous_claude.py, Svm-GridsearchCV:GENAIGREENML_autonomous_claude.py, cars-classification:GENAIGREENML_autonomous_claude.py
+  Did not finish generating code: Iris-Classification-ML-problem:GENAIGREENML_autonomous_claude.py, Network_Intrusion_Detection_System:GENAIGREENML_autonomous_claude.py, Rock-or-Mine-prediction:GENAIGREENML_autonomous_claude.py, SparkMLClassification:GENAIGREENML_autonomous_claude.py, Svm-GridsearchCV:GENAIGREENML_autonomous_claude.py, cars-classification:GENAIGREENML_autonomous_claude.py
   invalid syntax: Annotated_Colab_Notebook:GENAIGREENML_autonomous_claude.py, BreastCancer_Classification:GENAIGREENML_autonomous_claude.py, Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity:GENAIGREENML_autonomous_claude.py, FakeNewsPrediction:GENAIGREENML_autonomous_claude.py
   EOL while scanning string literal: Email-spam-detector:GENAIGREENML_autonomous_claude.py, JunctionalClassifier3:GENAIGREENML_autonomous_claude.py, animals-classification:GENAIGREENML_autonomous_claude.py
   invalid character '”' (U+201D): JunctionalClassifier3:GENAIGREENML_autonomous_chatgpt.py
@@ -41,7 +40,5 @@ ValueError:
   DataFrame constructor not properly called!: JunctionalClassifier3:GENAIGREENML_autonomous_codex.py
 AssertionError:
   AssertionError: JunctionalClassifier:GENAIGREENML_autonomous_codex.py
-ModuleNotFoundError:
-  No module named 'sklearn': Iris-Classification-ML-problem:GENAIGREENML_autonomous_claude.py
 NameError:
   name 'train_idx' is not defined: Network_Intrusion_Detection_System:GENAIGREENML_assisted_claude.py
