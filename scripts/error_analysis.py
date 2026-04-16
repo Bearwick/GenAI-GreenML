@@ -261,7 +261,7 @@ def plot_llm_overall(iterations: List[Dict[str, object]], out_dir: Path, plt):
         all_totals = [sum(it["llm_total"].values()) for it in iterations]
         ax.plot(xvals, all_totals, marker="x", linestyle="--", linewidth=2, label="Combined")
 
-    ax.set_title("LLM errors over iterations")
+    #ax.set_title("LLM errors over iterations")
     ax.set_xlabel("Iteration")
     ax.set_ylabel("Error count")
     ax.set_xticks(xvals)
@@ -313,7 +313,7 @@ def plot_error_types_over_iterations(iterations: List[Dict[str, object]], out_di
         line, = ax.plot(xvals, ys, marker="o", color=color)
         plotted.append((line, err))
 
-    ax.set_title("Error type trend over iterations")
+    #ax.set_title("Error type trend over iterations")
     ax.set_xlabel("Iteration")
     ax.set_ylabel("Error count")
     ax.set_xticks(xvals)
@@ -371,7 +371,7 @@ def plot_last_iteration_error_types(iterations: List[Dict[str, object]], out_dir
                 fontsize=8,
             )
 
-    ax.set_title(f"Error types by mode (final iteration)")
+    #ax.set_title(f"Error types by mode (final iteration)")
     ax.set_xlabel("Error type")
     ax.set_ylabel("Error count")
     ax.set_xticks(idx)
@@ -398,7 +398,7 @@ def plot_mode_totals(iterations: List[Dict[str, object]], out_dir: Path, plt):
 
     if include_original:
         ax.plot(xvals, original, marker="o", label="original")
-    ax.set_title("Errors by mode over iterations")
+    #ax.set_title("Errors by mode over iterations")
     ax.set_xlabel("Iteration")
     ax.set_ylabel("Error count")
     ax.set_xticks(xvals)

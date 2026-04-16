@@ -33,6 +33,13 @@ BREAST-CANCER-PREDICTION-SYSTEM,BREAST-CANCER-PREDICTION-SYSTEM/GENAIGREENML_aut
 BREAST-CANCER-PREDICTION-SYSTEM,BREAST-CANCER-PREDICTION-SYSTEM/GENAIGREENML_autonomous_codex.py,autonomous,codex,6663,6.507
 BREAST-CANCER-PREDICTION-SYSTEM,BREAST-CANCER-PREDICTION-SYSTEM/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,4959,4.843
 BREAST-CANCER-PREDICTION-SYSTEM,BREAST-CANCER-PREDICTION-SYSTEM/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,2242,2.189
+BreastCancer_Classification,BreastCancer_Classification/GENAIGREENML_assisted_chatgpt.py,assisted,chatgpt,4815,4.702
+BreastCancer_Classification,BreastCancer_Classification/GENAIGREENML_assisted_claude.py,assisted,claude,2324,2.270
+BreastCancer_Classification,BreastCancer_Classification/GENAIGREENML_assisted_codex.py,assisted,codex,4235,4.136
+BreastCancer_Classification,BreastCancer_Classification/GENAIGREENML_assisted_gemini.py,assisted,gemini,2178,2.127
+BreastCancer_Classification,BreastCancer_Classification/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,10219,9.979
+BreastCancer_Classification,BreastCancer_Classification/GENAIGREENML_autonomous_codex.py,autonomous,codex,6597,6.442
+BreastCancer_Classification,BreastCancer_Classification/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,2547,2.487
 CT_Project,CT_Project/GENAIGREENML_assisted_chatgpt.py,assisted,chatgpt,2929,2.860
 CT_Project,CT_Project/GENAIGREENML_assisted_claude.py,assisted,claude,2108,2.059
 CT_Project,CT_Project/GENAIGREENML_assisted_codex.py,assisted,codex,3046,2.975
@@ -355,13 +362,6 @@ animals-classification,animals-classification/GENAIGREENML_autonomous_chatgpt.py
 animals-classification,animals-classification/GENAIGREENML_autonomous_codex.py,autonomous,codex,6835,6.675
 animals-classification,animals-classification/GENAIGREENML_autonomous_gemini.py,autonomous,gemini,5024,4.906
 animals-classification,animals-classification/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,884,0.863
-breastcancer_classification,breastcancer_classification/GENAIGREENML_assisted_chatgpt.py,assisted,chatgpt,4815,4.702
-breastcancer_classification,breastcancer_classification/GENAIGREENML_assisted_claude.py,assisted,claude,2324,2.270
-breastcancer_classification,breastcancer_classification/GENAIGREENML_assisted_codex.py,assisted,codex,4235,4.136
-breastcancer_classification,breastcancer_classification/GENAIGREENML_assisted_gemini.py,assisted,gemini,2178,2.127
-breastcancer_classification,breastcancer_classification/GENAIGREENML_autonomous_chatgpt.py,autonomous,chatgpt,10219,9.979
-breastcancer_classification,breastcancer_classification/GENAIGREENML_autonomous_codex.py,autonomous,codex,6597,6.442
-breastcancer_classification,breastcancer_classification/GENAIGREENML_original_telemetry_chatgpt.py,original,chatgpt,2547,2.487
 cancer_prediction,cancer_prediction/GENAIGREENML_assisted_chatgpt.py,assisted,chatgpt,3561,3.478
 cancer_prediction,cancer_prediction/GENAIGREENML_assisted_claude.py,assisted,claude,1943,1.897
 cancer_prediction,cancer_prediction/GENAIGREENML_assisted_codex.py,assisted,codex,4560,4.453

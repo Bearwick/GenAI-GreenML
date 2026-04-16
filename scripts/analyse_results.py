@@ -613,7 +613,7 @@ def main():
         metric_original = raw_original[metric]
         metric_original_plot = list(metric_original) if metric == "accuracy" else list(metric_original)
         plot_metric_label = "Accuracy" if metric == "accuracy" else metric
-        fig.suptitle(f"{plot_metric_label} by mode and source (raw)")
+        #fig.suptitle(f"{plot_metric_label} by mode and source (raw)")
 
         all_values_for_axis = list(metric_original_plot)
 

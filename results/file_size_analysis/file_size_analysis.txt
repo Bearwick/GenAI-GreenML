@@ -1,6 +1,6 @@
 GENAIGREENML File Size Analysis
 ==================================
-Repos directory: /cluster/home/edvardbj/GenAI-GreenML/repos
+Repos directory: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/repos
 Projects scanned: 50
 Total files analyzed: 413
 
@@ -105,22 +105,22 @@ Project-level summary (top 15 mean file sizes)
   Supervised-Data-mining-Customer-satisfaction-prediction-: 4.676 KB
 
 Output files
-- records: /cluster/home/edvardbj/GenAI-GreenML/results/file_size_analysis/file_size_records.csv
-- summary: /cluster/home/edvardbj/GenAI-GreenML/results/file_size_analysis/file_size_summary_stats.csv
-- non-generated project sizes: /cluster/home/edvardbj/GenAI-GreenML/results/file_size_analysis/non_generated_project_sizes.csv
+- records: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/file_size_analysis/file_size_records.csv
+- summary: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/file_size_analysis/file_size_summary_stats.csv
+- non-generated project sizes: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/file_size_analysis/non_generated_project_sizes.csv
 
 Top 10 biggest projects excluding GENAIGREENML files
  1. FakeNewsPrediction: 158947.407 KB
  2. Network_Intrusion_Detection_System: 25756.355 KB
- 3. breastcancer_classification: 22704.497 KB
+ 3. BreastCancer_Classification: 22704.497 KB
  4. Cuisine-Predictor: 15153.929 KB
  5. MaliciousSoftwareClassification: 12695.839 KB
  6. Supervised-Data-mining-Customer-satisfaction-prediction-: 9298.083 KB
  7. spam-ham-detection: 8747.857 KB
- 8. IMDB-Sentiment-Analysis: 7620.503 KB
- 9. Annotated_Colab_Notebook: 5847.298 KB
-10. dyslexia-randomforest: 3533.707 KB
+ 8. HWStudentGradPredictor: 8330.660 KB
+ 9. IMDB-Sentiment-Analysis: 7620.503 KB
+10. Annotated_Colab_Notebook: 5847.298 KB
 Plots:
-- /cluster/home/edvardbj/GenAI-GreenML/results/file_size_analysis/boxplot_size_by_mode.png
-- /cluster/home/edvardbj/GenAI-GreenML/results/file_size_analysis/boxplot_size_by_llm.png
-- /cluster/home/edvardbj/GenAI-GreenML/results/file_size_analysis/hist_size_kb.png
+- /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/file_size_analysis/boxplot_size_by_mode.png
+- /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/file_size_analysis/boxplot_size_by_llm.png
+- /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/file_size_analysis/hist_size_kb.png

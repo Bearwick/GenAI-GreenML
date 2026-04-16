@@ -338,17 +338,17 @@ def plot_box_by_group(records: List[SizeRecord], output_path: Path, by: str) -> 
 
     if by == "mode":
         labels = MODES[:3]
-        groups = [[r.size_bytes for r in records if r.mode == m] for m in labels]
+        groups = [[normalize_size(r.size_bytes) for r in records if r.mode == m] for m in labels]
         path = output_path / "boxplot_size_by_mode.png"
-        title = "File size by mode"
+        #title = "File size by mode"
         x_labels = [f"{label} (n={len(g)})" for label, g in zip(labels, groups)]
         fig, ax = plt.subplots(figsize=(10, 6))
         if any(groups):
             ax.boxplot([g for g in groups if g], labels=[x for g, x in zip(groups, x_labels) if g])
             ax.set_xticks(range(1, 1 + len([g for g in groups if g])))
             ax.set_xticklabels([x for g, x in zip(groups, x_labels) if g], rotation=20, ha="right")
-        ax.set_title(title)
-        ax.set_ylabel("Size (bytes)")
+       # ax.set_title(title)
+        ax.set_ylabel("Size (KB)")
         ax.grid(axis="y", alpha=0.25)
         fig.tight_layout()
         fig.savefig(path, dpi=160)
@@ -357,12 +357,12 @@ def plot_box_by_group(records: List[SizeRecord], output_path: Path, by: str) -> 
 
     llms = sorted({r.llm for r in records})
     path = output_path / "boxplot_size_by_llm.png"
-    groups = [[r.size_bytes for r in records if r.llm == llm] for llm in llms]
+    groups = [[normalize_size(r.size_bytes) for r in records if r.llm == llm] for llm in llms]
     fig, ax = plt.subplots(figsize=(max(10, 1.5 * len(llms)), 6))
     if any(groups):
         ax.boxplot(groups, labels=llms)
-    ax.set_title("File size by LLM")
-    ax.set_ylabel("Size (bytes)")
+    #ax.set_title("File size by LLM")
+    ax.set_ylabel("Size (KB)")
     ax.set_xticklabels([f"{llm}\n(n={len(g)})" for llm, g in zip(llms, groups)], rotation=20, ha="right")
     ax.grid(axis="y", alpha=0.25)
     fig.tight_layout()
