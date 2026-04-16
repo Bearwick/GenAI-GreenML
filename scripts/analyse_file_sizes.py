@@ -18,6 +18,9 @@ OUTPUT_DIR = REPO_ROOT / "results" / "file_size_analysis"
 GENERATED_PREFIX = "GENAIGREENML"
 GENERATED_SUFFIX = ".py"
 MODES = ("assisted", "autonomous", "original", "unknown")
+AXIS_LABEL_FONTSIZE = 16
+TICK_LABEL_FONTSIZE = 16
+PLOT_TITLE_FONTSIZE = 18
 IGNORE_DIR_NAMES = {
     ".git",
     ".svn",
@@ -212,6 +215,14 @@ def import_plot_libs():
         import matplotlib
 
         matplotlib.use("Agg")
+        matplotlib.rcParams.update(
+            {
+                "axes.labelsize": AXIS_LABEL_FONTSIZE,
+                "xtick.labelsize": TICK_LABEL_FONTSIZE,
+                "ytick.labelsize": TICK_LABEL_FONTSIZE,
+                "axes.titlesize": PLOT_TITLE_FONTSIZE,
+            }
+        )
         import matplotlib.pyplot as plt
 
         return plt

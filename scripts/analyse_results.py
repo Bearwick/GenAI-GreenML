@@ -9,6 +9,11 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 RESULTS_DIR = REPO_ROOT / "results"
 METRICS = ("accuracy", "exec_time", "energy")
 MODES = ("assisted", "autonomous")
+AXIS_LABEL_FONTSIZE = 16
+TICK_LABEL_FONTSIZE = 16
+MODE_TITLE_FONTSIZE = 18
+BOXPLOT_SPACING = 0.65
+BOXPLOT_WIDTH = 0.35
 
 # Positive deltas represent improvements over original.
 METRIC_CONFIG = {
@@ -24,6 +29,13 @@ def import_external_libs():
         import matplotlib
 
         matplotlib.use("Agg")
+        matplotlib.rcParams.update(
+            {
+                "axes.labelsize": AXIS_LABEL_FONTSIZE,
+                "xtick.labelsize": TICK_LABEL_FONTSIZE,
+                "ytick.labelsize": TICK_LABEL_FONTSIZE,
+            }
+        )
         import matplotlib.pyplot as plt  # type: ignore
         from matplotlib.lines import Line2D  # type: ignore
         from scipy import stats  # type: ignore
@@ -563,6 +575,7 @@ def main():
         fig.suptitle(f"{plot_metric_label} delta vs original (positive = better)")
 
         for ax, mode in zip(axes, MODES):
+            mode_label = mode.title()
             by_llm = deltas_by_mode_metric_llm[mode][metric]
             llms = sorted(by_llm.keys())
             if metric == "accuracy":
@@ -573,12 +586,14 @@ def main():
 
             if not data:
                 ax.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax.transAxes)
-                ax.set_title(mode)
+                ax.set_title(mode_label, fontsize=MODE_TITLE_FONTSIZE)
                 ax.set_xticks([])
             else:
+                positions = np.arange(len(data), dtype=float) * BOXPLOT_SPACING + 1.0
                 ax.boxplot(
                     data,
-                    tick_labels=labels,
+                    positions=positions,
+                    widths=BOXPLOT_WIDTH,
                     showfliers=False,  # Hide outlier dots for cleaner, standard line view.
                     showmeans=False,   # Keep default median line only.
                     medianprops={"color": "green", "linewidth": 2},
@@ -586,7 +601,9 @@ def main():
                     capprops={"linewidth": 1.5},
                     boxprops={"linewidth": 1.5},
                 )
-                ax.set_title(mode)
+                ax.set_xticks(positions)
+                ax.set_xticklabels(labels)
+                ax.set_title(mode_label, fontsize=MODE_TITLE_FONTSIZE)
                 ax.tick_params(axis="x", rotation=35)
                 if metric == "accuracy":
                     ax.set_ylabel("Delta percentage points (positive = better)")
@@ -618,6 +635,7 @@ def main():
         all_values_for_axis = list(metric_original_plot)
 
         for ax, mode in zip(axes, MODES):
+            mode_label = mode.title()
             by_llm = raw_by_mode_metric_llm[mode][metric]
             llms = sorted(by_llm.keys())
             data = []
@@ -639,17 +657,23 @@ def main():
 
             if metric == "accuracy":
                 ylabel = "Accuracy"
+            elif metric == "exec_time":
+                ylabel = "Execution Time (s)"
+            elif metric == "energy":
+                ylabel = "Energy Consumption (Joules)"
             else:
                 ylabel = plot_metric_label
 
             if not data:
                 ax.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax.transAxes)
-                ax.set_title(mode)
+                ax.set_title(mode_label, fontsize=MODE_TITLE_FONTSIZE)
                 ax.set_xticks([])
             else:
+                positions = np.arange(len(data), dtype=float) * BOXPLOT_SPACING + 1.0
                 ax.boxplot(
                     data,
-                    tick_labels=labels,
+                    positions=positions,
+                    widths=BOXPLOT_WIDTH,
                     showfliers=False,  # Hide outlier dots for cleaner, standard line view.
                     showmeans=False,   # Keep default median line only.
                     medianprops={"color": "green", "linewidth": 2},
@@ -657,7 +681,9 @@ def main():
                     capprops={"linewidth": 1.5},
                     boxprops={"linewidth": 1.5},
                 )
-                ax.set_title(mode)
+                ax.set_xticks(positions)
+                ax.set_xticklabels(labels)
+                ax.set_title(mode_label, fontsize=MODE_TITLE_FONTSIZE)
                 ax.tick_params(axis="x", rotation=35)
                 ax.set_ylabel(ylabel)
                 ax.legend(
