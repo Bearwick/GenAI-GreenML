@@ -10,6 +10,9 @@ from typing import Dict, List, Tuple
 
 ITERATION_PREFIX = "failed_generated_code_iteration_"
 ANALYSIS_FILENAME = "analysis"
+AXIS_LABEL_FONTSIZE = 16
+TICK_LABEL_FONTSIZE = 16
+PLOT_TITLE_FONTSIZE = 18
 
 TOTAL_ERRORS_LINE_RE = re.compile(r"^Total Errors occured:\s*(\d+)$")
 MODE_ERRORS_LINE_RE = re.compile(r"^Total Errors by (assisted|original|autonomous):\s*(\d+)$")
@@ -49,6 +52,14 @@ def import_plot_libs():
         import matplotlib
 
         matplotlib.use("Agg")
+        matplotlib.rcParams.update(
+            {
+                "axes.labelsize": AXIS_LABEL_FONTSIZE,
+                "xtick.labelsize": TICK_LABEL_FONTSIZE,
+                "ytick.labelsize": TICK_LABEL_FONTSIZE,
+                "axes.titlesize": PLOT_TITLE_FONTSIZE,
+            }
+        )
         import matplotlib.pyplot as plt
 
         return plt
@@ -64,6 +75,10 @@ def normalize_error_type(name: str) -> str:
     if "." in name:
         return name.rsplit(".", 1)[-1]
     return name
+
+
+def display_llm_name(name: str) -> str:
+    return name[:1].upper() + name[1:]
 
 
 def parse_counter(text: str) -> Dict[str, int]:
@@ -229,10 +244,10 @@ def plot_llm_per_mode(iterations: List[Dict[str, object]], out_dir: Path, plt):
         ax = axes[i]
         for llm in llms:
             ys = [it["llm_by_mode"][mode].get(llm, 0) for it in iterations]
-            ax.plot(xvals, ys, marker="o", label=llm)
-        ax.set_title(f"{mode.title()} LLM errors")
+            ax.plot(xvals, ys, marker="o", label=display_llm_name(llm))
+        ax.set_title(f"{mode.title()} LLM Errors")
         ax.set_xlabel("Iteration")
-        ax.set_ylabel("Error count")
+        ax.set_ylabel("Error Count")
         ax.set_xticks(xvals)
         ax.set_xticklabels(labels)
         ax.tick_params(axis="x", rotation=0)
@@ -255,15 +270,15 @@ def plot_llm_overall(iterations: List[Dict[str, object]], out_dir: Path, plt):
     for llm in all_llms:
         ys = [it["llm_total"].get(llm, 0) for it in iterations]
         combined = [sum(pair) for pair in zip(combined, ys)] if combined else ys[:]
-        ax.plot(xvals, ys, marker="o", label=llm)
+        ax.plot(xvals, ys, marker="o", label=display_llm_name(llm))
 
     if iterations:
         all_totals = [sum(it["llm_total"].values()) for it in iterations]
         ax.plot(xvals, all_totals, marker="x", linestyle="--", linewidth=2, label="Combined")
 
-    ax.set_title("LLM errors over iterations")
+    #ax.set_title("LLM errors over iterations")
     ax.set_xlabel("Iteration")
-    ax.set_ylabel("Error count")
+    ax.set_ylabel("Error Count")
     ax.set_xticks(xvals)
     ax.set_xticklabels(labels)
     ax.tick_params(axis="x", rotation=0)
@@ -313,9 +328,9 @@ def plot_error_types_over_iterations(iterations: List[Dict[str, object]], out_di
         line, = ax.plot(xvals, ys, marker="o", color=color)
         plotted.append((line, err))
 
-    ax.set_title("Error type trend over iterations")
+    #ax.set_title("Error type trend over iterations")
     ax.set_xlabel("Iteration")
-    ax.set_ylabel("Error count")
+    ax.set_ylabel("Error Count")
     ax.set_xticks(xvals)
     ax.set_xticklabels(labels)
     ax.tick_params(axis="x", rotation=0)
@@ -323,7 +338,7 @@ def plot_error_types_over_iterations(iterations: List[Dict[str, object]], out_di
     handles = [h for h, _ in plotted]
     display_labels = [lbl for _, lbl in plotted]
     ax.legend(handles, display_labels, loc="upper right", ncol=2, fontsize=8)
-    fig.tight_layout(rect=[0, 0, 0.8, 1])
+    fig.tight_layout()
     out = out_dir / "error_type_over_iterations.png"
     fig.savefig(out, dpi=160)
     plt.close(fig)
@@ -348,8 +363,8 @@ def plot_last_iteration_error_types(iterations: List[Dict[str, object]], out_dir
     fig, ax = plt.subplots(figsize=(10, 6))
     x_auto = [i - width / 2 for i in idx]
     x_assist = [i + width / 2 for i in idx]
-    ax.bar(x_auto, auto_vals, width=width, label="autonomous")
-    ax.bar(x_assist, assist_vals, width=width, label="assisted")
+    ax.bar(x_auto, auto_vals, width=width, label="Autonomous")
+    ax.bar(x_assist, assist_vals, width=width, label="Assisted")
     for x_pos, value in zip(x_auto, auto_vals):
         if value > 0:
             ax.text(
@@ -371,9 +386,9 @@ def plot_last_iteration_error_types(iterations: List[Dict[str, object]], out_dir
                 fontsize=8,
             )
 
-    ax.set_title(f"Error types by mode (final iteration)")
-    ax.set_xlabel("Error type")
-    ax.set_ylabel("Error count")
+    #ax.set_title(f"Error types by mode (final iteration)")
+    ax.set_xlabel("Error Type")
+    ax.set_ylabel("Error Count")
     ax.set_xticks(idx)
     ax.set_xticklabels(errs, rotation=45, ha="right")
     ax.legend()
@@ -393,14 +408,14 @@ def plot_mode_totals(iterations: List[Dict[str, object]], out_dir: Path, plt):
     original = [d["mode_totals"]["original"] for d in iterations] if include_original else []
 
     fig, ax = plt.subplots(figsize=(11, 5))
-    ax.plot(xvals, autonomous, marker="o", label="autonomous")
-    ax.plot(xvals, assisted, marker="o", label="assisted")
+    ax.plot(xvals, autonomous, marker="o", label="Autonomous")
+    ax.plot(xvals, assisted, marker="o", label="Assisted")
 
     if include_original:
-        ax.plot(xvals, original, marker="o", label="original")
-    ax.set_title("Errors by mode over iterations")
+        ax.plot(xvals, original, marker="o", label="Original")
+    #ax.set_title("Errors by mode over iterations")
     ax.set_xlabel("Iteration")
-    ax.set_ylabel("Error count")
+    ax.set_ylabel("Error Count")
     ax.set_xticks(xvals)
     ax.set_xticklabels(labels)
     ax.tick_params(axis="x", rotation=0)
