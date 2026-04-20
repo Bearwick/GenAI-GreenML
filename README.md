@@ -305,3 +305,24 @@ python scripts/code_differences.py
 ```
 
 ## Analyse Code Complexity
+
+Add SonarQube tokens and keys to `API.env`, as shown in [env.md](/scripts/env.md).
+Run the following to generate code complexity analysis:
+
+```
+cd scripts
+source venv/bin/activate
+python analyse_cyclomatic_code_complexity.py
+deactivate
+cd ..
+```
+
+To rerun the generation of boxplots without rerunning SonarQube:
+
+```
+cd scripts
+source venv/bin/activate
+python analyse_cyclomatic_code_complexity.py --reuse-cached-api
+deactivate
+cd ..
+```
