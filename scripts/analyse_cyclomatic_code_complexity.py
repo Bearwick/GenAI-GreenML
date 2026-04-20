@@ -1050,7 +1050,7 @@ def save_scatter(records: Sequence[ComplexityRecord], output_dir: Path, plt, Lin
     if not points:
         return None
 
-    colors = {"original": "#1f77b4", "assisted": "#2ca02c", "autonomous": "#ff7f0e"}
+    colors = {"original": "#2ca02c", "assisted": "#ff7f0e", "autonomous": "#1f77b4"}
     fig, ax = plt.subplots(figsize=(10, 6))
     for mode in ALL_MODES:
         subset = [r for r in points if r.mode == mode]
