@@ -1065,7 +1065,6 @@ def save_scatter(records: Sequence[ComplexityRecord], output_dir: Path, plt, Lin
             edgecolors="black",
             linewidths=0.4,
         )
-    ax.set_title("Cyclomatic Complexity vs NCLOC")
     ax.set_xlabel("NCLOC")
     ax.set_ylabel("Cyclomatic Complexity")
     ax.grid(alpha=0.25)
