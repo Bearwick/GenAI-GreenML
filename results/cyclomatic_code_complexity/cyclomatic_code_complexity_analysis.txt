@@ -1,0 +1,159 @@
+Cyclomatic Code Complexity Analysis
+Local generated files discovered: 413
+Files returned by SonarQube API: 413
+Unmatched API components: 0
+Local files missing from SonarQube results: 0
+
+Scan Metadata
+mode: reuse_cached_api
+projectKey: cached
+serverUrl: https://sonarcloud.io
+
+Project Measures
+complexity: 9624
+cognitive_complexity: 12666
+ncloc: 39264
+
+Summary Statistics
+mode | complexity | assisted: n=198 mean=13.8737 median=10 min=1 max=110 std=15.7863 p25=4 p75=18
+mode | complexity | autonomous: n=165 mean=39.9273 median=45 min=6 max=118 std=24.6355 p25=15 p75=59
+mode | complexity | original: n=50 mean=5.7800 median=2 min=0 max=57 std=9.4357 p25=1 p75=6.5000
+mode | complexity_per_100_ncloc | assisted: n=198 mean=18.4632 median=17.6471 min=2.8571 max=48.0349 std=9.5171 p25=10.5263 p75=25
+mode | complexity_per_100_ncloc | autonomous: n=165 mean=25.1168 median=26.2295 min=11.5385 max=41.4035 std=6.3795 p25=20.5479 p75=29.8137
+mode | complexity_per_100_ncloc | original: n=50 mean=8.1614 median=5.8824 min=0 max=32.2581 std=7.4931 p25=3.9828 p75=10.9507
+llm_assisted | complexity | chatgpt: n=50 mean=16.3200 median=16 min=5 max=69 std=9.4274 p25=10.2500 p75=19
+llm_assisted | complexity | claude: n=49 mean=5.1224 median=4 min=1 max=60 std=8.5529 p25=2 p75=6
+llm_assisted | complexity | codex: n=50 mean=27.4600 median=21 min=7 max=110 std=21.4145 p25=16 p75=29.7500
+llm_assisted | complexity | gemini: n=49 mean=6.2653 median=4 min=2 max=47 std=7.4156 p25=3 p75=6
+llm_autonomous | complexity | chatgpt: n=47 mean=60.6809 median=59 min=35 max=90 std=11.3331 p25=54 p75=68.5000
+llm_autonomous | complexity | claude: n=22 mean=10.8182 median=10 min=6 max=18 std=3.4453 p25=8.2500 p75=12
+llm_autonomous | complexity | codex: n=47 mean=57.7872 median=54 min=37 max=118 std=14.7839 p25=46.5000 p75=67.5000
+llm_autonomous | complexity | gemini: n=49 mean=15.9592 median=15 min=9 max=28 std=5.1960 p25=12 p75=19
+llm_generated | complexity | chatgpt: n=97 mean=37.8144 median=31 min=5 max=90 std=24.5668 p25=16 p75=59
+llm_generated | complexity | claude: n=71 mean=6.8873 median=5 min=1 max=60 std=7.7948 p25=2 p75=10
+llm_generated | complexity | codex: n=97 mean=42.1546 median=44 min=7 max=118 std=23.8936 p25=21 p75=55
+llm_generated | complexity | gemini: n=98 mean=11.1122 median=10 min=2 max=47 std=8.0192 p25=4 p75=16
+llm_assisted | complexity_per_100_ncloc | chatgpt: n=50 mean=21.5791 median=20.7792 min=11.3636 max=32.3077 std=5.0765 p25=17.6471 p75=25
+llm_assisted | complexity_per_100_ncloc | claude: n=49 mean=10.7126 median=9.2593 min=2.8571 max=39.7351 std=6.9971 p25=5.8824 p75=13.0435
+llm_assisted | complexity_per_100_ncloc | codex: n=50 mean=28.0116 median=27.3619 min=13.7500 max=48.0349 std=7.2243 p25=22.6383 p75=33.7010
+llm_assisted | complexity_per_100_ncloc | gemini: n=49 mean=13.2912 median=11.5385 min=3.0303 max=32.6389 std=7.0338 p25=8.3333 p75=15.7895
+llm_autonomous | complexity_per_100_ncloc | chatgpt: n=47 mean=28.3621 median=28.3898 min=21.5859 max=33.9623 std=3.5757 p25=26.3092 p75=30.9185
+llm_autonomous | complexity_per_100_ncloc | claude: n=22 mean=17.4639 median=16.3693 min=11.5385 max=27.2727 std=4.3874 p25=13.8934 p75=20.2778
+llm_autonomous | complexity_per_100_ncloc | codex: n=47 mean=30.1933 median=29.5597 min=24.1935 max=41.4035 std=3.7376 p25=27.0593 p75=32.7288
+llm_autonomous | complexity_per_100_ncloc | gemini: n=49 mean=20.5708 median=20.5479 min=14.0845 max=34.2105 std=4.6373 p25=17.3333 p75=23.4568
+llm_generated | complexity_per_100_ncloc | chatgpt: n=97 mean=24.8657 median=25.3968 min=11.3636 max=33.9623 std=5.5580 p25=20.7792 p75=29.1005
+llm_generated | complexity_per_100_ncloc | claude: n=71 mean=12.8045 median=12.5000 min=2.8571 max=39.7351 std=7.0167 p25=6.6741 p75=16.1332
+llm_generated | complexity_per_100_ncloc | codex: n=97 mean=29.0687 median=28.8235 min=13.7500 max=48.0349 std=5.8765 p25=26.0870 p75=33.3333
+llm_generated | complexity_per_100_ncloc | gemini: n=98 mean=16.9310 median=16.2331 min=3.0303 max=34.2105 std=6.9648 p25=11.6538 p75=22.5765
+
+Statistical Tests [raw complexity]: Mode
+Kruskal-Wallis: H=161.36863 | p=0.000000 | groups=Assisted, Autonomous, Original
+Assisted vs Autonomous: n=(198,165) | U=5740.00000 | p=0.000000 | p_holm=0.000000 | median=(10.0000,45.0000) | mean=(13.8737,39.9273)
+Assisted vs Original: n=(198,50) | U=7519.50000 | p=0.000000 | p_holm=0.000000 | median=(10.0000,2.0000) | mean=(13.8737,5.7800)
+Autonomous vs Original: n=(165,50) | U=7698.50000 | p=0.000000 | p_holm=0.000000 | median=(45.0000,2.0000) | mean=(39.9273,5.7800)
+
+Statistical Tests [raw complexity]: Assisted by LLM
+Kruskal-Wallis: H=124.95360 | p=0.000000 | groups=ChatGPT, Claude, Codex, Gemini
+ChatGPT vs Claude: n=(50,49) | U=2318.00000 | p=0.000000 | p_holm=0.000000 | median=(16.0000,4.0000) | mean=(16.3200,5.1224)
+ChatGPT vs Codex: n=(50,50) | U=692.00000 | p=0.000119 | p_holm=0.000239 | median=(16.0000,21.0000) | mean=(16.3200,27.4600)
+ChatGPT vs Gemini: n=(50,49) | U=2242.00000 | p=0.000000 | p_holm=0.000000 | median=(16.0000,4.0000) | mean=(16.3200,6.2653)
+Claude vs Codex: n=(49,50) | U=60.00000 | p=0.000000 | p_holm=0.000000 | median=(4.0000,21.0000) | mean=(5.1224,27.4600)
+Claude vs Gemini: n=(49,49) | U=907.00000 | p=0.035753 | p_holm=0.035753 | median=(4.0000,4.0000) | mean=(5.1224,6.2653)
+Codex vs Gemini: n=(50,49) | U=2330.00000 | p=0.000000 | p_holm=0.000000 | median=(21.0000,4.0000) | mean=(27.4600,6.2653)
+
+Statistical Tests [raw complexity]: Autonomous by LLM
+Kruskal-Wallis: H=124.65757 | p=0.000000 | groups=ChatGPT, Claude, Codex, Gemini
+ChatGPT vs Claude: n=(47,22) | U=1034.00000 | p=0.000000 | p_holm=0.000000 | median=(59.0000,10.0000) | mean=(60.6809,10.8182)
+ChatGPT vs Codex: n=(47,47) | U=1334.50000 | p=0.082478 | p_holm=0.082478 | median=(59.0000,54.0000) | mean=(60.6809,57.7872)
+ChatGPT vs Gemini: n=(47,49) | U=2303.00000 | p=0.000000 | p_holm=0.000000 | median=(59.0000,15.0000) | mean=(60.6809,15.9592)
+Claude vs Codex: n=(22,47) | U=0.00000 | p=0.000000 | p_holm=0.000000 | median=(10.0000,54.0000) | mean=(10.8182,57.7872)
+Claude vs Gemini: n=(22,49) | U=218.00000 | p=0.000064 | p_holm=0.000129 | median=(10.0000,15.0000) | mean=(10.8182,15.9592)
+Codex vs Gemini: n=(47,49) | U=2303.00000 | p=0.000000 | p_holm=0.000000 | median=(54.0000,15.0000) | mean=(57.7872,15.9592)
+
+Statistical Tests [raw complexity]: Generated by LLM (assisted + autonomous)
+Kruskal-Wallis: H=191.50177 | p=0.000000 | groups=ChatGPT, Claude, Codex, Gemini
+ChatGPT vs Claude: n=(97,71) | U=6438.00000 | p=0.000000 | p_holm=0.000000 | median=(31.0000,5.0000) | mean=(37.8144,6.8873)
+ChatGPT vs Codex: n=(97,97) | U=4235.00000 | p=0.230252 | p_holm=0.230252 | median=(31.0000,44.0000) | mean=(37.8144,42.1546)
+ChatGPT vs Gemini: n=(97,98) | U=8005.00000 | p=0.000000 | p_holm=0.000000 | median=(31.0000,10.0000) | mean=(37.8144,11.1122)
+Claude vs Codex: n=(71,97) | U=193.00000 | p=0.000000 | p_holm=0.000000 | median=(5.0000,44.0000) | mean=(6.8873,42.1546)
+Claude vs Gemini: n=(71,98) | U=2165.50000 | p=0.000028 | p_holm=0.000055 | median=(5.0000,10.0000) | mean=(6.8873,11.1122)
+Codex vs Gemini: n=(97,98) | U=8695.50000 | p=0.000000 | p_holm=0.000000 | median=(44.0000,10.0000) | mean=(42.1546,11.1122)
+
+Statistical Tests [normalized complexity]: Mode
+Kruskal-Wallis: H=119.52276 | p=0.000000 | groups=Assisted, Autonomous, Original
+Assisted vs Autonomous: n=(198,165) | U=9120.50000 | p=0.000000 | p_holm=0.000000 | median=(17.6471,26.2295) | mean=(18.4632,25.1168)
+Assisted vs Original: n=(198,50) | U=8030.00000 | p=0.000000 | p_holm=0.000000 | median=(17.6471,5.8824) | mean=(18.4632,8.1614)
+Autonomous vs Original: n=(165,50) | U=7763.50000 | p=0.000000 | p_holm=0.000000 | median=(26.2295,5.8824) | mean=(25.1168,8.1614)
+
+Statistical Tests [normalized complexity]: Assisted by LLM
+Kruskal-Wallis: H=108.08700 | p=0.000000 | groups=ChatGPT, Claude, Codex, Gemini
+ChatGPT vs Claude: n=(50,49) | U=2230.50000 | p=0.000000 | p_holm=0.000000 | median=(20.7792,9.2593) | mean=(21.5791,10.7126)
+ChatGPT vs Codex: n=(50,50) | U=599.50000 | p=0.000007 | p_holm=0.000015 | median=(20.7792,27.3619) | mean=(21.5791,28.0116)
+ChatGPT vs Gemini: n=(50,49) | U=2063.00000 | p=0.000000 | p_holm=0.000000 | median=(20.7792,11.5385) | mean=(21.5791,13.2912)
+Claude vs Codex: n=(49,50) | U=112.00000 | p=0.000000 | p_holm=0.000000 | median=(9.2593,27.3619) | mean=(10.7126,28.0116)
+Claude vs Gemini: n=(49,49) | U=898.00000 | p=0.031850 | p_holm=0.031850 | median=(9.2593,11.5385) | mean=(10.7126,13.2912)
+Codex vs Gemini: n=(50,49) | U=2259.00000 | p=0.000000 | p_holm=0.000000 | median=(27.3619,11.5385) | mean=(28.0116,13.2912)
+
+Statistical Tests [normalized complexity]: Autonomous by LLM
+Kruskal-Wallis: H=99.21765 | p=0.000000 | groups=ChatGPT, Claude, Codex, Gemini
+ChatGPT vs Claude: n=(47,22) | U=1000.00000 | p=0.000000 | p_holm=0.000000 | median=(28.3898,16.3693) | mean=(28.3621,17.4639)
+ChatGPT vs Codex: n=(47,47) | U=848.00000 | p=0.052883 | p_holm=0.052883 | median=(28.3898,29.5597) | mean=(28.3621,30.1933)
+ChatGPT vs Gemini: n=(47,49) | U=2081.00000 | p=0.000000 | p_holm=0.000000 | median=(28.3898,20.5479) | mean=(28.3621,20.5708)
+Claude vs Codex: n=(22,47) | U=16.00000 | p=0.000000 | p_holm=0.000000 | median=(16.3693,29.5597) | mean=(17.4639,30.1933)
+Claude vs Gemini: n=(22,49) | U=324.00000 | p=0.007643 | p_holm=0.015286 | median=(16.3693,20.5479) | mean=(17.4639,20.5708)
+Codex vs Gemini: n=(47,49) | U=2199.00000 | p=0.000000 | p_holm=0.000000 | median=(29.5597,20.5479) | mean=(30.1933,20.5708)
+
+Statistical Tests [normalized complexity]: Generated by LLM (assisted + autonomous)
+Kruskal-Wallis: H=183.07062 | p=0.000000 | groups=ChatGPT, Claude, Codex, Gemini
+ChatGPT vs Claude: n=(97,71) | U=6276.50000 | p=0.000000 | p_holm=0.000000 | median=(25.3968,12.5000) | mean=(24.8657,12.8045)
+ChatGPT vs Codex: n=(97,97) | U=2930.00000 | p=0.000006 | p_holm=0.000011 | median=(25.3968,28.8235) | mean=(24.8657,29.0687)
+ChatGPT vs Gemini: n=(97,98) | U=7695.00000 | p=0.000000 | p_holm=0.000000 | median=(25.3968,16.2331) | mean=(24.8657,16.9310)
+Claude vs Codex: n=(71,97) | U=287.00000 | p=0.000000 | p_holm=0.000000 | median=(12.5000,28.8235) | mean=(12.8045,29.0687)
+Claude vs Gemini: n=(71,98) | U=2267.00000 | p=0.000114 | p_holm=0.000114 | median=(12.5000,16.2331) | mean=(12.8045,16.9310)
+Codex vs Gemini: n=(97,98) | U=8629.00000 | p=0.000000 | p_holm=0.000000 | median=(28.8235,16.2331) | mean=(29.0687,16.9310)
+
+Paired Tests [raw complexity]: Original vs Assisted by LLM
+ChatGPT: n=50 | W=34.00000 | p=0.000000 | p_holm=0.000000 | mean_diff=10.5400 | median_diff=11.5000 | cohen_d=1.4826 | 95% CI [8.5196, 12.5604]
+Claude: n=49 | W=441.50000 | p=0.900033 | p_holm=0.900033 | mean_diff=-0.7347 | median_diff=1.0000 | cohen_d=-0.1447 | 95% CI [-2.1932, 0.7238]
+Codex: n=50 | W=1.00000 | p=0.000000 | p_holm=0.000000 | mean_diff=21.6800 | median_diff=18.0000 | cohen_d=1.2572 | 95% CI [16.7792, 26.5808]
+Gemini: n=49 | W=356.50000 | p=0.067283 | p_holm=0.134565 | mean_diff=0.4082 | median_diff=2.0000 | cohen_d=0.0916 | 95% CI [-0.8723, 1.6886]
+
+Paired Tests [raw complexity]: Original vs Autonomous by LLM
+ChatGPT: n=47 | W=0.00000 | p=0.000000 | p_holm=0.000000 | mean_diff=55.0851 | median_diff=55.0000 | cohen_d=3.8045 | 95% CI [50.8339, 59.3363]
+Claude: n=22 | W=21.50000 | p=0.000256 | p_holm=0.000256 | mean_diff=7.5000 | median_diff=8.5000 | cohen_d=1.1890 | 95% CI [4.7034, 10.2966]
+Codex: n=47 | W=0.00000 | p=0.000000 | p_holm=0.000000 | mean_diff=52.5957 | median_diff=50.0000 | cohen_d=3.2757 | 95% CI [47.8814, 57.3101]
+Gemini: n=49 | W=52.00000 | p=0.000000 | p_holm=0.000000 | mean_diff=10.3265 | median_diff=12.0000 | cohen_d=1.1577 | 95% CI [7.7645, 12.8885]
+
+Paired Tests [raw complexity]: Assisted vs Autonomous by LLM
+ChatGPT: n=47 | W=1.00000 | p=0.000000 | p_holm=0.000000 | mean_diff=-44.4468 | median_diff=-46.0000 | cohen_d=-2.9589 | 95% CI [-48.8573, -40.0363]
+Claude: n=22 | W=0.00000 | p=0.000000 | p_holm=0.000000 | mean_diff=-8.2727 | median_diff=-7.5000 | cohen_d=-1.9337 | 95% CI [-10.1696, -6.3759]
+Codex: n=47 | W=2.00000 | p=0.000000 | p_holm=0.000000 | mean_diff=-33.8936 | median_diff=-34.0000 | cohen_d=-2.0366 | 95% CI [-38.7800, -29.0072]
+Gemini: n=48 | W=59.00000 | p=0.000000 | p_holm=0.000000 | mean_diff=-9.7917 | median_diff=-10.0000 | cohen_d=-1.2393 | 95% CI [-12.0858, -7.4975]
+
+Paired Tests [normalized complexity]: Original vs Assisted by LLM
+ChatGPT: n=50 | W=37.00000 | p=0.000000 | p_holm=0.000000 | mean_diff=13.4177 | median_diff=13.3820 | cohen_d=1.4654 | 95% CI [10.8155, 16.0198]
+Claude: n=49 | W=328.00000 | p=0.004077 | p_holm=0.004077 | mean_diff=2.4866 | median_diff=3.5714 | cohen_d=0.3492 | 95% CI [0.4415, 4.5318]
+Codex: n=50 | W=3.00000 | p=0.000000 | p_holm=0.000000 | mean_diff=19.8501 | median_diff=19.7558 | cohen_d=2.2602 | 95% CI [17.3542, 22.3461]
+Gemini: n=49 | W=115.00000 | p=0.000000 | p_holm=0.000000 | mean_diff=5.0652 | median_diff=4.7619 | cohen_d=0.7930 | 95% CI [3.2305, 6.9000]
+
+Paired Tests [normalized complexity]: Original vs Autonomous by LLM
+ChatGPT: n=47 | W=7.00000 | p=0.000000 | p_holm=0.000000 | mean_diff=20.3269 | median_diff=22.6891 | cohen_d=2.3666 | 95% CI [17.8050, 22.8487]
+Claude: n=22 | W=25.00000 | p=0.000428 | p_holm=0.000428 | mean_diff=10.5372 | median_diff=12.0322 | cohen_d=1.0963 | 95% CI [6.2756, 14.7988]
+Codex: n=47 | W=2.00000 | p=0.000000 | p_holm=0.000000 | mean_diff=22.6730 | median_diff=23.5795 | cohen_d=2.8737 | 95% CI [20.3564, 24.9896]
+Gemini: n=49 | W=19.00000 | p=0.000000 | p_holm=0.000000 | mean_diff=12.5966 | median_diff=13.2554 | cohen_d=1.7706 | 95% CI [10.5531, 14.6400]
+
+Paired Tests [normalized complexity]: Assisted vs Autonomous by LLM
+ChatGPT: n=47 | W=59.00000 | p=0.000000 | p_holm=0.000000 | mean_diff=-6.8690 | median_diff=-6.9154 | cohen_d=-1.1377 | 95% CI [-8.6417, -5.0964]
+Claude: n=22 | W=4.00000 | p=0.000003 | p_holm=0.000007 | mean_diff=-9.2008 | median_diff=-9.0460 | cohen_d=-1.3630 | 95% CI [-12.1938, -6.2078]
+Codex: n=47 | W=284.00000 | p=0.002545 | p_holm=0.002545 | mean_diff=-2.9476 | median_diff=-2.8385 | cohen_d=-0.4314 | 95% CI [-4.9537, -0.9415]
+Gemini: n=48 | W=107.00000 | p=0.000000 | p_holm=0.000000 | mean_diff=-7.4097 | median_diff=-9.1258 | cohen_d=-1.0445 | 95% CI [-9.4697, -5.3497]
+
+Figures
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/cyclomatic_code_complexity/boxplot_complexity_by_mode.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/cyclomatic_code_complexity/boxplot_complexity_by_llm_assisted.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/cyclomatic_code_complexity/boxplot_complexity_by_llm_autonomous.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/cyclomatic_code_complexity/boxplot_complexity_by_llm_generated.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/cyclomatic_code_complexity/scatter_complexity_vs_ncloc_by_mode.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/cyclomatic_code_complexity/boxplot_complexity_per_100_ncloc_by_mode.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/cyclomatic_code_complexity/boxplot_delta_complexity_vs_original.png
+/Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/cyclomatic_code_complexity/boxplot_delta_complexity_per_100_ncloc_vs_original.png

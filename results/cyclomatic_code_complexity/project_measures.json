@@ -1,0 +1,23 @@
+{
+  "component": {
+    "id": "AZ2qaai6kft0Kr0noGtf",
+    "key": "Bearwick_GenAI-GreenML",
+    "name": "GENAIGREENML Cyclomatic Complexity",
+    "qualifier": "TRK",
+    "measures": [
+      {
+        "metric": "complexity",
+        "value": "9624"
+      },
+      {
+        "metric": "cognitive_complexity",
+        "value": "12666",
+        "bestValue": false
+      },
+      {
+        "metric": "ncloc",
+        "value": "39264"
+      }
+    ]
+  }
+}
