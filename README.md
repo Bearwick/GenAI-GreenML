@@ -23,6 +23,8 @@ This dataset was developed as part of a master’s thesis at the **Norwegian Uni
 8. [Generate Code Iterations (Failed Scripts)](#generate-code-iterations-failed-scripts)
 9. [Analyse Failed Code](#analyse-failed-code)
 10. [Analyse Errors](#analyse-errors)
+11. [Generate Code Differences](#generate-code-differences)
+12. [Analyse Code Complexity (SonarQube)](#analyse-code-complexity)
 
 ## Repository Information
 
@@ -289,6 +291,38 @@ Analyse the error analysis from failed iterations.
 cd scripts
 source venv/bin/activate
 python ./error_analysis.py
+deactivate
+cd ..
+```
+
+## Generate Code Differences
+
+Generates code differences comparing `original_telemetry` with assisted and autonomous implementations by Codex and Gemini.
+Output folder in `results`.
+
+```
+python scripts/code_differences.py
+```
+
+## Analyse Code Complexity
+
+Add SonarQube tokens and keys to `API.env`, as shown in [env.md](/scripts/env.md).
+Run the following to generate code complexity analysis:
+
+```
+cd scripts
+source venv/bin/activate
+python analyse_cyclomatic_code_complexity.py
+deactivate
+cd ..
+```
+
+To rerun the generation of boxplots without rerunning SonarQube:
+
+```
+cd scripts
+source venv/bin/activate
+python analyse_cyclomatic_code_complexity.py --reuse-cached-api
 deactivate
 cd ..
 ```

@@ -1,0 +1,2893 @@
+[
+  {
+    "project": "Air-Quality-Health-Prediction",
+    "relative_path": "Air-Quality-Health-Prediction/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Air-Quality-Health-Prediction",
+    "relative_path": "Air-Quality-Health-Prediction/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Air-Quality-Health-Prediction",
+    "relative_path": "Air-Quality-Health-Prediction/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Air-Quality-Health-Prediction",
+    "relative_path": "Air-Quality-Health-Prediction/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Air-Quality-Health-Prediction",
+    "relative_path": "Air-Quality-Health-Prediction/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Air-Quality-Health-Prediction",
+    "relative_path": "Air-Quality-Health-Prediction/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Air-Quality-Health-Prediction",
+    "relative_path": "Air-Quality-Health-Prediction/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Air-Quality-Health-Prediction",
+    "relative_path": "Air-Quality-Health-Prediction/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Algorithms_KnnClasifier",
+    "relative_path": "Algorithms_KnnClasifier/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Algorithms_KnnClasifier",
+    "relative_path": "Algorithms_KnnClasifier/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Algorithms_KnnClasifier",
+    "relative_path": "Algorithms_KnnClasifier/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Algorithms_KnnClasifier",
+    "relative_path": "Algorithms_KnnClasifier/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Algorithms_KnnClasifier",
+    "relative_path": "Algorithms_KnnClasifier/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Algorithms_KnnClasifier",
+    "relative_path": "Algorithms_KnnClasifier/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "Algorithms_KnnClasifier",
+    "relative_path": "Algorithms_KnnClasifier/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Algorithms_KnnClasifier",
+    "relative_path": "Algorithms_KnnClasifier/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Algorithms_KnnClasifier",
+    "relative_path": "Algorithms_KnnClasifier/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Annotated_Colab_Notebook",
+    "relative_path": "Annotated_Colab_Notebook/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Annotated_Colab_Notebook",
+    "relative_path": "Annotated_Colab_Notebook/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Annotated_Colab_Notebook",
+    "relative_path": "Annotated_Colab_Notebook/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Annotated_Colab_Notebook",
+    "relative_path": "Annotated_Colab_Notebook/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Annotated_Colab_Notebook",
+    "relative_path": "Annotated_Colab_Notebook/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Annotated_Colab_Notebook",
+    "relative_path": "Annotated_Colab_Notebook/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Annotated_Colab_Notebook",
+    "relative_path": "Annotated_Colab_Notebook/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Annotated_Colab_Notebook",
+    "relative_path": "Annotated_Colab_Notebook/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "BREAST-CANCER-PREDICTION-SYSTEM",
+    "relative_path": "BREAST-CANCER-PREDICTION-SYSTEM/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "BREAST-CANCER-PREDICTION-SYSTEM",
+    "relative_path": "BREAST-CANCER-PREDICTION-SYSTEM/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "BREAST-CANCER-PREDICTION-SYSTEM",
+    "relative_path": "BREAST-CANCER-PREDICTION-SYSTEM/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "BREAST-CANCER-PREDICTION-SYSTEM",
+    "relative_path": "BREAST-CANCER-PREDICTION-SYSTEM/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "BREAST-CANCER-PREDICTION-SYSTEM",
+    "relative_path": "BREAST-CANCER-PREDICTION-SYSTEM/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "BREAST-CANCER-PREDICTION-SYSTEM",
+    "relative_path": "BREAST-CANCER-PREDICTION-SYSTEM/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "BREAST-CANCER-PREDICTION-SYSTEM",
+    "relative_path": "BREAST-CANCER-PREDICTION-SYSTEM/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "BREAST-CANCER-PREDICTION-SYSTEM",
+    "relative_path": "BREAST-CANCER-PREDICTION-SYSTEM/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "BREAST-CANCER-PREDICTION-SYSTEM",
+    "relative_path": "BREAST-CANCER-PREDICTION-SYSTEM/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "BreastCancer_Classification",
+    "relative_path": "BreastCancer_Classification/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "BreastCancer_Classification",
+    "relative_path": "BreastCancer_Classification/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "BreastCancer_Classification",
+    "relative_path": "BreastCancer_Classification/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "BreastCancer_Classification",
+    "relative_path": "BreastCancer_Classification/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "BreastCancer_Classification",
+    "relative_path": "BreastCancer_Classification/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "BreastCancer_Classification",
+    "relative_path": "BreastCancer_Classification/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "BreastCancer_Classification",
+    "relative_path": "BreastCancer_Classification/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "CT_Project",
+    "relative_path": "CT_Project/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "CT_Project",
+    "relative_path": "CT_Project/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "CT_Project",
+    "relative_path": "CT_Project/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "CT_Project",
+    "relative_path": "CT_Project/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "CT_Project",
+    "relative_path": "CT_Project/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "CT_Project",
+    "relative_path": "CT_Project/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "CT_Project",
+    "relative_path": "CT_Project/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "CT_Project",
+    "relative_path": "CT_Project/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "CT_Project",
+    "relative_path": "CT_Project/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Classification-with-xgboost-on-binary.csv-data",
+    "relative_path": "Classification-with-xgboost-on-binary.csv-data/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Classification-with-xgboost-on-binary.csv-data",
+    "relative_path": "Classification-with-xgboost-on-binary.csv-data/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Classification-with-xgboost-on-binary.csv-data",
+    "relative_path": "Classification-with-xgboost-on-binary.csv-data/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Classification-with-xgboost-on-binary.csv-data",
+    "relative_path": "Classification-with-xgboost-on-binary.csv-data/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Classification-with-xgboost-on-binary.csv-data",
+    "relative_path": "Classification-with-xgboost-on-binary.csv-data/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Classification-with-xgboost-on-binary.csv-data",
+    "relative_path": "Classification-with-xgboost-on-binary.csv-data/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "Classification-with-xgboost-on-binary.csv-data",
+    "relative_path": "Classification-with-xgboost-on-binary.csv-data/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Classification-with-xgboost-on-binary.csv-data",
+    "relative_path": "Classification-with-xgboost-on-binary.csv-data/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Classification-with-xgboost-on-binary.csv-data",
+    "relative_path": "Classification-with-xgboost-on-binary.csv-data/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "CodeAlpha_IrisClassification",
+    "relative_path": "CodeAlpha_IrisClassification/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "CodeAlpha_IrisClassification",
+    "relative_path": "CodeAlpha_IrisClassification/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "CodeAlpha_IrisClassification",
+    "relative_path": "CodeAlpha_IrisClassification/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "CodeAlpha_IrisClassification",
+    "relative_path": "CodeAlpha_IrisClassification/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "CodeAlpha_IrisClassification",
+    "relative_path": "CodeAlpha_IrisClassification/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "CodeAlpha_IrisClassification",
+    "relative_path": "CodeAlpha_IrisClassification/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "CodeAlpha_IrisClassification",
+    "relative_path": "CodeAlpha_IrisClassification/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "CodeAlpha_IrisClassification",
+    "relative_path": "CodeAlpha_IrisClassification/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "CodeAlpha_IrisClassification",
+    "relative_path": "CodeAlpha_IrisClassification/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Cuisine-Predictor",
+    "relative_path": "Cuisine-Predictor/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Cuisine-Predictor",
+    "relative_path": "Cuisine-Predictor/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Cuisine-Predictor",
+    "relative_path": "Cuisine-Predictor/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Cuisine-Predictor",
+    "relative_path": "Cuisine-Predictor/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Cuisine-Predictor",
+    "relative_path": "Cuisine-Predictor/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Cuisine-Predictor",
+    "relative_path": "Cuisine-Predictor/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Cuisine-Predictor",
+    "relative_path": "Cuisine-Predictor/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Cuisine-Predictor",
+    "relative_path": "Cuisine-Predictor/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Decision-Trees",
+    "relative_path": "Decision-Trees/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Decision-Trees",
+    "relative_path": "Decision-Trees/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Decision-Trees",
+    "relative_path": "Decision-Trees/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Decision-Trees",
+    "relative_path": "Decision-Trees/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Decision-Trees",
+    "relative_path": "Decision-Trees/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Decision-Trees",
+    "relative_path": "Decision-Trees/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Decision-Trees",
+    "relative_path": "Decision-Trees/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Decision-Trees",
+    "relative_path": "Decision-Trees/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "DecisionTreeClassifier",
+    "relative_path": "DecisionTreeClassifier/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "DecisionTreeClassifier",
+    "relative_path": "DecisionTreeClassifier/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "DecisionTreeClassifier",
+    "relative_path": "DecisionTreeClassifier/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "DecisionTreeClassifier",
+    "relative_path": "DecisionTreeClassifier/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "DecisionTreeClassifier",
+    "relative_path": "DecisionTreeClassifier/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "DecisionTreeClassifier",
+    "relative_path": "DecisionTreeClassifier/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "DecisionTreeClassifier",
+    "relative_path": "DecisionTreeClassifier/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "DecisionTreeClassifier",
+    "relative_path": "DecisionTreeClassifier/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "DecisionTreeClassifier",
+    "relative_path": "DecisionTreeClassifier/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Deep-Learning-Classification",
+    "relative_path": "Deep-Learning-Classification/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Deep-Learning-Classification",
+    "relative_path": "Deep-Learning-Classification/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Deep-Learning-Classification",
+    "relative_path": "Deep-Learning-Classification/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Deep-Learning-Classification",
+    "relative_path": "Deep-Learning-Classification/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Deep-Learning-Classification",
+    "relative_path": "Deep-Learning-Classification/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Deep-Learning-Classification",
+    "relative_path": "Deep-Learning-Classification/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Deep-Learning-Classification",
+    "relative_path": "Deep-Learning-Classification/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Deep-Learning-Classification",
+    "relative_path": "Deep-Learning-Classification/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity",
+    "relative_path": "Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity",
+    "relative_path": "Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity",
+    "relative_path": "Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity",
+    "relative_path": "Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity",
+    "relative_path": "Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity",
+    "relative_path": "Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity",
+    "relative_path": "Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity",
+    "relative_path": "Deep-learning-classification-based-model-for-screening-compounds-with-hERG-inhibitory-activity/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Diabetes-Classification-with-SVM",
+    "relative_path": "Diabetes-Classification-with-SVM/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Diabetes-Classification-with-SVM",
+    "relative_path": "Diabetes-Classification-with-SVM/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Diabetes-Classification-with-SVM",
+    "relative_path": "Diabetes-Classification-with-SVM/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Diabetes-Classification-with-SVM",
+    "relative_path": "Diabetes-Classification-with-SVM/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Diabetes-Classification-with-SVM",
+    "relative_path": "Diabetes-Classification-with-SVM/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Diabetes-Classification-with-SVM",
+    "relative_path": "Diabetes-Classification-with-SVM/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "Diabetes-Classification-with-SVM",
+    "relative_path": "Diabetes-Classification-with-SVM/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Diabetes-Classification-with-SVM",
+    "relative_path": "Diabetes-Classification-with-SVM/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Diabetes-Classification-with-SVM",
+    "relative_path": "Diabetes-Classification-with-SVM/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Email-spam-detector",
+    "relative_path": "Email-spam-detector/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Email-spam-detector",
+    "relative_path": "Email-spam-detector/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Email-spam-detector",
+    "relative_path": "Email-spam-detector/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Email-spam-detector",
+    "relative_path": "Email-spam-detector/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Email-spam-detector",
+    "relative_path": "Email-spam-detector/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Email-spam-detector",
+    "relative_path": "Email-spam-detector/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Email-spam-detector",
+    "relative_path": "Email-spam-detector/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Email-spam-detector",
+    "relative_path": "Email-spam-detector/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "FakeNewsPrediction",
+    "relative_path": "FakeNewsPrediction/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "FakeNewsPrediction",
+    "relative_path": "FakeNewsPrediction/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "FakeNewsPrediction",
+    "relative_path": "FakeNewsPrediction/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "FakeNewsPrediction",
+    "relative_path": "FakeNewsPrediction/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "FakeNewsPrediction",
+    "relative_path": "FakeNewsPrediction/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "FakeNewsPrediction",
+    "relative_path": "FakeNewsPrediction/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "FakeNewsPrediction",
+    "relative_path": "FakeNewsPrediction/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "FakeNewsPrediction",
+    "relative_path": "FakeNewsPrediction/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "HWStudentGradPredictor",
+    "relative_path": "HWStudentGradPredictor/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "HWStudentGradPredictor",
+    "relative_path": "HWStudentGradPredictor/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "HWStudentGradPredictor",
+    "relative_path": "HWStudentGradPredictor/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "HWStudentGradPredictor",
+    "relative_path": "HWStudentGradPredictor/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "HWStudentGradPredictor",
+    "relative_path": "HWStudentGradPredictor/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "HWStudentGradPredictor",
+    "relative_path": "HWStudentGradPredictor/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "HWStudentGradPredictor",
+    "relative_path": "HWStudentGradPredictor/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "HWStudentGradPredictor",
+    "relative_path": "HWStudentGradPredictor/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "IMDB-Sentiment-Analysis",
+    "relative_path": "IMDB-Sentiment-Analysis/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "IMDB-Sentiment-Analysis",
+    "relative_path": "IMDB-Sentiment-Analysis/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "IMDB-Sentiment-Analysis",
+    "relative_path": "IMDB-Sentiment-Analysis/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "IMDB-Sentiment-Analysis",
+    "relative_path": "IMDB-Sentiment-Analysis/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "IMDB-Sentiment-Analysis",
+    "relative_path": "IMDB-Sentiment-Analysis/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "IMDB-Sentiment-Analysis",
+    "relative_path": "IMDB-Sentiment-Analysis/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "IMDB-Sentiment-Analysis",
+    "relative_path": "IMDB-Sentiment-Analysis/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "IMDB-Sentiment-Analysis",
+    "relative_path": "IMDB-Sentiment-Analysis/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "IMDB-Sentiment-Analysis",
+    "relative_path": "IMDB-Sentiment-Analysis/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Iris-Classification-ML-problem",
+    "relative_path": "Iris-Classification-ML-problem/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Iris-Classification-ML-problem",
+    "relative_path": "Iris-Classification-ML-problem/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Iris-Classification-ML-problem",
+    "relative_path": "Iris-Classification-ML-problem/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Iris-Classification-ML-problem",
+    "relative_path": "Iris-Classification-ML-problem/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Iris-Classification-ML-problem",
+    "relative_path": "Iris-Classification-ML-problem/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Iris-Classification-ML-problem",
+    "relative_path": "Iris-Classification-ML-problem/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Iris-Classification-ML-problem",
+    "relative_path": "Iris-Classification-ML-problem/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Iris-Classification-ML-problem",
+    "relative_path": "Iris-Classification-ML-problem/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha",
+    "relative_path": "Iris-Flower-Classification-Codealpha/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha",
+    "relative_path": "Iris-Flower-Classification-Codealpha/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha",
+    "relative_path": "Iris-Flower-Classification-Codealpha/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha",
+    "relative_path": "Iris-Flower-Classification-Codealpha/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha",
+    "relative_path": "Iris-Flower-Classification-Codealpha/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha",
+    "relative_path": "Iris-Flower-Classification-Codealpha/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha",
+    "relative_path": "Iris-Flower-Classification-Codealpha/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha",
+    "relative_path": "Iris-Flower-Classification-Codealpha/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha",
+    "relative_path": "Iris-Flower-Classification-Codealpha/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha2",
+    "relative_path": "Iris-Flower-Classification-Codealpha2/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha2",
+    "relative_path": "Iris-Flower-Classification-Codealpha2/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha2",
+    "relative_path": "Iris-Flower-Classification-Codealpha2/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha2",
+    "relative_path": "Iris-Flower-Classification-Codealpha2/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha2",
+    "relative_path": "Iris-Flower-Classification-Codealpha2/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha2",
+    "relative_path": "Iris-Flower-Classification-Codealpha2/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha2",
+    "relative_path": "Iris-Flower-Classification-Codealpha2/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha2",
+    "relative_path": "Iris-Flower-Classification-Codealpha2/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha2",
+    "relative_path": "Iris-Flower-Classification-Codealpha2/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha3",
+    "relative_path": "Iris-Flower-Classification-Codealpha3/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha3",
+    "relative_path": "Iris-Flower-Classification-Codealpha3/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha3",
+    "relative_path": "Iris-Flower-Classification-Codealpha3/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha3",
+    "relative_path": "Iris-Flower-Classification-Codealpha3/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha3",
+    "relative_path": "Iris-Flower-Classification-Codealpha3/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha3",
+    "relative_path": "Iris-Flower-Classification-Codealpha3/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha3",
+    "relative_path": "Iris-Flower-Classification-Codealpha3/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha3",
+    "relative_path": "Iris-Flower-Classification-Codealpha3/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Iris-Flower-Classification-Codealpha3",
+    "relative_path": "Iris-Flower-Classification-Codealpha3/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Iris-ML-Lab",
+    "relative_path": "Iris-ML-Lab/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Iris-ML-Lab",
+    "relative_path": "Iris-ML-Lab/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Iris-ML-Lab",
+    "relative_path": "Iris-ML-Lab/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Iris-ML-Lab",
+    "relative_path": "Iris-ML-Lab/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Iris-ML-Lab",
+    "relative_path": "Iris-ML-Lab/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Iris-ML-Lab",
+    "relative_path": "Iris-ML-Lab/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "Iris-ML-Lab",
+    "relative_path": "Iris-ML-Lab/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Iris-ML-Lab",
+    "relative_path": "Iris-ML-Lab/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Iris-ML-Lab",
+    "relative_path": "Iris-ML-Lab/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "JunctionalClassifier",
+    "relative_path": "JunctionalClassifier/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "JunctionalClassifier",
+    "relative_path": "JunctionalClassifier/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "JunctionalClassifier",
+    "relative_path": "JunctionalClassifier/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "JunctionalClassifier",
+    "relative_path": "JunctionalClassifier/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "JunctionalClassifier",
+    "relative_path": "JunctionalClassifier/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "JunctionalClassifier",
+    "relative_path": "JunctionalClassifier/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "JunctionalClassifier",
+    "relative_path": "JunctionalClassifier/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "JunctionalClassifier2",
+    "relative_path": "JunctionalClassifier2/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "JunctionalClassifier2",
+    "relative_path": "JunctionalClassifier2/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "JunctionalClassifier2",
+    "relative_path": "JunctionalClassifier2/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "JunctionalClassifier2",
+    "relative_path": "JunctionalClassifier2/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "JunctionalClassifier2",
+    "relative_path": "JunctionalClassifier2/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "JunctionalClassifier2",
+    "relative_path": "JunctionalClassifier2/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "JunctionalClassifier2",
+    "relative_path": "JunctionalClassifier2/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "JunctionalClassifier2",
+    "relative_path": "JunctionalClassifier2/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "JunctionalClassifier3",
+    "relative_path": "JunctionalClassifier3/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "JunctionalClassifier3",
+    "relative_path": "JunctionalClassifier3/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "JunctionalClassifier3",
+    "relative_path": "JunctionalClassifier3/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "JunctionalClassifier3",
+    "relative_path": "JunctionalClassifier3/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "JunctionalClassifier3",
+    "relative_path": "JunctionalClassifier3/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "JunctionalClassifier3",
+    "relative_path": "JunctionalClassifier3/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "K-Nearest-Neighbor-Algorithm",
+    "relative_path": "K-Nearest-Neighbor-Algorithm/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "K-Nearest-Neighbor-Algorithm",
+    "relative_path": "K-Nearest-Neighbor-Algorithm/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "K-Nearest-Neighbor-Algorithm",
+    "relative_path": "K-Nearest-Neighbor-Algorithm/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "K-Nearest-Neighbor-Algorithm",
+    "relative_path": "K-Nearest-Neighbor-Algorithm/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "K-Nearest-Neighbor-Algorithm",
+    "relative_path": "K-Nearest-Neighbor-Algorithm/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "K-Nearest-Neighbor-Algorithm",
+    "relative_path": "K-Nearest-Neighbor-Algorithm/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "K-Nearest-Neighbor-Algorithm",
+    "relative_path": "K-Nearest-Neighbor-Algorithm/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "K-Nearest-Neighbor-Algorithm",
+    "relative_path": "K-Nearest-Neighbor-Algorithm/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "K-Nearest-Neighbor-Algorithm",
+    "relative_path": "K-Nearest-Neighbor-Algorithm/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "ML_CSV_Classification",
+    "relative_path": "ML_CSV_Classification/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "ML_CSV_Classification",
+    "relative_path": "ML_CSV_Classification/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "ML_CSV_Classification",
+    "relative_path": "ML_CSV_Classification/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "ML_CSV_Classification",
+    "relative_path": "ML_CSV_Classification/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "ML_CSV_Classification",
+    "relative_path": "ML_CSV_Classification/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "ML_CSV_Classification",
+    "relative_path": "ML_CSV_Classification/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "ML_CSV_Classification",
+    "relative_path": "ML_CSV_Classification/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "MachineLearn-WineClassifier",
+    "relative_path": "MachineLearn-WineClassifier/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "MachineLearn-WineClassifier",
+    "relative_path": "MachineLearn-WineClassifier/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "MachineLearn-WineClassifier",
+    "relative_path": "MachineLearn-WineClassifier/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "MachineLearn-WineClassifier",
+    "relative_path": "MachineLearn-WineClassifier/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "MachineLearn-WineClassifier",
+    "relative_path": "MachineLearn-WineClassifier/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "MachineLearn-WineClassifier",
+    "relative_path": "MachineLearn-WineClassifier/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "MachineLearn-WineClassifier",
+    "relative_path": "MachineLearn-WineClassifier/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "MachineLearn-WineClassifier",
+    "relative_path": "MachineLearn-WineClassifier/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "MaliciousSoftwareClassification",
+    "relative_path": "MaliciousSoftwareClassification/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "MaliciousSoftwareClassification",
+    "relative_path": "MaliciousSoftwareClassification/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "MaliciousSoftwareClassification",
+    "relative_path": "MaliciousSoftwareClassification/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "MaliciousSoftwareClassification",
+    "relative_path": "MaliciousSoftwareClassification/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "MaliciousSoftwareClassification",
+    "relative_path": "MaliciousSoftwareClassification/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "MaliciousSoftwareClassification",
+    "relative_path": "MaliciousSoftwareClassification/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "MaliciousSoftwareClassification",
+    "relative_path": "MaliciousSoftwareClassification/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "MaliciousSoftwareClassification",
+    "relative_path": "MaliciousSoftwareClassification/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Multi-Turn-Intent-Classification",
+    "relative_path": "Multi-Turn-Intent-Classification/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Multi-Turn-Intent-Classification",
+    "relative_path": "Multi-Turn-Intent-Classification/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Multi-Turn-Intent-Classification",
+    "relative_path": "Multi-Turn-Intent-Classification/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Multi-Turn-Intent-Classification",
+    "relative_path": "Multi-Turn-Intent-Classification/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Multi-Turn-Intent-Classification",
+    "relative_path": "Multi-Turn-Intent-Classification/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Multi-Turn-Intent-Classification",
+    "relative_path": "Multi-Turn-Intent-Classification/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Multi-Turn-Intent-Classification",
+    "relative_path": "Multi-Turn-Intent-Classification/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Na-ve-bayes-algorithm-to-classify-the-fetal-health-",
+    "relative_path": "Na-ve-bayes-algorithm-to-classify-the-fetal-health-/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Na-ve-bayes-algorithm-to-classify-the-fetal-health-",
+    "relative_path": "Na-ve-bayes-algorithm-to-classify-the-fetal-health-/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Na-ve-bayes-algorithm-to-classify-the-fetal-health-",
+    "relative_path": "Na-ve-bayes-algorithm-to-classify-the-fetal-health-/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Na-ve-bayes-algorithm-to-classify-the-fetal-health-",
+    "relative_path": "Na-ve-bayes-algorithm-to-classify-the-fetal-health-/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Na-ve-bayes-algorithm-to-classify-the-fetal-health-",
+    "relative_path": "Na-ve-bayes-algorithm-to-classify-the-fetal-health-/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Na-ve-bayes-algorithm-to-classify-the-fetal-health-",
+    "relative_path": "Na-ve-bayes-algorithm-to-classify-the-fetal-health-/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "Na-ve-bayes-algorithm-to-classify-the-fetal-health-",
+    "relative_path": "Na-ve-bayes-algorithm-to-classify-the-fetal-health-/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Na-ve-bayes-algorithm-to-classify-the-fetal-health-",
+    "relative_path": "Na-ve-bayes-algorithm-to-classify-the-fetal-health-/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Na-ve-bayes-algorithm-to-classify-the-fetal-health-",
+    "relative_path": "Na-ve-bayes-algorithm-to-classify-the-fetal-health-/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Network_Intrusion_Detection_System",
+    "relative_path": "Network_Intrusion_Detection_System/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Network_Intrusion_Detection_System",
+    "relative_path": "Network_Intrusion_Detection_System/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Network_Intrusion_Detection_System",
+    "relative_path": "Network_Intrusion_Detection_System/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Network_Intrusion_Detection_System",
+    "relative_path": "Network_Intrusion_Detection_System/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Network_Intrusion_Detection_System",
+    "relative_path": "Network_Intrusion_Detection_System/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Network_Intrusion_Detection_System",
+    "relative_path": "Network_Intrusion_Detection_System/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Predicting-heart-diseases-",
+    "relative_path": "Predicting-heart-diseases-/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Predicting-heart-diseases-",
+    "relative_path": "Predicting-heart-diseases-/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Predicting-heart-diseases-",
+    "relative_path": "Predicting-heart-diseases-/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Predicting-heart-diseases-",
+    "relative_path": "Predicting-heart-diseases-/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Predicting-heart-diseases-",
+    "relative_path": "Predicting-heart-diseases-/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Predicting-heart-diseases-",
+    "relative_path": "Predicting-heart-diseases-/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "Predicting-heart-diseases-",
+    "relative_path": "Predicting-heart-diseases-/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Predicting-heart-diseases-",
+    "relative_path": "Predicting-heart-diseases-/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Predicting-heart-diseases-",
+    "relative_path": "Predicting-heart-diseases-/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Rock-or-Mine-prediction",
+    "relative_path": "Rock-or-Mine-prediction/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Rock-or-Mine-prediction",
+    "relative_path": "Rock-or-Mine-prediction/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Rock-or-Mine-prediction",
+    "relative_path": "Rock-or-Mine-prediction/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Rock-or-Mine-prediction",
+    "relative_path": "Rock-or-Mine-prediction/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Rock-or-Mine-prediction",
+    "relative_path": "Rock-or-Mine-prediction/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Rock-or-Mine-prediction",
+    "relative_path": "Rock-or-Mine-prediction/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Rock-or-Mine-prediction",
+    "relative_path": "Rock-or-Mine-prediction/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Rock-or-Mine-prediction",
+    "relative_path": "Rock-or-Mine-prediction/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "SCT_ML_3",
+    "relative_path": "SCT_ML_3/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "SCT_ML_3",
+    "relative_path": "SCT_ML_3/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "SCT_ML_3",
+    "relative_path": "SCT_ML_3/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "SCT_ML_3",
+    "relative_path": "SCT_ML_3/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "SCT_ML_3",
+    "relative_path": "SCT_ML_3/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "SCT_ML_3",
+    "relative_path": "SCT_ML_3/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "SCT_ML_3",
+    "relative_path": "SCT_ML_3/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "SCT_ML_3",
+    "relative_path": "SCT_ML_3/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "SCT_ML_3",
+    "relative_path": "SCT_ML_3/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Simple-Naive-Bayes-on-Iris-Dataset",
+    "relative_path": "Simple-Naive-Bayes-on-Iris-Dataset/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Simple-Naive-Bayes-on-Iris-Dataset",
+    "relative_path": "Simple-Naive-Bayes-on-Iris-Dataset/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Simple-Naive-Bayes-on-Iris-Dataset",
+    "relative_path": "Simple-Naive-Bayes-on-Iris-Dataset/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Simple-Naive-Bayes-on-Iris-Dataset",
+    "relative_path": "Simple-Naive-Bayes-on-Iris-Dataset/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Simple-Naive-Bayes-on-Iris-Dataset",
+    "relative_path": "Simple-Naive-Bayes-on-Iris-Dataset/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Simple-Naive-Bayes-on-Iris-Dataset",
+    "relative_path": "Simple-Naive-Bayes-on-Iris-Dataset/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "Simple-Naive-Bayes-on-Iris-Dataset",
+    "relative_path": "Simple-Naive-Bayes-on-Iris-Dataset/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Simple-Naive-Bayes-on-Iris-Dataset",
+    "relative_path": "Simple-Naive-Bayes-on-Iris-Dataset/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Simple-Naive-Bayes-on-Iris-Dataset",
+    "relative_path": "Simple-Naive-Bayes-on-Iris-Dataset/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Social-Network-Ads",
+    "relative_path": "Social-Network-Ads/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Social-Network-Ads",
+    "relative_path": "Social-Network-Ads/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Social-Network-Ads",
+    "relative_path": "Social-Network-Ads/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Social-Network-Ads",
+    "relative_path": "Social-Network-Ads/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Social-Network-Ads",
+    "relative_path": "Social-Network-Ads/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Social-Network-Ads",
+    "relative_path": "Social-Network-Ads/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "Social-Network-Ads",
+    "relative_path": "Social-Network-Ads/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Social-Network-Ads",
+    "relative_path": "Social-Network-Ads/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Social-Network-Ads",
+    "relative_path": "Social-Network-Ads/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Spam-Email-Classifier",
+    "relative_path": "Spam-Email-Classifier/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Spam-Email-Classifier",
+    "relative_path": "Spam-Email-Classifier/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Spam-Email-Classifier",
+    "relative_path": "Spam-Email-Classifier/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Spam-Email-Classifier",
+    "relative_path": "Spam-Email-Classifier/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Spam-Email-Classifier",
+    "relative_path": "Spam-Email-Classifier/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Spam-Email-Classifier",
+    "relative_path": "Spam-Email-Classifier/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Spam-Email-Classifier",
+    "relative_path": "Spam-Email-Classifier/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Spam-Email-Classifier",
+    "relative_path": "Spam-Email-Classifier/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "SparkMLClassification",
+    "relative_path": "SparkMLClassification/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "SparkMLClassification",
+    "relative_path": "SparkMLClassification/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "SparkMLClassification",
+    "relative_path": "SparkMLClassification/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "SparkMLClassification",
+    "relative_path": "SparkMLClassification/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "SparkMLClassification",
+    "relative_path": "SparkMLClassification/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "SparkMLClassification",
+    "relative_path": "SparkMLClassification/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "SparkMLClassification",
+    "relative_path": "SparkMLClassification/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "SparkMLClassification",
+    "relative_path": "SparkMLClassification/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Supervised-Data-mining-Customer-satisfaction-prediction-",
+    "relative_path": "Supervised-Data-mining-Customer-satisfaction-prediction-/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Supervised-Data-mining-Customer-satisfaction-prediction-",
+    "relative_path": "Supervised-Data-mining-Customer-satisfaction-prediction-/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Supervised-Data-mining-Customer-satisfaction-prediction-",
+    "relative_path": "Supervised-Data-mining-Customer-satisfaction-prediction-/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Supervised-Data-mining-Customer-satisfaction-prediction-",
+    "relative_path": "Supervised-Data-mining-Customer-satisfaction-prediction-/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Supervised-Data-mining-Customer-satisfaction-prediction-",
+    "relative_path": "Supervised-Data-mining-Customer-satisfaction-prediction-/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Supervised-Data-mining-Customer-satisfaction-prediction-",
+    "relative_path": "Supervised-Data-mining-Customer-satisfaction-prediction-/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Supervised-Data-mining-Customer-satisfaction-prediction-",
+    "relative_path": "Supervised-Data-mining-Customer-satisfaction-prediction-/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Supervised-Data-mining-Customer-satisfaction-prediction-",
+    "relative_path": "Supervised-Data-mining-Customer-satisfaction-prediction-/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Svm-GridsearchCV",
+    "relative_path": "Svm-GridsearchCV/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Svm-GridsearchCV",
+    "relative_path": "Svm-GridsearchCV/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Svm-GridsearchCV",
+    "relative_path": "Svm-GridsearchCV/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Svm-GridsearchCV",
+    "relative_path": "Svm-GridsearchCV/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Svm-GridsearchCV",
+    "relative_path": "Svm-GridsearchCV/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Svm-GridsearchCV",
+    "relative_path": "Svm-GridsearchCV/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Svm-GridsearchCV",
+    "relative_path": "Svm-GridsearchCV/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Svm-GridsearchCV",
+    "relative_path": "Svm-GridsearchCV/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "Voting-Data-Classification",
+    "relative_path": "Voting-Data-Classification/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Voting-Data-Classification",
+    "relative_path": "Voting-Data-Classification/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "Voting-Data-Classification",
+    "relative_path": "Voting-Data-Classification/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "Voting-Data-Classification",
+    "relative_path": "Voting-Data-Classification/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "Voting-Data-Classification",
+    "relative_path": "Voting-Data-Classification/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "Voting-Data-Classification",
+    "relative_path": "Voting-Data-Classification/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "Voting-Data-Classification",
+    "relative_path": "Voting-Data-Classification/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "Voting-Data-Classification",
+    "relative_path": "Voting-Data-Classification/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "Voting-Data-Classification",
+    "relative_path": "Voting-Data-Classification/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "animals-classification",
+    "relative_path": "animals-classification/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "animals-classification",
+    "relative_path": "animals-classification/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "animals-classification",
+    "relative_path": "animals-classification/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "animals-classification",
+    "relative_path": "animals-classification/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "animals-classification",
+    "relative_path": "animals-classification/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "animals-classification",
+    "relative_path": "animals-classification/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "animals-classification",
+    "relative_path": "animals-classification/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "animals-classification",
+    "relative_path": "animals-classification/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "cancer_prediction",
+    "relative_path": "cancer_prediction/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "cancer_prediction",
+    "relative_path": "cancer_prediction/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "cancer_prediction",
+    "relative_path": "cancer_prediction/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "cancer_prediction",
+    "relative_path": "cancer_prediction/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "cancer_prediction",
+    "relative_path": "cancer_prediction/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "cancer_prediction",
+    "relative_path": "cancer_prediction/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "cancer_prediction",
+    "relative_path": "cancer_prediction/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "cancer_prediction",
+    "relative_path": "cancer_prediction/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "cancer_prediction",
+    "relative_path": "cancer_prediction/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "cars-classification",
+    "relative_path": "cars-classification/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "cars-classification",
+    "relative_path": "cars-classification/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "cars-classification",
+    "relative_path": "cars-classification/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "cars-classification",
+    "relative_path": "cars-classification/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "cars-classification",
+    "relative_path": "cars-classification/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "cars-classification",
+    "relative_path": "cars-classification/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "cars-classification",
+    "relative_path": "cars-classification/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "cars-classification",
+    "relative_path": "cars-classification/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "diabetes_predictive_analysis",
+    "relative_path": "diabetes_predictive_analysis/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "diabetes_predictive_analysis",
+    "relative_path": "diabetes_predictive_analysis/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "diabetes_predictive_analysis",
+    "relative_path": "diabetes_predictive_analysis/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "diabetes_predictive_analysis",
+    "relative_path": "diabetes_predictive_analysis/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "diabetes_predictive_analysis",
+    "relative_path": "diabetes_predictive_analysis/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "diabetes_predictive_analysis",
+    "relative_path": "diabetes_predictive_analysis/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "diabetes_predictive_analysis",
+    "relative_path": "diabetes_predictive_analysis/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "diabetes_predictive_analysis",
+    "relative_path": "diabetes_predictive_analysis/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "diabetes_predictive_analysis",
+    "relative_path": "diabetes_predictive_analysis/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "dyslexia-randomforest",
+    "relative_path": "dyslexia-randomforest/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "dyslexia-randomforest",
+    "relative_path": "dyslexia-randomforest/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "dyslexia-randomforest",
+    "relative_path": "dyslexia-randomforest/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "dyslexia-randomforest",
+    "relative_path": "dyslexia-randomforest/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "dyslexia-randomforest",
+    "relative_path": "dyslexia-randomforest/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "dyslexia-randomforest",
+    "relative_path": "dyslexia-randomforest/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "dyslexia-randomforest",
+    "relative_path": "dyslexia-randomforest/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "dyslexia-randomforest",
+    "relative_path": "dyslexia-randomforest/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "spam-ham-detection",
+    "relative_path": "spam-ham-detection/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "spam-ham-detection",
+    "relative_path": "spam-ham-detection/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "spam-ham-detection",
+    "relative_path": "spam-ham-detection/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "spam-ham-detection",
+    "relative_path": "spam-ham-detection/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "spam-ham-detection",
+    "relative_path": "spam-ham-detection/GENAIGREENML_autonomous_chatgpt.py",
+    "file": "GENAIGREENML_autonomous_chatgpt.py",
+    "mode": "autonomous",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "spam-ham-detection",
+    "relative_path": "spam-ham-detection/GENAIGREENML_autonomous_claude.py",
+    "file": "GENAIGREENML_autonomous_claude.py",
+    "mode": "autonomous",
+    "llm": "claude"
+  },
+  {
+    "project": "spam-ham-detection",
+    "relative_path": "spam-ham-detection/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "spam-ham-detection",
+    "relative_path": "spam-ham-detection/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "spam-ham-detection",
+    "relative_path": "spam-ham-detection/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  },
+  {
+    "project": "student-math-ml-analysis",
+    "relative_path": "student-math-ml-analysis/analysis/GENAIGREENML_assisted_chatgpt.py",
+    "file": "GENAIGREENML_assisted_chatgpt.py",
+    "mode": "assisted",
+    "llm": "chatgpt"
+  },
+  {
+    "project": "student-math-ml-analysis",
+    "relative_path": "student-math-ml-analysis/analysis/GENAIGREENML_assisted_claude.py",
+    "file": "GENAIGREENML_assisted_claude.py",
+    "mode": "assisted",
+    "llm": "claude"
+  },
+  {
+    "project": "student-math-ml-analysis",
+    "relative_path": "student-math-ml-analysis/analysis/GENAIGREENML_assisted_codex.py",
+    "file": "GENAIGREENML_assisted_codex.py",
+    "mode": "assisted",
+    "llm": "codex"
+  },
+  {
+    "project": "student-math-ml-analysis",
+    "relative_path": "student-math-ml-analysis/analysis/GENAIGREENML_assisted_gemini.py",
+    "file": "GENAIGREENML_assisted_gemini.py",
+    "mode": "assisted",
+    "llm": "gemini"
+  },
+  {
+    "project": "student-math-ml-analysis",
+    "relative_path": "student-math-ml-analysis/analysis/GENAIGREENML_autonomous_codex.py",
+    "file": "GENAIGREENML_autonomous_codex.py",
+    "mode": "autonomous",
+    "llm": "codex"
+  },
+  {
+    "project": "student-math-ml-analysis",
+    "relative_path": "student-math-ml-analysis/analysis/GENAIGREENML_autonomous_gemini.py",
+    "file": "GENAIGREENML_autonomous_gemini.py",
+    "mode": "autonomous",
+    "llm": "gemini"
+  },
+  {
+    "project": "student-math-ml-analysis",
+    "relative_path": "student-math-ml-analysis/analysis/GENAIGREENML_original_telemetry_chatgpt.py",
+    "file": "GENAIGREENML_original_telemetry_chatgpt.py",
+    "mode": "original",
+    "llm": "baseline"
+  }
+]

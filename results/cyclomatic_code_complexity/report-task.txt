@@ -1,0 +1,7 @@
+organization=bearwick
+projectKey=Bearwick_GenAI-GreenML
+serverUrl=https://sonarcloud.io
+serverVersion=8.0.0.85689
+dashboardUrl=https://sonarcloud.io/dashboard?id=Bearwick_GenAI-GreenML
+ceTaskId=AZ2qnjt81WBW43gtFK9I
+ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZ2qnjt81WBW43gtFK9I

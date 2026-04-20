@@ -1,0 +1,22 @@
+{
+  "task": {
+    "id": "AZ2qnjt81WBW43gtFK9I",
+    "type": "REPORT",
+    "componentId": "AZ2qaai6kft0Kr0noGtf",
+    "componentKey": "Bearwick_GenAI-GreenML",
+    "componentName": "GENAIGREENML Cyclomatic Complexity",
+    "componentQualifier": "TRK",
+    "analysisId": "1ded0b93-ec44-4b78-a7ff-2b8984e8c192",
+    "status": "SUCCESS",
+    "submittedAt": "2026-04-20T11:19:50+0000",
+    "submitterLogin": "Bearwick-ivLrN@github",
+    "startedAt": "2026-04-20T11:19:50+0000",
+    "executedAt": "2026-04-20T11:20:03+0000",
+    "executionTimeMs": 13288,
+    "logs": false,
+    "hasScannerContext": true,
+    "organization": "bearwick",
+    "warningCount": 0,
+    "warnings": []
+  }
+}

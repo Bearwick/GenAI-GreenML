@@ -15,6 +15,12 @@ export ANTHROPIC_API_KEY=
 
 # Groq
 export GROQ_API_KEY=
+
+# SonarQube Cyclomatic Code Complexity
+export SONAR_TOKEN=
+export SONAR_ORGANIZATION=
+export SONAR_PROJECT_KEY=
+export SONAR_SCANNER_BIN=
 EOF
 ```
 
