@@ -12,6 +12,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -162,9 +163,10 @@ def import_external_libs():
         import matplotlib.pyplot as plt  # type: ignore
         from matplotlib.lines import Line2D  # type: ignore
         from scipy import stats  # type: ignore
+        from statsmodels.stats.multicomp import pairwise_tukeyhsd  # type: ignore
         from statsmodels.stats.multitest import multipletests  # type: ignore
 
-        return np, plt, Line2D, stats, multipletests
+        return np, plt, Line2D, stats, pairwise_tukeyhsd, multipletests
     except ModuleNotFoundError as exc:
         pkg = str(exc).split("'")[-2] if "'" in str(exc) else str(exc)
         raise SystemExit(
@@ -810,12 +812,12 @@ def build_summary_rows(records: Sequence[ComplexityRecord]) -> list[dict[str, st
     return rows
 
 
-def kruskal_and_pairwise_summary(
+def anova_and_tukey_summary(
     section_label: str,
     groups: dict[str, list[float]],
     stats,
     np,
-    multipletests,
+    pairwise_tukeyhsd,
     lines: list[str],
 ) -> None:
     lines.append(f"\n{section_label}")
@@ -826,42 +828,31 @@ def kruskal_and_pairwise_summary(
 
     ordered_names = sorted(nonempty)
     data = [nonempty[name] for name in ordered_names]
-    kruskal_stat, kruskal_p = stats.kruskal(*data)
-    lines.append(
-        f"Kruskal-Wallis: H={kruskal_stat:.5f} | p={kruskal_p:.6f} | groups={', '.join(ordered_names)}"
-    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        f_stat, p_value = stats.f_oneway(*data)
 
-    pair_rows: list[dict[str, float | str]] = []
-    for i in range(len(ordered_names)):
-        for j in range(i + 1, len(ordered_names)):
-            name_a = ordered_names[i]
-            name_b = ordered_names[j]
-            values_a = np.asarray(nonempty[name_a], dtype=float)
-            values_b = np.asarray(nonempty[name_b], dtype=float)
-            stat_u, p_value = stats.mannwhitneyu(values_a, values_b, alternative="two-sided")
-            pair_rows.append(
-                {
-                    "a": name_a,
-                    "b": name_b,
-                    "u": float(stat_u),
-                    "p": float(p_value),
-                    "n_a": int(values_a.size),
-                    "n_b": int(values_b.size),
-                    "median_a": float(np.median(values_a)),
-                    "median_b": float(np.median(values_b)),
-                    "mean_a": float(np.mean(values_a)),
-                    "mean_b": float(np.mean(values_b)),
-                }
-            )
+    if np.isnan(f_stat) or np.isnan(p_value):
+        lines.append(f"ANOVA undefined (constant/insufficient variance) | groups={', '.join(ordered_names)}")
+    else:
+        lines.append(f"ANOVA: F={f_stat:.5f} | p_anova={p_value:.6f} | groups={', '.join(ordered_names)}")
 
-    adjusted = holm_adjust_pvalues([row["p"] for row in pair_rows], multipletests, np)
-    for row, p_adj in zip(pair_rows, adjusted):
-        lines.append(
-            f"{row['a']} vs {row['b']}: n=({row['n_a']},{row['n_b']}) | U={row['u']:.5f} | "
-            f"p={row['p']:.6f} | p_holm={p_adj:.6f} | "
-            f"median=({row['median_a']:.4f},{row['median_b']:.4f}) | "
-            f"mean=({row['mean_a']:.4f},{row['mean_b']:.4f})"
-        )
+    values: list[float] = []
+    labels: list[str] = []
+    for name in ordered_names:
+        for value in nonempty[name]:
+            if math.isfinite(value):
+                values.append(float(value))
+                labels.append(name)
+
+    if len(set(labels)) < 2:
+        lines.append("Tukey HSD: insufficient grouped data")
+        return
+
+    tukey = pairwise_tukeyhsd(endog=np.array(values, dtype=float), groups=np.array(labels), alpha=0.05)
+    lines.append("Tukey HSD:")
+    for row in tukey.summary().as_text().splitlines():
+        lines.append(row)
 
 
 def create_original_lookup(records: Sequence[ComplexityRecord]) -> dict[str, ComplexityRecord]:
@@ -943,6 +934,7 @@ def save_boxplot(
     output_path: Path,
     plt,
     np,
+    Line2D,
 ) -> Optional[Path]:
     groups = [(label, values) for label, values in data.items() if values]
     if not groups:
@@ -968,16 +960,26 @@ def save_boxplot(
         rotation=20,
         ha="right",
     )
-    ax.set_title(title)
     ax.set_ylabel(ylabel)
+    legend_handles = [
+        Line2D([0], [0], color="green", linewidth=2, label="Median"),
+    ]
+    original_group = next((values for label, values in groups if label == "Original"), None)
+    if original_group:
+        original_median = float(np.median(original_group))
+        ax.axhline(original_median, color="blue", linestyle="--", linewidth=1)
+        legend_handles.append(
+            Line2D([0], [0], color="blue", linestyle="--", linewidth=1, label="Original")
+        )
     ax.grid(axis="y", alpha=0.25)
+    ax.legend(handles=legend_handles, loc="upper right", frameon=True)
     fig.tight_layout()
     fig.savefig(output_path, dpi=160)
     plt.close(fig)
     return output_path
 
 
-def save_mode_boxplot(records: Sequence[ComplexityRecord], output_dir: Path, plt, np) -> Optional[Path]:
+def save_mode_boxplot(records: Sequence[ComplexityRecord], output_dir: Path, plt, np, Line2D) -> Optional[Path]:
     groups = {
         display_mode_name(mode): [r.complexity for r in records if r.mode == mode and math.isfinite(r.complexity)]
         for mode in ALL_MODES
@@ -989,6 +991,7 @@ def save_mode_boxplot(records: Sequence[ComplexityRecord], output_dir: Path, plt
         output_dir / "boxplot_complexity_by_mode.png",
         plt,
         np,
+        Line2D,
     )
 
 
@@ -1000,6 +1003,7 @@ def save_llm_boxplot(
     file_name: str,
     plt,
     np,
+    Line2D,
 ) -> Optional[Path]:
     groups: dict[str, list[float]] = defaultdict(list)
     for record in records:
@@ -1017,10 +1021,11 @@ def save_llm_boxplot(
         output_dir / file_name,
         plt,
         np,
+        Line2D,
     )
 
 
-def save_density_boxplot(records: Sequence[ComplexityRecord], output_dir: Path, plt, np) -> Optional[Path]:
+def save_density_boxplot(records: Sequence[ComplexityRecord], output_dir: Path, plt, np, Line2D) -> Optional[Path]:
     groups = {
         display_mode_name(mode): [
             r.complexity_per_100_ncloc
@@ -1036,6 +1041,7 @@ def save_density_boxplot(records: Sequence[ComplexityRecord], output_dir: Path, 
         output_dir / "boxplot_complexity_per_100_ncloc_by_mode.png",
         plt,
         np,
+        Line2D,
     )
 
 
@@ -1117,7 +1123,6 @@ def save_delta_boxplots(
             for llm in sorted(delta_groups[mode])
             if delta_groups[mode][llm]
         ]
-        ax.set_title(display_mode_name(mode), fontsize=MODE_TITLE_FONTSIZE)
         if not llm_groups:
             ax.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax.transAxes)
             ax.set_xticks([])
@@ -1155,14 +1160,13 @@ def save_delta_boxplots(
     if not has_data:
         plt.close(fig)
         return None
-    fig.suptitle(title)
-    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    fig.tight_layout()
     fig.savefig(output_path, dpi=160)
     plt.close(fig)
     return output_path
 
 
-def paired_wilcoxon_summary(
+def paired_ttest_summary(
     label: str,
     llm_values: dict[str, tuple[list[float], list[float]]],
     stats,
@@ -1175,22 +1179,26 @@ def paired_wilcoxon_summary(
     for llm in sorted(llm_values):
         a_values, b_values = llm_values[llm]
         if len(a_values) < 2 or len(b_values) < 2:
-            lines.append(f"{display_llm_name(llm)}: insufficient pairs")
+            lines.append(f"{display_llm_name(llm)}: insufficient pairs for t-test")
             continue
         a = np.asarray(a_values, dtype=float)
         b = np.asarray(b_values, dtype=float)
+        n_pairs = min(a.size, b.size)
+        if n_pairs < 2:
+            lines.append(f"{display_llm_name(llm)}: insufficient pairs for t-test")
+            continue
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            t_stat, p_value = stats.ttest_rel(a, b, nan_policy="omit")
+
+        if np.isnan(t_stat) or np.isnan(p_value):
+            lines.append(f"{display_llm_name(llm)}: insufficient variance for t-test")
+            continue
         diff = a - b
         diff = diff[~np.isnan(diff)]
         if diff.size < 2:
-            lines.append(f"{display_llm_name(llm)}: insufficient pairs")
-            continue
-        if np.allclose(diff, 0.0):
-            lines.append(f"{display_llm_name(llm)}: no variance in paired differences")
-            continue
-        try:
-            stat_w, p_value = stats.wilcoxon(a, b)
-        except ValueError:
-            lines.append(f"{display_llm_name(llm)}: no variance in paired differences")
+            lines.append(f"{display_llm_name(llm)}: insufficient pairs for t-test")
             continue
         mean_diff = float(np.mean(diff))
         median_diff = float(np.median(diff))
@@ -1200,7 +1208,7 @@ def paired_wilcoxon_summary(
             {
                 "llm": llm,
                 "n": int(diff.size),
-                "w": float(stat_w),
+                "t": float(t_stat),
                 "p": float(p_value),
                 "mean_diff": mean_diff,
                 "median_diff": median_diff,
@@ -1212,8 +1220,8 @@ def paired_wilcoxon_summary(
     adjusted = holm_adjust_pvalues([row["p"] for row in rows], multipletests, np)
     for row, p_adj in zip(rows, adjusted):
         lines.append(
-            f"{display_llm_name(str(row['llm']))}: n={row['n']} | W={row['w']:.5f} | "
-            f"p={row['p']:.6f} | p_holm={p_adj:.6f} | mean_diff={row['mean_diff']:.4f} | "
+            f"{display_llm_name(str(row['llm']))}: n={row['n']} | t={row['t']:.5f} | "
+            f"p_ttest={row['p']:.6f} | p_ttest_holm={p_adj:.6f} | mean_diff={row['mean_diff']:.4f} | "
             f"median_diff={row['median_diff']:.4f} | cohen_d={row['cohen_d']:.4f} | "
             f"95% CI [{row['ci_low']:.4f}, {row['ci_high']:.4f}]"
         )
@@ -1281,6 +1289,7 @@ def build_analysis_text(
     project_measures: dict,
     np,
     stats,
+    pairwise_tukeyhsd,
     multipletests,
 ) -> str:
     lines: list[str] = []
@@ -1308,40 +1317,48 @@ def build_analysis_text(
             f"p25={row['p25']} p75={row['p75']}"
         )
 
-    kruskal_and_pairwise_summary(
-        "Statistical Tests [raw complexity]: Mode",
+    lines.append("\nANOVA by mode [raw complexity]")
+    lines.append("(one-way ANOVA + Tukey HSD post-hoc)")
+    anova_and_tukey_summary(
+        "Metric: complexity | factor: mode",
         group_values(records, lambda r: r.complexity, lambda r: display_mode_name(r.mode), lambda r: r.mode in ALL_MODES),
         stats,
         np,
-        multipletests,
+        pairwise_tukeyhsd,
         lines,
     )
-    kruskal_and_pairwise_summary(
-        "Statistical Tests [raw complexity]: Assisted by LLM",
+
+    lines.append("\nANOVA by LLM [raw complexity]")
+    lines.append("(one-way ANOVA + Tukey HSD post-hoc)")
+    anova_and_tukey_summary(
+        "Mode: assisted | Metric: complexity | factor: model",
         group_values(records, lambda r: r.complexity, lambda r: display_llm_name(r.llm), lambda r: r.mode == "assisted"),
         stats,
         np,
-        multipletests,
+        pairwise_tukeyhsd,
         lines,
     )
-    kruskal_and_pairwise_summary(
-        "Statistical Tests [raw complexity]: Autonomous by LLM",
+    anova_and_tukey_summary(
+        "Mode: autonomous | Metric: complexity | factor: model",
         group_values(records, lambda r: r.complexity, lambda r: display_llm_name(r.llm), lambda r: r.mode == "autonomous"),
         stats,
         np,
-        multipletests,
+        pairwise_tukeyhsd,
         lines,
     )
-    kruskal_and_pairwise_summary(
-        "Statistical Tests [raw complexity]: Generated by LLM (assisted + autonomous)",
+    anova_and_tukey_summary(
+        "Mode: assisted + autonomous | Metric: complexity | factor: model",
         group_values(records, lambda r: r.complexity, lambda r: display_llm_name(r.llm), lambda r: r.mode in GENERATED_MODES),
         stats,
         np,
-        multipletests,
+        pairwise_tukeyhsd,
         lines,
     )
-    kruskal_and_pairwise_summary(
-        "Statistical Tests [normalized complexity]: Mode",
+
+    lines.append("\nANOVA by mode [normalized complexity]")
+    lines.append("(one-way ANOVA + Tukey HSD post-hoc)")
+    anova_and_tukey_summary(
+        "Metric: complexity_per_100_ncloc | factor: mode",
         group_values(
             records,
             lambda r: r.complexity_per_100_ncloc,
@@ -1350,11 +1367,14 @@ def build_analysis_text(
         ),
         stats,
         np,
-        multipletests,
+        pairwise_tukeyhsd,
         lines,
     )
-    kruskal_and_pairwise_summary(
-        "Statistical Tests [normalized complexity]: Assisted by LLM",
+
+    lines.append("\nANOVA by LLM [normalized complexity]")
+    lines.append("(one-way ANOVA + Tukey HSD post-hoc)")
+    anova_and_tukey_summary(
+        "Mode: assisted | Metric: complexity_per_100_ncloc | factor: model",
         group_values(
             records,
             lambda r: r.complexity_per_100_ncloc,
@@ -1363,11 +1383,11 @@ def build_analysis_text(
         ),
         stats,
         np,
-        multipletests,
+        pairwise_tukeyhsd,
         lines,
     )
-    kruskal_and_pairwise_summary(
-        "Statistical Tests [normalized complexity]: Autonomous by LLM",
+    anova_and_tukey_summary(
+        "Mode: autonomous | Metric: complexity_per_100_ncloc | factor: model",
         group_values(
             records,
             lambda r: r.complexity_per_100_ncloc,
@@ -1376,11 +1396,11 @@ def build_analysis_text(
         ),
         stats,
         np,
-        multipletests,
+        pairwise_tukeyhsd,
         lines,
     )
-    kruskal_and_pairwise_summary(
-        "Statistical Tests [normalized complexity]: Generated by LLM (assisted + autonomous)",
+    anova_and_tukey_summary(
+        "Mode: assisted + autonomous | Metric: complexity_per_100_ncloc | factor: model",
         group_values(
             records,
             lambda r: r.complexity_per_100_ncloc,
@@ -1389,29 +1409,38 @@ def build_analysis_text(
         ),
         stats,
         np,
-        multipletests,
+        pairwise_tukeyhsd,
         lines,
     )
 
     orig_assist_raw, orig_auto_raw, assist_auto_raw = build_paired_value_maps(records, lambda r: r.complexity)
-    paired_wilcoxon_summary(
-        "Paired Tests [raw complexity]: Original vs Assisted by LLM",
+    lines.append("\nPaired t-tests [raw complexity]: Original vs Assisted by model")
+    lines.append("(paired by project and model)")
+    lines.append("Holm correction: across LLMs in this section")
+    paired_ttest_summary(
+        "Metric: complexity",
         orig_assist_raw,
         stats,
         np,
         multipletests,
         lines,
     )
-    paired_wilcoxon_summary(
-        "Paired Tests [raw complexity]: Original vs Autonomous by LLM",
+    lines.append("\nPaired t-tests [raw complexity]: Original vs Autonomous by model")
+    lines.append("(paired by project and model)")
+    lines.append("Holm correction: across LLMs in this section")
+    paired_ttest_summary(
+        "Metric: complexity",
         orig_auto_raw,
         stats,
         np,
         multipletests,
         lines,
     )
-    paired_wilcoxon_summary(
-        "Paired Tests [raw complexity]: Assisted vs Autonomous by LLM",
+    lines.append("\nPaired t-tests [raw complexity]: Assisted vs Autonomous by model")
+    lines.append("(paired by project and model)")
+    lines.append("Holm correction: across LLMs in this section")
+    paired_ttest_summary(
+        "Metric: complexity",
         assist_auto_raw,
         stats,
         np,
@@ -1423,24 +1452,33 @@ def build_analysis_text(
         records,
         lambda r: r.complexity_per_100_ncloc,
     )
-    paired_wilcoxon_summary(
-        "Paired Tests [normalized complexity]: Original vs Assisted by LLM",
+    lines.append("\nPaired t-tests [normalized complexity]: Original vs Assisted by model")
+    lines.append("(paired by project and model)")
+    lines.append("Holm correction: across LLMs in this section")
+    paired_ttest_summary(
+        "Metric: complexity_per_100_ncloc",
         orig_assist_norm,
         stats,
         np,
         multipletests,
         lines,
     )
-    paired_wilcoxon_summary(
-        "Paired Tests [normalized complexity]: Original vs Autonomous by LLM",
+    lines.append("\nPaired t-tests [normalized complexity]: Original vs Autonomous by model")
+    lines.append("(paired by project and model)")
+    lines.append("Holm correction: across LLMs in this section")
+    paired_ttest_summary(
+        "Metric: complexity_per_100_ncloc",
         orig_auto_norm,
         stats,
         np,
         multipletests,
         lines,
     )
-    paired_wilcoxon_summary(
-        "Paired Tests [normalized complexity]: Assisted vs Autonomous by LLM",
+    lines.append("\nPaired t-tests [normalized complexity]: Assisted vs Autonomous by model")
+    lines.append("(paired by project and model)")
+    lines.append("Holm correction: across LLMs in this section")
+    paired_ttest_summary(
+        "Metric: complexity_per_100_ncloc",
         assist_auto_norm,
         stats,
         np,
@@ -1479,7 +1517,7 @@ def main() -> None:
 
     local_records, path_lookup = collect_local_metadata(repos_dir)
 
-    np, plt, Line2D, stats, multipletests = import_external_libs()
+    np, plt, Line2D, stats, pairwise_tukeyhsd, multipletests = import_external_libs()
 
     scan_metadata: dict[str, str] = {}
     project_measures: dict
@@ -1568,7 +1606,7 @@ def main() -> None:
 
     plot_paths: list[Path] = []
     for path in (
-        save_mode_boxplot(records, output_dir, plt, np),
+        save_mode_boxplot(records, output_dir, plt, np, Line2D),
         save_llm_boxplot(
             records,
             output_dir,
@@ -1577,6 +1615,7 @@ def main() -> None:
             "boxplot_complexity_by_llm_assisted.png",
             plt,
             np,
+            Line2D,
         ),
         save_llm_boxplot(
             records,
@@ -1586,6 +1625,7 @@ def main() -> None:
             "boxplot_complexity_by_llm_autonomous.png",
             plt,
             np,
+            Line2D,
         ),
         save_llm_boxplot(
             records,
@@ -1595,9 +1635,10 @@ def main() -> None:
             "boxplot_complexity_by_llm_generated.png",
             plt,
             np,
+            Line2D,
         ),
         save_scatter(records, output_dir, plt, Line2D),
-        save_density_boxplot(records, output_dir, plt, np),
+        save_density_boxplot(records, output_dir, plt, np, Line2D),
         save_delta_boxplots(
             build_delta_groups(records, lambda r: r.complexity),
             "Delta Cyclomatic Complexity vs Original",
@@ -1631,6 +1672,7 @@ def main() -> None:
         project_measures,
         np,
         stats,
+        pairwise_tukeyhsd,
         multipletests,
     )
     analysis_path = output_dir / "cyclomatic_code_complexity_analysis.txt"
