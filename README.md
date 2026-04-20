@@ -23,8 +23,8 @@ This dataset was developed as part of a master’s thesis at the **Norwegian Uni
 8. [Generate Code Iterations (Failed Scripts)](#generate-code-iterations-failed-scripts)
 9. [Analyse Failed Code](#analyse-failed-code)
 10. [Analyse Errors](#analyse-errors)
-11. [Generate Code Differences]()
-12. [Analyse Code Complexity (SonarQube)]()
+11. [Generate Code Differences](#generate-code-differences)
+12. [Analyse Code Complexity (SonarQube)](#analyse-code-complexity)
 
 ## Repository Information
 
