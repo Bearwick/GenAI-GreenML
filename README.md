@@ -23,6 +23,8 @@ This dataset was developed as part of a master’s thesis at the **Norwegian Uni
 8. [Generate Code Iterations (Failed Scripts)](#generate-code-iterations-failed-scripts)
 9. [Analyse Failed Code](#analyse-failed-code)
 10. [Analyse Errors](#analyse-errors)
+11. [Generate Code Differences]()
+12. [Analyse Code Complexity (SonarQube)]()
 
 ## Repository Information
 
@@ -292,3 +294,14 @@ python ./error_analysis.py
 deactivate
 cd ..
 ```
+
+## Generate Code Differences
+
+Generates code differences comparing `original_telemetry` with assisted and autonomous implementations by Codex and Gemini.
+Output folder in `results`.
+
+```
+python scripts/code_differences.py
+```
+
+## Analyse Code Complexity
