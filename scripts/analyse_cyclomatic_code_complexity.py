@@ -965,11 +965,11 @@ def save_boxplot(
         Line2D([0], [0], color="green", linewidth=2, label="Median"),
     ]
     original_group = next((values for label, values in groups if label == "Original"), None)
-    if original_group:
+    if original_group and len(groups) > 1:
         original_median = float(np.median(original_group))
         ax.axhline(original_median, color="blue", linestyle="--", linewidth=1)
         legend_handles.append(
-            Line2D([0], [0], color="blue", linestyle="--", linewidth=1, label="Original")
+            Line2D([0], [0], color="blue", linestyle="--", linewidth=1, label="Original Median")
         )
     ax.grid(axis="y", alpha=0.25)
     ax.legend(handles=legend_handles, loc="upper right", frameon=True)
@@ -999,6 +999,7 @@ def save_llm_boxplot(
     records: Sequence[ComplexityRecord],
     output_dir: Path,
     mode_filter: Optional[str],
+    include_original: bool,
     title: str,
     file_name: str,
     plt,
@@ -1006,16 +1007,26 @@ def save_llm_boxplot(
     Line2D,
 ) -> Optional[Path]:
     groups: dict[str, list[float]] = defaultdict(list)
+    original_values: list[float] = []
     for record in records:
         if record.mode == "original":
+            if include_original and math.isfinite(record.complexity):
+                original_values.append(record.complexity)
             continue
         if mode_filter and record.mode != mode_filter:
             continue
         if not math.isfinite(record.complexity):
             continue
         groups[display_llm_name(record.llm)].append(record.complexity)
+
+    ordered_groups: dict[str, list[float]] = {}
+    for key in sorted(groups):
+        ordered_groups[key] = groups[key]
+    if include_original and original_values:
+        ordered_groups["Original"] = original_values
+
     return save_boxplot(
-        {key: groups[key] for key in sorted(groups)},
+        ordered_groups,
         title,
         "Cyclomatic Complexity",
         output_dir / file_name,
@@ -1610,7 +1621,8 @@ def main() -> None:
             records,
             output_dir,
             "assisted",
-            "Cyclomatic Complexity by LLM (Assisted)",
+            True,
+            "Cyclomatic Complexity by LLM with Original Baseline (Assisted)",
             "boxplot_complexity_by_llm_assisted.png",
             plt,
             np,
@@ -1620,7 +1632,8 @@ def main() -> None:
             records,
             output_dir,
             "autonomous",
-            "Cyclomatic Complexity by LLM (Autonomous)",
+            True,
+            "Cyclomatic Complexity by LLM with Original Baseline (Autonomous)",
             "boxplot_complexity_by_llm_autonomous.png",
             plt,
             np,
@@ -1630,6 +1643,7 @@ def main() -> None:
             records,
             output_dir,
             None,
+            False,
             "Cyclomatic Complexity by LLM (Assisted + Autonomous)",
             "boxplot_complexity_by_llm_generated.png",
             plt,

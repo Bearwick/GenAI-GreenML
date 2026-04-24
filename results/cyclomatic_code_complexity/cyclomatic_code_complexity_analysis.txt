@@ -6,7 +6,7 @@ Local files missing from SonarQube results: 0
 
 Scan Metadata
 mode: reuse_cached_api
-projectKey: Bearwick_GenAI-GreenML
+projectKey: cached
 serverUrl: https://sonarcloud.io
 
 Project Measures
