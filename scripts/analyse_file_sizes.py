@@ -280,6 +280,22 @@ def collect_group_sizes(records: List[SizeRecord], key):
     return grouped
 
 
+def llm_plot_group(record: SizeRecord) -> str:
+    if record.mode == "original":
+        return "original"
+    return record.llm
+
+
+def llm_plot_sort_key(label: str) -> tuple[int, str]:
+    if label == "original":
+        return (1, label)
+    return (0, label)
+
+
+def llm_plot_label(label: str) -> str:
+    return "ChatGPT" if label == "chatgpt" else label
+
+
 def group_stats_to_rows(group_name: str, grouped: Dict[str, List[int]]) -> List[Dict[str, str]]:
     rows = []
     for group_key, vals in sorted(grouped.items(), key=lambda kv: (str(kv[0]))):
@@ -354,28 +370,86 @@ def plot_box_by_group(records: List[SizeRecord], output_path: Path, by: str) -> 
         #title = "File size by mode"
         x_labels = [f"{label} (n={len(g)})" for label, g in zip(labels, groups)]
         fig, ax = plt.subplots(figsize=(10, 6))
+        legend_handles = []
+        legend_labels = []
         if any(groups):
-            ax.boxplot([g for g in groups if g], labels=[x for g, x in zip(groups, x_labels) if g])
+            bp = ax.boxplot(
+                [g for g in groups if g],
+                labels=[x for g, x in zip(groups, x_labels) if g],
+                medianprops={"color": "green", "linewidth": 1.5},
+            )
+            legend_handles.append(bp["medians"][0])
+            legend_labels.append("Median")
+        original_sizes = [normalize_size(r.size_bytes) for r in records if r.mode == "original"]
+        if original_sizes:
+            original_median = median(original_sizes)
+            original_line = ax.axhline(
+                original_median,
+                color="blue",
+                linestyle="--",
+                linewidth=1.0,
+                label="Original",
+            )
+            legend_handles.append(original_line)
+            legend_labels.append("Original")
+        visible_groups = [g for g in groups if g]
+        if visible_groups:
             ax.set_xticks(range(1, 1 + len([g for g in groups if g])))
             ax.set_xticklabels([x for g, x in zip(groups, x_labels) if g], rotation=20, ha="right")
        # ax.set_title(title)
         ax.set_ylabel("Size (KB)")
         ax.grid(axis="y", alpha=0.25)
+        if legend_handles:
+            ax.legend(
+                legend_handles,
+                legend_labels,
+                frameon=True,
+                loc="upper right",
+                fontsize=12,
+            )
         fig.tight_layout()
         fig.savefig(path, dpi=160)
         plt.close(fig)
         return [path]
 
-    llms = sorted({r.llm for r in records})
+    llms = sorted({llm_plot_group(r) for r in records}, key=llm_plot_sort_key)
     path = output_path / "boxplot_size_by_llm.png"
-    groups = [[normalize_size(r.size_bytes) for r in records if r.llm == llm] for llm in llms]
+    groups = [[normalize_size(r.size_bytes) for r in records if llm_plot_group(r) == llm] for llm in llms]
     fig, ax = plt.subplots(figsize=(max(10, 1.5 * len(llms)), 6))
+    legend_handles = []
+    legend_labels = []
     if any(groups):
-        ax.boxplot(groups, labels=llms)
+        bp = ax.boxplot(
+            groups,
+            labels=[llm_plot_label(llm) for llm in llms],
+            medianprops={"color": "green", "linewidth": 1.5},
+        )
+        legend_handles.append(bp["medians"][0])
+        legend_labels.append("Median")
+    original_sizes = [normalize_size(r.size_bytes) for r in records if llm_plot_group(r) == "original"]
+    if original_sizes:
+        original_median = median(original_sizes)
+        original_line = ax.axhline(
+            original_median,
+            color="blue",
+            linestyle="--",
+            linewidth=1.0,
+            label="Original",
+        )
+        legend_handles.append(original_line)
+        legend_labels.append("Original")
     #ax.set_title("File size by LLM")
     ax.set_ylabel("Size (KB)")
-    ax.set_xticklabels([f"{llm}\n(n={len(g)})" for llm, g in zip(llms, groups)], rotation=20, ha="right")
+    ax.set_xticklabels([f"{llm_plot_label(llm)}\n(n={len(g)})" for llm, g in zip(llms, groups)], rotation=20, ha="right")
     ax.grid(axis="y", alpha=0.25)
+    if legend_handles:
+        ax.legend(
+            legend_handles,
+            legend_labels,
+            frameon=True,
+            loc="upper right",
+            fontsize=12,
+        )
     fig.tight_layout()
     fig.savefig(path, dpi=160)
     plt.close(fig)
