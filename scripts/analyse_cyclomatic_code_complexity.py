@@ -969,7 +969,7 @@ def save_boxplot(
         original_median = float(np.median(original_group))
         ax.axhline(original_median, color="blue", linestyle="--", linewidth=1)
         legend_handles.append(
-            Line2D([0], [0], color="blue", linestyle="--", linewidth=1, label="Original Median")
+            Line2D([0], [0], color="blue", linestyle="--", linewidth=1, label="Original")
         )
     ax.grid(axis="y", alpha=0.25)
     ax.legend(handles=legend_handles, loc="upper right", frameon=True)
