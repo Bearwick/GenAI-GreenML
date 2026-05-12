@@ -9,9 +9,9 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 RESULTS_DIR = REPO_ROOT / "results"
 METRICS = ("accuracy", "exec_time", "energy")
 MODES = ("assisted", "autonomous")
-AXIS_LABEL_FONTSIZE = 16
-TICK_LABEL_FONTSIZE = 16
-MODE_TITLE_FONTSIZE = 18
+AXIS_LABEL_FONTSIZE = 24
+TICK_LABEL_FONTSIZE = 20
+MODE_TITLE_FONTSIZE = 24
 BOXPLOT_SPACING = 0.65
 BOXPLOT_WIDTH = 0.35
 
