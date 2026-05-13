@@ -104,9 +104,41 @@ Project-level summary (top 15 mean file sizes)
   JunctionalClassifier2: 5.102 KB
   Supervised-Data-mining-Customer-satisfaction-prediction-: 4.676 KB
 
+Paired t-tests [file size]: Original vs Assisted by model
+Values are generated - original file size.
+Holm correction: across LLMs in this section
+
+Original vs Assisted
+ChatGPT: n=50 | t=9.55996 | p_ttest=0.000000 | p_ttest_holm=0.000000 | mean_diff=1.935 KB | median_diff=1.915 KB | cohen_d=1.3520 | 95% CI [1.528 KB, 2.341 KB]
+Claude: n=49 | t=2.04597 | p_ttest=0.046259 | p_ttest_holm=0.046259 | mean_diff=0.265 KB | median_diff=0.528 KB | cohen_d=0.2923 | 95% CI [0.005 KB, 0.526 KB]
+Codex: n=50 | t=10.44791 | p_ttest=0.000000 | p_ttest_holm=0.000000 | mean_diff=2.201 KB | median_diff=1.952 KB | cohen_d=1.4776 | 95% CI [1.777 KB, 2.624 KB]
+Gemini: n=49 | t=4.16288 | p_ttest=0.000130 | p_ttest_holm=0.000259 | mean_diff=0.520 KB | median_diff=0.729 KB | cohen_d=0.5947 | 95% CI [0.269 KB, 0.771 KB]
+
+Paired t-tests [file size]: Original vs Autonomous by model
+Values are generated - original file size.
+Holm correction: across LLMs in this section
+
+Original vs Autonomous
+ChatGPT: n=47 | t=24.93196 | p_ttest=0.000000 | p_ttest_holm=0.000000 | mean_diff=8.398 KB | median_diff=8.610 KB | cohen_d=3.6367 | 95% CI [7.720 KB, 9.076 KB]
+Claude: n=22 | t=8.72010 | p_ttest=0.000000 | p_ttest_holm=0.000000 | mean_diff=1.533 KB | median_diff=1.732 KB | cohen_d=1.8591 | 95% CI [1.168 KB, 1.899 KB]
+Codex: n=47 | t=21.00169 | p_ttest=0.000000 | p_ttest_holm=0.000000 | mean_diff=5.303 KB | median_diff=5.611 KB | cohen_d=3.0634 | 95% CI [4.795 KB, 5.811 KB]
+Gemini: n=49 | t=12.68333 | p_ttest=0.000000 | p_ttest_holm=0.000000 | mean_diff=2.727 KB | median_diff=3.098 KB | cohen_d=1.8119 | 95% CI [2.295 KB, 3.160 KB]
+
+Paired t-tests [file size]: Assisted vs Autonomous by model
+Values are assisted - autonomous file size.
+Holm correction: across LLMs in this section
+
+Assisted vs Autonomous
+ChatGPT: n=47 | t=-15.03035 | p_ttest=0.000000 | p_ttest_holm=0.000000 | mean_diff=-6.388 KB | median_diff=-6.767 KB | cohen_d=-2.1924 | 95% CI [-7.244 KB, -5.533 KB]
+Claude: n=22 | t=-10.74855 | p_ttest=0.000000 | p_ttest_holm=0.000000 | mean_diff=-1.108 KB | median_diff=-1.117 KB | cohen_d=-2.2916 | 95% CI [-1.322 KB, -0.894 KB]
+Codex: n=47 | t=-12.06656 | p_ttest=0.000000 | p_ttest_holm=0.000000 | mean_diff=-3.268 KB | median_diff=-3.428 KB | cohen_d=-1.7601 | 95% CI [-3.814 KB, -2.723 KB]
+Gemini: n=48 | t=-14.08944 | p_ttest=0.000000 | p_ttest_holm=0.000000 | mean_diff=-2.176 KB | median_diff=-2.263 KB | cohen_d=-2.0336 | 95% CI [-2.487 KB, -1.866 KB]
+
 Output files
 - records: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/file_size_analysis/file_size_records.csv
 - summary: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/file_size_analysis/file_size_summary_stats.csv
+- paired deltas: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/file_size_analysis/file_size_paired_deltas.csv
+- t-tests with Holm correction: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/file_size_analysis/file_size_ttests_holm.csv
 - non-generated project sizes: /Users/edvard/Documents/NTNU/Master/Master Thesis/GenAI-GreenML/results/file_size_analysis/non_generated_project_sizes.csv
 
 Top 10 biggest projects excluding GENAIGREENML files

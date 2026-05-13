@@ -5,6 +5,7 @@ import argparse
 import csv
 import math
 import os
+import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,7 +18,8 @@ DEFAULT_REPOS_DIR = REPO_ROOT / "repos"
 OUTPUT_DIR = REPO_ROOT / "results" / "file_size_analysis"
 GENERATED_PREFIX = "GENAIGREENML"
 GENERATED_SUFFIX = ".py"
-MODES = ("original","assisted", "autonomous",  "unknown")
+GENERATED_MODES = ("assisted", "autonomous")
+MODES = ("original", "assisted", "autonomous", "unknown")
 AXIS_LABEL_FONTSIZE = 16
 TICK_LABEL_FONTSIZE = 16
 PLOT_TITLE_FONTSIZE = 18
@@ -233,6 +235,21 @@ def import_plot_libs():
         )
 
 
+def import_stats_libs():
+    try:
+        import numpy as np  # type: ignore
+        from scipy import stats  # type: ignore
+        from statsmodels.stats.multitest import multipletests  # type: ignore
+
+        return np, stats, multipletests
+    except ModuleNotFoundError as e:
+        pkg = str(e).split("'")[1] if "'" in str(e) else str(e)
+        raise SystemExit(
+            "Missing dependency for file-size t-tests: "
+            f"{pkg}. Install with: python3 -m pip install numpy scipy statsmodels"
+        )
+
+
 def save_raw_csv(path: Path, records: List[SizeRecord]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as f:
@@ -252,6 +269,237 @@ def save_summary_csv(path: Path, rows: List[Dict[str, str]]) -> None:
         writer.writeheader()
         for row in rows:
             writer.writerow({h: row.get(h, "") for h in header})
+
+
+def create_original_lookup(records: Sequence[SizeRecord]) -> dict[str, SizeRecord]:
+    out: dict[str, SizeRecord] = {}
+    for record in records:
+        if record.mode == "original":
+            out[record.project] = record
+    return out
+
+
+def create_mode_llm_lookup(records: Sequence[SizeRecord]) -> dict[tuple[str, str, str], SizeRecord]:
+    return {
+        (record.mode, record.llm, record.project): record
+        for record in records
+        if record.mode in GENERATED_MODES
+    }
+
+
+def display_llm_name(name: str) -> str:
+    mapping = {
+        "baseline": "Original",
+        "chatgpt": "ChatGPT",
+        "gemini": "Gemini",
+        "claude": "Claude",
+        "codex": "Codex",
+        "unknown": "Unknown",
+    }
+    return mapping.get(name, name[:1].upper() + name[1:])
+
+
+def paired_cohens_d(diff, np) -> float:
+    diff = np.asarray(diff, dtype=float)
+    diff = diff[~np.isnan(diff)]
+    if diff.size < 2:
+        return float("nan")
+    sd = diff.std(ddof=1)
+    if sd == 0:
+        return float("nan")
+    return float(diff.mean() / sd)
+
+
+def paired_ci_mean(diff, stats, np, alpha: float = 0.05) -> tuple[float, float]:
+    arr = np.asarray(diff, dtype=float)
+    arr = arr[~np.isnan(arr)]
+    n = arr.size
+    if n < 2:
+        return (float("nan"), float("nan"))
+    mean_diff = arr.mean()
+    sd = arr.std(ddof=1)
+    if sd == 0:
+        return (float(mean_diff), float(mean_diff))
+    se = sd / np.sqrt(n)
+    t_crit = stats.t.ppf(1 - alpha / 2, n - 1)
+    half_width = t_crit * se
+    return float(mean_diff - half_width), float(mean_diff + half_width)
+
+
+def holm_adjust_pvalues(p_values, multipletests, np) -> list[float]:
+    arr = np.asarray(p_values, dtype=float)
+    if arr.size == 0:
+        return []
+    out = np.full(arr.shape, np.nan, dtype=float)
+    valid = ~np.isnan(arr)
+    if np.any(valid):
+        out[valid] = multipletests(arr[valid], alpha=0.05, method="holm")[1]
+    return out.tolist()
+
+
+def build_paired_value_maps(
+    records: Sequence[SizeRecord],
+) -> tuple[dict[str, tuple[list[float], list[float]]], dict[str, tuple[list[float], list[float]]], dict[str, tuple[list[float], list[float]]]]:
+    original_lookup = create_original_lookup(records)
+    mode_lookup = create_mode_llm_lookup(records)
+    llms = sorted({record.llm for record in records if record.mode in GENERATED_MODES})
+
+    original_vs_assisted: dict[str, tuple[list[float], list[float]]] = {}
+    original_vs_autonomous: dict[str, tuple[list[float], list[float]]] = {}
+    assisted_vs_autonomous: dict[str, tuple[list[float], list[float]]] = {}
+
+    for llm in llms:
+        generated_assisted: list[float] = []
+        original_assisted: list[float] = []
+        generated_autonomous: list[float] = []
+        original_autonomous: list[float] = []
+        assisted_values: list[float] = []
+        autonomous_values: list[float] = []
+
+        for project, original_record in sorted(original_lookup.items()):
+            assisted = mode_lookup.get(("assisted", llm, project))
+            autonomous = mode_lookup.get(("autonomous", llm, project))
+            original_value = float(original_record.size_bytes)
+
+            if assisted is not None:
+                generated_assisted.append(float(assisted.size_bytes))
+                original_assisted.append(original_value)
+
+            if autonomous is not None:
+                generated_autonomous.append(float(autonomous.size_bytes))
+                original_autonomous.append(original_value)
+
+            if assisted is not None and autonomous is not None:
+                assisted_values.append(float(assisted.size_bytes))
+                autonomous_values.append(float(autonomous.size_bytes))
+
+        original_vs_assisted[llm] = (generated_assisted, original_assisted)
+        original_vs_autonomous[llm] = (generated_autonomous, original_autonomous)
+        assisted_vs_autonomous[llm] = (assisted_values, autonomous_values)
+
+    return original_vs_assisted, original_vs_autonomous, assisted_vs_autonomous
+
+
+def paired_ttest_summary(
+    label: str,
+    llm_values: dict[str, tuple[list[float], list[float]]],
+    stats,
+    np,
+    multipletests,
+    lines: list[str],
+) -> list[dict[str, str]]:
+    lines.append(f"\n{label}")
+    rows: list[dict[str, float | str]] = []
+    for llm in sorted(llm_values):
+        a_values, b_values = llm_values[llm]
+        if len(a_values) < 2 or len(b_values) < 2:
+            lines.append(f"{display_llm_name(llm)}: insufficient pairs for t-test")
+            continue
+        a = np.asarray(a_values, dtype=float)
+        b = np.asarray(b_values, dtype=float)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            t_stat, p_value = stats.ttest_rel(a, b, nan_policy="omit")
+
+        if np.isnan(t_stat) or np.isnan(p_value):
+            lines.append(f"{display_llm_name(llm)}: insufficient variance for t-test")
+            continue
+        diff = a - b
+        diff = diff[~np.isnan(diff)]
+        if diff.size < 2:
+            lines.append(f"{display_llm_name(llm)}: insufficient pairs for t-test")
+            continue
+        mean_diff = float(np.mean(diff))
+        median_diff = float(np.median(diff))
+        cohen_d = paired_cohens_d(diff, np)
+        ci_low, ci_high = paired_ci_mean(diff, stats, np)
+        rows.append(
+            {
+                "comparison": label,
+                "llm": llm,
+                "n": int(diff.size),
+                "t": float(t_stat),
+                "p": float(p_value),
+                "mean_diff": mean_diff,
+                "median_diff": median_diff,
+                "cohen_d": cohen_d,
+                "ci_low": ci_low,
+                "ci_high": ci_high,
+            }
+        )
+
+    adjusted = holm_adjust_pvalues([row["p"] for row in rows], multipletests, np)
+    output_rows: list[dict[str, str]] = []
+    for row, p_adj in zip(rows, adjusted):
+        lines.append(
+            f"{display_llm_name(str(row['llm']))}: n={row['n']} | t={row['t']:.5f} | "
+            f"p_ttest={row['p']:.6f} | p_ttest_holm={p_adj:.6f} | "
+            f"mean_diff={kb(float(row['mean_diff']))} | median_diff={kb(float(row['median_diff']))} | "
+            f"cohen_d={row['cohen_d']:.4f} | 95% CI [{kb(float(row['ci_low']))}, {kb(float(row['ci_high']))}]"
+        )
+        output_rows.append(
+            {
+                "comparison": str(row["comparison"]),
+                "llm": str(row["llm"]),
+                "n": str(row["n"]),
+                "t": f"{float(row['t']):.6f}",
+                "p_ttest": f"{float(row['p']):.6f}",
+                "p_ttest_holm": f"{float(p_adj):.6f}",
+                "mean_diff_bytes": f"{float(row['mean_diff']):.6f}",
+                "median_diff_bytes": f"{float(row['median_diff']):.6f}",
+                "cohen_d": f"{float(row['cohen_d']):.6f}",
+                "ci_low_bytes": f"{float(row['ci_low']):.6f}",
+                "ci_high_bytes": f"{float(row['ci_high']):.6f}",
+            }
+        )
+    return output_rows
+
+
+def build_paired_rows_from_records(records: Sequence[SizeRecord]) -> list[dict[str, str]]:
+    original_lookup = create_original_lookup(records)
+    rows: list[dict[str, str]] = []
+    for record in records:
+        if record.mode not in GENERATED_MODES:
+            continue
+        original = original_lookup.get(record.project)
+        if original is None:
+            continue
+        rows.append(
+            {
+                "comparison": f"original_vs_{record.mode}",
+                "project": record.project,
+                "llm": record.llm,
+                "generated_relative_path": record.relative_path,
+                "original_relative_path": original.relative_path,
+                "generated_size_bytes": str(record.size_bytes),
+                "original_size_bytes": str(original.size_bytes),
+                "delta_size_bytes": str(record.size_bytes - original.size_bytes),
+            }
+        )
+
+    lookup = create_mode_llm_lookup(records)
+    projects = sorted({record.project for record in records})
+    llms = sorted({record.llm for record in records if record.mode in GENERATED_MODES})
+    for llm in llms:
+        for project in projects:
+            assisted = lookup.get(("assisted", llm, project))
+            autonomous = lookup.get(("autonomous", llm, project))
+            if assisted is None or autonomous is None:
+                continue
+            rows.append(
+                {
+                    "comparison": "assisted_vs_autonomous",
+                    "project": project,
+                    "llm": llm,
+                    "generated_relative_path": assisted.relative_path,
+                    "original_relative_path": autonomous.relative_path,
+                    "generated_size_bytes": str(assisted.size_bytes),
+                    "original_size_bytes": str(autonomous.size_bytes),
+                    "delta_size_bytes": str(assisted.size_bytes - autonomous.size_bytes),
+                }
+            )
+    return rows
 
 
 def non_generated_project_sizes(repos_dir: Path) -> Dict[str, int]:
@@ -483,6 +731,7 @@ def main() -> None:
     records = build_records(repos_dir)
     if not records:
         raise SystemExit(f"No GENAIGREENML .py files found in {repos_dir}")
+    np, stats, multipletests = import_stats_libs()
     nongenerated_project_bytes = non_generated_project_sizes(repos_dir)
 
     records_sorted = sorted(records, key=lambda r: (r.project, r.mode, r.llm, r.file))
@@ -535,6 +784,9 @@ def main() -> None:
 
     raw_csv = output_dir / "file_size_records.csv"
     save_raw_csv(raw_csv, records_sorted)
+
+    paired_deltas_csv = output_dir / "file_size_paired_deltas.csv"
+    save_summary_csv(paired_deltas_csv, build_paired_rows_from_records(records_sorted))
 
     biggest = max(records_sorted, key=lambda r: r.size_bytes)
     sorted_by_size = sorted(records_sorted, key=lambda r: r.size_bytes, reverse=True)
@@ -636,10 +888,60 @@ def main() -> None:
     for project, avg_bytes in project_mean[: min(15, len(project_mean))]:
         lines.append(f"  {project}: {kb(avg_bytes)}")
 
+    original_vs_assisted, original_vs_autonomous, assisted_vs_autonomous = build_paired_value_maps(records_sorted)
+    ttest_rows: list[dict[str, str]] = []
+    lines.append("")
+    lines.append("Paired t-tests [file size]: Original vs Assisted by model")
+    lines.append("Values are generated - original file size.")
+    lines.append("Holm correction: across LLMs in this section")
+    ttest_rows.extend(
+        paired_ttest_summary(
+            "Original vs Assisted",
+            original_vs_assisted,
+            stats,
+            np,
+            multipletests,
+            lines,
+        )
+    )
+    lines.append("")
+    lines.append("Paired t-tests [file size]: Original vs Autonomous by model")
+    lines.append("Values are generated - original file size.")
+    lines.append("Holm correction: across LLMs in this section")
+    ttest_rows.extend(
+        paired_ttest_summary(
+            "Original vs Autonomous",
+            original_vs_autonomous,
+            stats,
+            np,
+            multipletests,
+            lines,
+        )
+    )
+    lines.append("")
+    lines.append("Paired t-tests [file size]: Assisted vs Autonomous by model")
+    lines.append("Values are assisted - autonomous file size.")
+    lines.append("Holm correction: across LLMs in this section")
+    ttest_rows.extend(
+        paired_ttest_summary(
+            "Assisted vs Autonomous",
+            assisted_vs_autonomous,
+            stats,
+            np,
+            multipletests,
+            lines,
+        )
+    )
+
+    ttest_csv = output_dir / "file_size_ttests_holm.csv"
+    save_summary_csv(ttest_csv, ttest_rows)
+
     lines.append("")
     lines.append(f"Output files")
     lines.append(f"- records: {raw_csv}")
     lines.append(f"- summary: {summary_csv}")
+    lines.append(f"- paired deltas: {paired_deltas_csv}")
+    lines.append(f"- t-tests with Holm correction: {ttest_csv}")
     non_generated_csv = output_dir / "non_generated_project_sizes.csv"
     with non_generated_csv.open("w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f)
