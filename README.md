@@ -10,6 +10,7 @@ This dataset was developed as part of a master’s thesis at the **Norwegian Uni
    1. [Repository Content](#repository-content)
    2. [Intended Use](#intended-use)
    3. [Citation](#citation)
+   4. [Video Code Walkthrough](#video-code-walkthrough)
 2. [Experiment Pipeline](#experiment-pipeline)
 3. [Adding ML Projects](#adding-ml-projects)
 4. [Environment Variables Setup](#environment-variables-setup)
@@ -49,6 +50,10 @@ The dataset supports reproducible research on:
 If you use this dataset in academic work, please cite it as:
 
 > **Bjørnevik, E. (2025).** _GenAI-GreenML: A Dataset for Evaluating Generative AI in Green Machine Learning Code._ NTNU, Department of Computer Science.
+
+### Video Code Walkthrough
+
+[Watch video here.](./assets/videos/GENAIGREENML.mp4)
 
 ## Experiment Pipeline
 
