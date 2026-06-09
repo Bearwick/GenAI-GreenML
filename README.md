@@ -53,7 +53,7 @@ If you use this dataset in academic work, please cite it as:
 
 ### Video Code Walkthrough
 
-[Watch video here.](https://youtu.be/RYAJE6c-yNM){:target="_blank"}
+[Watch video here.](https://youtu.be/RYAJE6c-yNM)
 
 ## Experiment Pipeline
 
