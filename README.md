@@ -10,21 +10,22 @@ This dataset was developed as part of a master’s thesis at the **Norwegian Uni
    1. [Repository Content](#repository-content)
    2. [Intended Use](#intended-use)
    3. [Citation](#citation)
-2. [Adding ML Projects](#adding-ml-projects)
-3. [Environment Variables Setup](#environment-variables-setup)
-4. [Adding LLMs](#adding-llms)
+2. [Experiment Pipeline](#experiment-pipeline)
+3. [Adding ML Projects](#adding-ml-projects)
+4. [Environment Variables Setup](#environment-variables-setup)
+5. [Adding LLMs](#adding-llms)
    1. [Free LLM API](#free-llm-groq)
-5. [Generate LLM Code](#generate-llm-code)
+6. [Generate LLM Code](#generate-llm-code)
    1. [Delete Old Generated Code](#delete-old-generated-code)
    2. [Runability Check](#runability-check)
-6. [Run Projects and Capture Telemetry](#run-projects-and-capture-telemetry)
-7. [Analyse Results](#analyse-results)
+7. [Run Projects and Capture Telemetry](#run-projects-and-capture-telemetry)
+8. [Analyse Results](#analyse-results)
    1. [Analyse File Sizes](#analyse-file-sizes)
-8. [Generate Code Iterations (Failed Scripts)](#generate-code-iterations-failed-scripts)
-9. [Analyse Failed Code](#analyse-failed-code)
-10. [Analyse Errors](#analyse-errors)
-11. [Generate Code Differences](#generate-code-differences)
-12. [Analyse Code Complexity (SonarQube)](#analyse-code-complexity)
+9. [Generate Code Iterations (Failed Scripts)](#generate-code-iterations-failed-scripts)
+10. [Analyse Failed Code](#analyse-failed-code)
+11. [Analyse Errors](#analyse-errors)
+12. [Generate Code Differences](#generate-code-differences)
+13. [Analyse Code Complexity (SonarQube)](#analyse-code-complexity)
 
 ## Repository Information
 
@@ -48,6 +49,22 @@ The dataset supports reproducible research on:
 If you use this dataset in academic work, please cite it as:
 
 > **Bjørnevik, E. (2025).** _GenAI-GreenML: A Dataset for Evaluating Generative AI in Green Machine Learning Code._ NTNU, Department of Computer Science.
+
+## Experiment Pipeline
+
+The overall experiment pipeline is illustrated in the figure below. The following sections describe the individual scripts and stages included in the pipeline.
+
+![Experiment Pipeline](./assets/images/experiment_pipeline.png)
+
+The experiment evaluates three different implementation conditions:
+
+- **Original:** Human-written machine learning implementations collected from GitHub repositories
+- **Assisted:** LLM-generated refactoring based on the original implementation and additional optimisation instructions.
+- **Autonomous:** Fully LLM-generated implementations created from repository context and task descriptions without access to the original implementation
+
+To ensure consistent and reproducible execution across all conditions, the original human-written scripts required minor standardisation changes before inclusion in the experiment pipeline. These modifications were intentionally minimal and designed to preserve the original functionality while enabling automated execution and telemetry collection. Typical changes included ensuring accuracy were explicitly printed to stdout, removing interactive inputs, removing visualisations and plotting functionality, and disabling file-writing and model persistence operations. The figure below illustrates the information provided to the LLM in each prompting condition.
+
+![Experiment Prompts](./assets/images/experiment_prompts.png)
 
 ## Adding ML Projects
 
